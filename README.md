@@ -1,157 +1,386 @@
-# 📦 MyGudang — Sistem Manajemen Inventaris Modern
+# 📦 MyGudang — Sistem Manajemen Gudang
 
-![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-8.0-purple?logo=dotnet)
-![SQL Server](https://img.shields.io/badge/SQL%20Server-Express-red?logo=microsoftsqlserver)
-![AdminLTE](https://img.shields.io/badge/AdminLTE-3.2-blue?logo=bootstrap)
-![License](https://img.shields.io/badge/License-MIT-green)
-
-**MyGudang** adalah aplikasi manajemen inventaris berbasis web yang dirancang untuk mengelola seluruh siklus hidup barang — dari penerimaan, penyimpanan, hingga pengeluaran — dengan pelacakan serial number dan multi-ruangan.
+Aplikasi manajemen gudang berbasis web yang dibangun menggunakan **ASP.NET Core 8 MVC** dengan **SQL Server Express**. Digunakan untuk mengelola stok barang, transaksi masuk/keluar, peminjaman, pengembalian, transfer antar lokasi, stok opname, arsip dokumen, dan pencetakan surat.
 
 ---
 
 ## ✨ Fitur Utama
 
-### 📋 Manajemen Barang
-- **Data Barang** — Katalog barang lengkap dengan kode, kategori, supplier, dan satuan
-- **Auto-generate Kode Barang** — Kode otomatis berdasarkan prefix kategori (ELK-001, ATK-002, dst.)
-- **Serial Number Tracking** — Lacak setiap unit barang secara individual
-- **Multi-Ruangan** — Kelola stok di beberapa ruangan/lokasi sekaligus
-
-### 📥 Barang Masuk
-- Input barang masuk dengan jumlah, serial number, ruangan, dan supplier
-- **Tambah Barang Baru** langsung dari form barang masuk (tanpa berpindah halaman)
-- Serial number otomatis "-" untuk barang tanpa SN
-- Stok otomatis bertambah di ruangan yang dipilih
-
-### 📤 Barang Keluar
-- Pilih barang & serial number via checkbox
-- Barang tanpa SN tampil sebagai "Unit 1", "Unit 2", dst.
-- Input penerima, alamat, dan no. HP
-- Stok otomatis berkurang di ruangan asal
-- **Surat Jalan & Surat Terima Barang** otomatis — siap cetak!
-
-### 🔄 Transfer Antar Ruangan
-- Pindahkan stok antar ruangan dengan mudah
-- Riwayat transfer tercatat lengkap
-
-### 🤝 Peminjaman
-- Catat peminjaman barang dengan jatuh tempo
-- Status: Dipinjam → Dikembalikan
-- Surat peminjaman otomatis
-
-### 🔙 Barang Kembali
-- Catat pengembalian barang keluar
-- Input kondisi & keterangan
-- Stok otomatis bertambah kembali
-
-### 📊 Dashboard & Laporan
-- **Dashboard interaktif** dengan grafik Chart.js (konfigurasi warna & tipe chart)
-- Kartu Stok per barang
-- Stok Opname — bandingkan stok sistem vs fisik
-- **Export/Import Excel** di setiap modul
-
-### 📄 Surat Otomatis
-- Surat Jalan dengan nomor otomatis
-- Surat Terima Barang
-- Surat Peminjaman & Pengembalian
-- **Kop Surat editable** — logo, nama perusahaan, alamat
-- **Nomor surat konfigurasi** — prefix & format bisa disesuaikan
-
-### 🔐 Keamanan
-- Login dengan ASP.NET Core Identity
-- Role-based access: **SuperAdmin** & **User**
-- Manajemen user (CRUD + reset password)
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Teknologi |
+| Modul | Deskripsi |
 |-------|-----------|
-| **Backend** | ASP.NET Core 8.0 MVC |
-| **Database** | SQL Server Express + Entity Framework Core |
-| **Frontend** | AdminLTE 3 + Bootstrap 4 |
-| **Charts** | Chart.js |
-| **Alerts** | SweetAlert2 |
-| **Excel** | ClosedXML |
-| **Auth** | ASP.NET Core Identity |
+| 📊 **Dashboard** | Ringkasan stok, grafik tren barang masuk/keluar, statistik real-time |
+| 📋 **Data Barang** | CRUD barang + detail histori transaksi masuk/keluar/peminjaman |
+| 📥 **Barang Masuk** | Catat penerimaan barang, import via Excel, cetak surat jalan |
+| 📤 **Barang Keluar** | Catat pengeluaran barang + cetak BAST & Surat Jalan |
+| 🔄 **Pengembalian Barang** | Pengembalian barang keluar + cetak Surat Pengembalian |
+| 🤝 **Peminjaman** | Peminjaman barang + cetak Surat Peminjaman |
+| 🔀 **Transfer Barang** | Pindah barang antar lokasi/ruangan |
+| 📑 **Stok Opname** | Pengecekan stok fisik vs sistem |
+| 📂 **Arsip Dokumen** | Penyimpanan dan manajemen dokumen digital |
+| 🏢 **Lokasi / Ruangan** | Manajemen lokasi penyimpanan + stok per lokasi |
+| 🏷️ **Kategori** | Pengelompokan barang |
+| 🚚 **Supplier** | Data pemasok barang |
+| 💾 **Backup & Restore** | Backup/restore database SQL Server, auto-backup terjadwal |
+| 👤 **Manajemen User** | Role-based (SuperAdmin & Admin) |
+| ⚙️ **Pengaturan** | Kop surat, nomor surat otomatis, setting chart dashboard |
 
 ---
 
-## 🚀 Instalasi
+## 🛠️ Teknologi
+
+- **Backend**: ASP.NET Core 8 MVC
+- **Database**: SQL Server Express (via Entity Framework Core)
+- **Frontend**: AdminLTE 3, Bootstrap 4, jQuery, DataTables, Select2, SweetAlert2
+- **Auth**: ASP.NET Core Identity (Role-based)
+- **Excel**: EPPlus 8 & ClosedXML
+- **PDF/Print**: CSS Print Styling
+
+---
+
+## 📁 Struktur Proyek
+
+```
+MyGudang/
+├── Controllers/                  # 20 Controllers
+│   ├── AccountController.cs      # Login, Logout, Profil
+│   ├── DashboardController.cs    # Halaman utama + statistik
+│   ├── BarangController.cs       # CRUD Barang + Detail Histori
+│   ├── BarangMasukController.cs  # Barang Masuk + Import Excel
+│   ├── BarangKeluarController.cs # Barang Keluar + Surat Jalan + BAST
+│   ├── BarangKembaliController.cs# Pengembalian Barang
+│   ├── PeminjamanController.cs   # Peminjaman + Surat Peminjaman
+│   ├── TransferBarangController.cs# Transfer antar lokasi
+│   ├── StokController.cs         # Monitoring stok
+│   ├── StokOpnameController.cs   # Stok opname
+│   ├── KategoriController.cs     # CRUD Kategori
+│   ├── SupplierController.cs     # CRUD Supplier
+│   ├── LokasiController.cs       # CRUD Lokasi + Stok per lokasi
+│   ├── ArsipController.cs        # Manajemen arsip dokumen
+│   ├── BackupController.cs       # Backup & Restore DB (SuperAdmin)
+│   ├── UserController.cs         # Manajemen user (SuperAdmin)
+│   ├── KopSuratController.cs     # Setting kop surat
+│   ├── SuratSettingController.cs # Nomor surat otomatis
+│   ├── ChartSettingController.cs # Setting chart dashboard
+│   └── HomeController.cs         # Landing page
+│
+├── Models/                       # 18 Entity Models
+│   ├── Barang.cs                 # Master barang
+│   ├── BarangMasuk.cs            # Transaksi masuk
+│   ├── BarangKeluar.cs           # Transaksi keluar
+│   ├── BarangKembali.cs          # Pengembalian
+│   ├── BarangSerial.cs           # Serial number per unit
+│   ├── BarangLokasi.cs           # Stok per lokasi
+│   ├── Peminjaman.cs             # Peminjaman barang
+│   ├── TransferBarang.cs         # Transfer antar lokasi
+│   ├── StokOpname.cs             # Header stok opname
+│   ├── Kategori.cs               # Kategori barang
+│   ├── Supplier.cs               # Supplier barang
+│   ├── Lokasi.cs                 # Lokasi/ruangan
+│   ├── Arsip.cs                  # Arsip dokumen
+│   ├── BackupSetting.cs          # Konfigurasi auto-backup
+│   ├── KopSurat.cs               # Data kop surat
+│   ├── SuratSetting.cs           # Format nomor surat
+│   └── ChartSetting.cs           # Konfigurasi chart
+│
+├── Views/                        # 21 View Folders
+│   ├── Shared/                   # Layout, Partial views
+│   ├── Dashboard/                # Halaman dashboard
+│   ├── Barang/                   # Index, Create, Edit, Detail
+│   ├── BarangMasuk/              # Index (+ Import Excel)
+│   ├── BarangKeluar/             # Index, SuratJalan, BAST, Edit
+│   ├── BarangKembali/            # Index, SuratPengembalian
+│   ├── Peminjaman/               # Index, Create, SuratPeminjaman
+│   ├── TransferBarang/           # Index, Create
+│   ├── Stok/                     # Monitor stok
+│   ├── StokOpname/               # Index, Create
+│   ├── Backup/                   # Halaman backup & restore
+│   └── ...                       # Kategori, Supplier, Lokasi, dll
+│
+├── Services/
+│   └── BackupService.cs          # Background service auto-backup
+│
+├── Data/
+│   └── ApplicationDbContext.cs   # EF Core DbContext + Fluent API
+│
+├── wwwroot/
+│   ├── css/site.css              # Custom styles + Print styles
+│   ├── js/site.js                # Custom JavaScript
+│   ├── images/                   # Logo dan gambar
+│   └── backups/                  # File backup database (.bak)
+│
+├── Program.cs                    # App configuration & middleware
+├── appsettings.json              # Connection string & EPPlus license
+└── MyGudang.csproj               # Project dependencies
+```
+
+---
+
+## 🗃️ Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    Kategori {
+        int Id PK
+        string NamaKategori
+    }
+
+    Supplier {
+        int Id PK
+        string NamaSupplier
+        string Alamat
+        string Telepon
+        string Email
+    }
+
+    Lokasi {
+        int Id PK
+        string NamaLokasi
+        string Deskripsi
+    }
+
+    Barang {
+        int Id PK
+        string KodeBarang
+        string NamaBarang
+        int KategoriId FK
+        int SupplierId FK
+        string Satuan
+        int Stok
+        string Gambar
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    BarangMasuk {
+        int Id PK
+        int BarangId FK
+        int Jumlah
+        DateTime TanggalMasuk
+        string Keterangan
+        int LokasiId FK
+        DateTime CreatedAt
+    }
+
+    BarangKeluar {
+        int Id PK
+        int BarangId FK
+        int Jumlah
+        DateTime TanggalKeluar
+        string Penerima
+        string NoHpPenerima
+        string Alamat
+        string Keterangan
+        string NoSuratJalan
+        DateTime CreatedAt
+    }
+
+    BarangKembali {
+        int Id PK
+        int BarangId FK
+        int BarangKeluarId FK
+        int Jumlah
+        DateTime TanggalKembali
+        string DikembalikanOleh
+        string Kondisi
+        string Keterangan
+        DateTime CreatedAt
+    }
+
+    BarangSerial {
+        int Id PK
+        int BarangId FK
+        string SerialNumber
+        string Status
+        int BarangMasukId FK
+        int BarangKeluarId FK
+        DateTime CreatedAt
+    }
+
+    BarangLokasi {
+        int Id PK
+        int BarangId FK
+        int LokasiId FK
+        int Stok
+    }
+
+    Peminjaman {
+        int Id PK
+        string NoPeminjaman
+        int BarangId FK
+        int Jumlah
+        string Peminjam
+        string NipNik
+        string Departemen
+        string NoHp
+        DateTime TanggalPinjam
+        DateTime TanggalJatuhTempo
+        string Status
+        string Keterangan
+    }
+
+    TransferBarang {
+        int Id PK
+        int BarangId FK
+        int DariLokasiId FK
+        int KeLokasiId FK
+        int Jumlah
+        DateTime TanggalTransfer
+        string Keterangan
+    }
+
+    StokOpname {
+        int Id PK
+        DateTime Tanggal
+        string Keterangan
+        string Status
+    }
+
+    StokOpnameDetail {
+        int Id PK
+        int StokOpnameId FK
+        int BarangId FK
+        int StokSistem
+        int StokFisik
+        int Selisih
+        string Keterangan
+    }
+
+    Arsip {
+        int Id PK
+        string NamaDokumen
+        string JenisDokumen
+        string FilePath
+        DateTime TanggalUpload
+        string Keterangan
+    }
+
+    BackupSetting {
+        int Id PK
+        bool AutoBackupEnabled
+        int IntervalHours
+        DateTime LastBackupAt
+        string BackupPath
+    }
+
+    KopSurat {
+        int Id PK
+        string NamaPerusahaan
+        string SubJudul
+        string Alamat
+        string Telepon
+        string Email
+        string Website
+        bool TampilkanLogo
+        string NamaPengirim
+        string JabatanPengirim
+    }
+
+    SuratSetting {
+        int Id PK
+        string JenisSurat
+        string Prefix
+        int NomorTerakhir
+    }
+
+    Kategori ||--o{ Barang : "memiliki"
+    Supplier ||--o{ Barang : "memasok"
+    Barang ||--o{ BarangMasuk : "diterima"
+    Barang ||--o{ BarangKeluar : "dikeluarkan"
+    Barang ||--o{ BarangKembali : "dikembalikan"
+    Barang ||--o{ BarangSerial : "punya serial"
+    Barang ||--o{ BarangLokasi : "disimpan di"
+    Barang ||--o{ Peminjaman : "dipinjam"
+    Barang ||--o{ TransferBarang : "ditransfer"
+    Lokasi ||--o{ BarangLokasi : "menyimpan"
+    Lokasi ||--o{ BarangMasuk : "lokasi masuk"
+    Lokasi ||--o{ TransferBarang : "asal"
+    Lokasi ||--o{ TransferBarang : "tujuan"
+    BarangKeluar ||--o{ BarangKembali : "dikembalikan dari"
+    BarangMasuk ||--o{ BarangSerial : "serial dari masuk"
+    BarangKeluar ||--o{ BarangSerial : "serial keluar"
+    StokOpname ||--o{ StokOpnameDetail : "detail opname"
+    Barang ||--o{ StokOpnameDetail : "dicek"
+```
+
+---
+
+## 🔐 Hak Akses (Role)
+
+| Fitur | SuperAdmin | Admin |
+|-------|:----------:|:-----:|
+| Dashboard | ✅ | ✅ |
+| Data Barang | ✅ | ✅ |
+| Barang Masuk/Keluar | ✅ | ✅ |
+| Peminjaman | ✅ | ✅ |
+| Transfer Barang | ✅ | ✅ |
+| Stok & Stok Opname | ✅ | ✅ |
+| Arsip Dokumen | ✅ | ✅ |
+| Kategori & Supplier | ✅ | ✅ |
+| Manajemen User | ✅ | ❌ |
+| Setting Kop Surat | ✅ | ❌ |
+| Setting Nomor Surat | ✅ | ❌ |
+| Setting Chart | ✅ | ❌ |
+| Backup & Restore | ✅ | ❌ |
+| Lokasi / Ruangan | ✅ | ❌ |
+
+---
+
+## 🚀 Cara Menjalankan
 
 ### Prasyarat
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [SQL Server Express](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
 
 ### Langkah
 ```bash
-# Clone repo
+# 1. Clone repository
 git clone https://github.com/danzone4u/MyGudang.git
 cd MyGudang
 
-# Update connection string di appsettings.json sesuai server SQL Anda
+# 2. Sesuaikan connection string di appsettings.json
+# (Server, Database, User Id, Password)
 
-# Jalankan
+# 3. Jalankan migrasi database
+dotnet ef database update
+
+# 4. Jalankan aplikasi
 dotnet run
 ```
 
-Akses di **http://localhost:5156**
+Aplikasi akan berjalan di `http://localhost:5156`
 
-### Login Default
-| Role | Username | Password |
-|------|----------|----------|
-| SuperAdmin | `admin` | `Admin123!` |
-
----
-
-## 📁 Struktur Project
-
-```
-MyGudang/
-├── Controllers/        # Logic bisnis per modul
-├── Models/             # Entity model (EF Core)
-├── Data/               # DbContext & konfigurasi
-├── Views/              # Razor views per modul
-│   ├── Dashboard/      # Halaman utama + chart
-│   ├── Barang/         # CRUD barang
-│   ├── BarangMasuk/    # Input barang masuk + modal barang baru
-│   ├── BarangKeluar/   # Output barang + surat
-│   ├── Peminjaman/     # Peminjaman + pengembalian
-│   ├── Lokasi/         # Manajemen ruangan
-│   └── Shared/         # Layout & partial views
-├── wwwroot/            # Static files (CSS, JS, images)
-└── Program.cs          # Entry point
-```
+### Akun Default
+| Email | Password | Role |
+|-------|----------|------|
+| admin@mygudang.com | Admin@123 | SuperAdmin |
 
 ---
 
-## 📸 Alur Kerja
+## 📄 Daftar Surat yang Dapat Dicetak
 
-```
-┌─────────────┐    ┌──────────────┐    ┌──────────────┐
-│  Buat       │    │  Barang      │    │  Stok Auto   │
-│  Kategori   │───▶│  Masuk       │───▶│  Bertambah   │
-│  + Prefix   │    │  + Barang    │    │  di Ruangan  │
-└─────────────┘    │    Baru      │    └──────┬───────┘
-                   └──────────────┘           │
-                                              ▼
-┌─────────────┐    ┌──────────────┐    ┌──────────────┐
-│  Cetak      │◀───│  Barang      │◀───│  Pilih       │
-│  Surat      │    │  Keluar      │    │  Barang &    │
-│  Jalan      │    │              │    │  Serial No   │
-└─────────────┘    └──────────────┘    └──────────────┘
-```
+| Surat | Modul | Format |
+|-------|-------|--------|
+| Surat Jalan | Barang Keluar | Print / PDF |
+| Berita Acara Serah Terima Barang (BAST) | Barang Keluar | Print / PDF |
+| Surat Peminjaman Barang | Peminjaman | Print / PDF |
+| Surat Pengembalian Barang | Pengembalian | Print / PDF |
 
 ---
 
-## 📝 License
+## 📸 Teknologi & Library
 
-MIT License — bebas digunakan untuk keperluan pribadi maupun komersial.
+| Library | Versi | Kegunaan |
+|---------|-------|----------|
+| ASP.NET Core | 8.0 | Web Framework |
+| Entity Framework Core | 8.0 | ORM |
+| ASP.NET Core Identity | 8.0 | Autentikasi & Otorisasi |
+| AdminLTE | 3.2 | UI Template |
+| DataTables | 1.13 | Tabel interaktif + sorting |
+| Select2 | 4.1 | Searchable dropdown |
+| SweetAlert2 | 11.x | Dialog & notifikasi |
+| EPPlus | 8.x | Import/Export Excel |
+| ClosedXML | 0.102 | Export Excel alternatif |
 
 ---
 
-<p align="center">
-  <b>Built with ❤️ using ASP.NET Core 8.0</b><br>
-  <i>© 2026 MyGudang. All rights reserved.</i>
-</p>
+*Dikembangkan oleh IT Region Jatimbalinus — PT Pertamina Patra Niaga*
