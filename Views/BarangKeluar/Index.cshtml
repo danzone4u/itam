@@ -26,7 +26,7 @@
                         <td>@item.Penerima</td><td>@item.NoHpPenerima</td>
                         <td>
                             <a href="@Url.Action("SuratJalan", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat Jalan"><i class="fas fa-file-alt"></i> SJ</a>
-                            <a href="@Url.Action("SuratTerimaBarang", new { id = item.Id })" class="btn btn-secondary btn-xs" title="Surat Terima"><i class="fas fa-receipt"></i> STB</a>
+                            <a href="@Url.Action("SuratTerimaBarang", new { id = item.Id })" class="btn btn-secondary btn-xs" title="Berita Acara Serah Terima"><i class="fas fa-receipt"></i> BAST</a>
                             <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
                             <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
                         </td>

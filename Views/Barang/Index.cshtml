@@ -7,19 +7,16 @@
     <div class="card-body">
         <div class="mb-3">
             <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
-            <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#importModal"><i class="fas fa-file-upload"></i> Import</button>
-            <button class="btn btn-danger btn-sm d-none" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Supplier</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th width="120">Aksi</th></tr>
+                <tr><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Supplier</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="120">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
                         <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td>
                         <td>@item.Kategori?.NamaKategori</td><td>@item.Supplier?.NamaSupplier</td>
                         <td>@item.Satuan</td>
@@ -43,9 +40,10 @@
                                 <span class="text-muted">-</span>
                             }
                         </td>
+                        <td><small class="text-muted">@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</small></td>
                         <td>
-                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
-                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                            <a href="@Url.Action("Detail", new { id = item.Id })" class="btn btn-info btn-xs" title="Lihat Histori Barang"><i class="fas fa-info-circle"></i></a>
+                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit Data Barang"><i class="fas fa-edit"></i></a>
                         </td>
                     </tr>
                 }
@@ -53,10 +51,4 @@
         </table>
     </div>
 </div>
-<div class="modal fade" id="importModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <form asp-action="ImportExcel" method="post" enctype="multipart/form-data">@Html.AntiForgeryToken()
-        <div class="modal-header bg-info"><h5 class="modal-title text-white"><i class="fas fa-file-upload"></i> Import Excel</h5><button type="button" class="close text-white" data-dismiss="modal">&times;</button></div>
-        <div class="modal-body"><p>Format: B=Kode, C=Nama, D=Kategori, E=Supplier, F=Satuan, G=Stok</p><input type="file" name="file" class="form-control" accept=".xlsx,.xls" required></div>
-        <div class="modal-footer"><button type="submit" class="btn btn-info"><i class="fas fa-upload"></i> Import</button></div>
-    </form>
-</div></div></div>
+

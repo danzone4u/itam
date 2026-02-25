@@ -199,6 +199,12 @@ namespace MyGudang.Controllers
                 if (barang != null)
                     barang.Stok += bk.Jumlah;
 
+                if (bk.LokasiId.HasValue && bk.LokasiId.Value > 0)
+                {
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bk.BarangId && x.LokasiId == bk.LokasiId.Value);
+                    if (bl != null) bl.Stok += bk.Jumlah;
+                }
+
                 // Restore serial statuses
                 var serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == id).ToListAsync();
                 foreach (var s in serials)
@@ -207,9 +213,16 @@ namespace MyGudang.Controllers
                     s.BarangKeluarId = null;
                 }
 
-                _context.BarangKeluars.Remove(bk);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Data berhasil dihapus!";
+                try
+                {
+                    _context.BarangKeluars.Remove(bk);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Data berhasil dihapus!";
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["Error"] = "Data tidak dapat dihapus karena masih terkait dengan data lain (misal: Barang Kembali).";
+                }
             }
             return RedirectToAction(nameof(Index));
         }
@@ -224,12 +237,28 @@ namespace MyGudang.Controllers
             {
                 var barang = await _context.Barangs.FindAsync(bk.BarangId);
                 if (barang != null) barang.Stok += bk.Jumlah;
+
+                if (bk.LokasiId.HasValue && bk.LokasiId.Value > 0)
+                {
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bk.BarangId && x.LokasiId == bk.LokasiId.Value);
+                    if (bl != null) bl.Stok += bk.Jumlah;
+                }
+
                 var serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == bk.Id).ToListAsync();
                 foreach (var s in serials) { s.Status = "Tersedia"; s.BarangKeluarId = null; }
             }
-            _context.BarangKeluars.RemoveRange(items);
-            await _context.SaveChangesAsync();
-            TempData["Success"] = $"{items.Count} data barang keluar berhasil dihapus!";
+
+            try
+            {
+                _context.BarangKeluars.RemoveRange(items);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"{items.Count} data barang keluar berhasil dihapus!";
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Error"] = "Beberapa data tidak dapat dihapus karena masih terkait dengan data lain (misal: Barang Kembali).";
+            }
+            
             return RedirectToAction(nameof(Index));
         }
 

@@ -107,6 +107,10 @@
         font-size: 15pt !important;
     }
 
+    .surat-container table th {
+        text-align: center !important;
+    }
+
     .surat-container h2 {
         font-size: 24pt !important;
     }
@@ -129,9 +133,12 @@
     box-sizing: border-box;
 }
 
+.surat-container table th {
+    text-align: center;
+}
+
 .surat-header {
     text-align: center;
-    border-bottom: 3px double #333;
     padding-bottom: 15px;
     margin-bottom: 20px;
 }

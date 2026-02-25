@@ -140,7 +140,7 @@
                     </li>
                     @if (User.IsInRole("SuperAdmin"))
                     {
-                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting" };
+                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup" };
                         var isSettingActive = settingControllers.Contains(ViewContext.RouteData.Values["controller"]?.ToString());
                     <li class="nav-item has-treeview @(isSettingActive ? "menu-open" : "")">
                         <a href="#" class="nav-link @(isSettingActive ? "active" : "")">
@@ -166,6 +166,11 @@
                             <li class="nav-item">
                                 <a href="@Url.Action("Index","SuratSetting")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SuratSetting" ? "active" : "")">
                                     <i class="far fa-circle nav-icon"></i><p>Nomor Surat</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","Backup")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Backup" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Backup & Restore</p>
                                 </a>
                             </li>
                         </ul>
@@ -239,7 +244,7 @@
     </div>
 
     <footer class="main-footer">
-        <strong>&copy; @DateTime.Now.Year <a href="#">MyGudang</a>.</strong> All rights reserved.
+        <strong>&copy; @DateTime.Now.Year <a href="#">IT Region Jatimbalinus</a>.</strong> All rights reserved.
         <div class="float-right d-none d-sm-inline-block">
             <b>Version</b> 1.0
         </div>

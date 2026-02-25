@@ -1,5 +1,5 @@
 @model MyGudang.Models.BarangKeluar
-@{ ViewData["Title"] = "Surat Terima Barang"; Layout = "~/Views/Shared/_Layout.cshtml"; var kop = (MyGudang.Models.KopSurat)ViewBag.Kop; }
+@{ ViewData["Title"] = "Berita Acara Serah Terima Barang"; Layout = "~/Views/Shared/_Layout.cshtml"; var kop = (MyGudang.Models.KopSurat)ViewBag.Kop; }
 
 <div class="no-print mb-3">
     <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak</button>
@@ -8,7 +8,7 @@
 </div>
 
 <div class="surat-container">
-    <div class="surat-header" style="text-align:left;">
+    <div class="surat-header" style="text-align:left; border-bottom:none !important;">
         <div style="display:flex; align-items:center; justify-content:space-between;">
             <div>
                 <h3 style="margin:0; font-weight:bold; font-size:22px;">@kop.NamaPerusahaan</h3>
@@ -33,12 +33,13 @@
             </div>
             @if (kop.TampilkanLogo)
             {
-                <img src="/images/logo-ppn.png" alt="Logo" style="height:90px;">
+                <img src="/images/logo-ppn.png" alt="Logo" style="height:112px;">
             }
         </div>
-        <hr style="border-top:3px solid #333; margin:10px 0;" />
-        <h2 style="text-align:center;">SURAT TERIMA BARANG</h2>
     </div>
+    
+    <hr style="border-top:3px solid #333; margin:10px 0;" />
+    <h2 style="text-align:center; margin-top:20px; font-weight:bold; margin-bottom:25px;">BERITA ACARA SERAH TERIMA BARANG</h2>
 
     <table style="width:100%; margin-bottom:20px;">
         <tr><td width="150"><strong>No. Referensi</strong></td><td>: @Model.NoSuratJalan</td></tr>

@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using MyGudang.Data;
 using MyGudang.Models;
 using ClosedXML.Excel;
+using OfficeOpenXml;
+using System.IO;
 
 namespace MyGudang.Controllers
 {
@@ -167,9 +169,25 @@ namespace MyGudang.Controllers
                 if (barang != null)
                     barang.Stok -= bm.Jumlah;
 
-                _context.BarangMasuks.Remove(bm);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Data berhasil dihapus!";
+                if (bm.LokasiId.HasValue && bm.LokasiId.Value > 0)
+                {
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bm.BarangId && x.LokasiId == bm.LokasiId.Value);
+                    if (bl != null) bl.Stok -= bm.Jumlah;
+                }
+
+                var serials = await _context.BarangSerials.Where(s => s.BarangMasukId == id).ToListAsync();
+                _context.BarangSerials.RemoveRange(serials);
+
+                try
+                {
+                    _context.BarangMasuks.Remove(bm);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Data berhasil dihapus!";
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["Error"] = "Data tidak dapat dihapus karena masih terkait dengan data lain.";
+                }
             }
             return RedirectToAction(nameof(Index));
         }
@@ -184,10 +202,28 @@ namespace MyGudang.Controllers
             {
                 var barang = await _context.Barangs.FindAsync(bm.BarangId);
                 if (barang != null) barang.Stok -= bm.Jumlah;
+                
+                if (bm.LokasiId.HasValue && bm.LokasiId.Value > 0)
+                {
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bm.BarangId && x.LokasiId == bm.LokasiId.Value);
+                    if (bl != null) bl.Stok -= bm.Jumlah;
+                }
+                
+                var serials = await _context.BarangSerials.Where(s => s.BarangMasukId == bm.Id).ToListAsync();
+                _context.BarangSerials.RemoveRange(serials);
             }
-            _context.BarangMasuks.RemoveRange(items);
-            await _context.SaveChangesAsync();
-            TempData["Success"] = $"{items.Count} data barang masuk berhasil dihapus!";
+            
+            try
+            {
+                _context.BarangMasuks.RemoveRange(items);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = $"{items.Count} data barang masuk berhasil dihapus!";
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Error"] = "Beberapa data tidak dapat dihapus karena masih terkait dengan data lain.";
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -217,6 +253,215 @@ namespace MyGudang.Controllers
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
             return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "BarangMasuk.xlsx");
+        }
+        [HttpGet]
+        public async Task<IActionResult> DownloadTemplate()
+        {
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("Template Barang Masuk");
+
+            // Header
+            worksheet.Cells[1, 1].Value = "Kode Barang (*Wajib)";
+            worksheet.Cells[1, 2].Value = "Nama Barang (*Wajib)";
+            worksheet.Cells[1, 3].Value = "Kategori";
+            worksheet.Cells[1, 4].Value = "Supplier";
+            worksheet.Cells[1, 5].Value = "Satuan";
+            worksheet.Cells[1, 6].Value = "Jumlah (*Wajib)";
+            worksheet.Cells[1, 7].Value = "Tanggal Masuk (DD/MM/YYYY)";
+            worksheet.Cells[1, 8].Value = "Keterangan";
+            worksheet.Cells[1, 9].Value = "Lokasi Ruangan";
+
+            worksheet.Cells["A1:I1"].Style.Font.Bold = true;
+
+            // Dummy row
+            var kategoriContoh = await _context.Kategoris.FirstOrDefaultAsync();
+            var supplierContoh = await _context.Suppliers.FirstOrDefaultAsync();
+            var lokasiContoh = await _context.Lokasis.FirstOrDefaultAsync();
+
+            worksheet.Cells[2, 1].Value = "BRG-001";
+            worksheet.Cells[2, 2].Value = "Contoh Barang";
+            worksheet.Cells[2, 3].Value = kategoriContoh?.NamaKategori ?? "IT";
+            worksheet.Cells[2, 4].Value = supplierContoh?.NamaSupplier ?? "PT Contoh";
+            worksheet.Cells[2, 5].Value = "Unit";
+            worksheet.Cells[2, 6].Value = 5;
+            worksheet.Cells[2, 7].Value = DateTime.Now.ToString("dd/MM/yyyy");
+            worksheet.Cells[2, 8].Value = "Stok awal";
+            worksheet.Cells[2, 9].Value = lokasiContoh?.NamaLokasi ?? "";
+
+            worksheet.Cells.AutoFitColumns();
+
+            var stream = new MemoryStream(package.GetAsByteArray());
+            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Template_Barang_Masuk.xlsx");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Import(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                TempData["Error"] = "Pilih file yang akan diimport!";
+                return RedirectToAction(nameof(Index));
+            }
+
+            using var stream = file.OpenReadStream();
+            using var package = new ExcelPackage(stream);
+            var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+
+            if (worksheet == null)
+            {
+                TempData["Error"] = "File Excel kosong atau format tidak valid.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            int rowCount = worksheet.Dimension?.Rows ?? 0;
+            if (rowCount <= 1)
+            {
+                TempData["Error"] = "File tidak memiliki data untuk diimport.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            int successCount = 0;
+            var barangs = await _context.Barangs.ToListAsync();
+            var lokasis = await _context.Lokasis.ToListAsync();
+            var kategoris = await _context.Kategoris.ToListAsync();
+            var suppliers = await _context.Suppliers.ToListAsync();
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                var kodeBarang = worksheet.Cells[row, 1].Value?.ToString()?.Trim();
+                var namaBarang = worksheet.Cells[row, 2].Value?.ToString()?.Trim();
+                var kategoriNama = worksheet.Cells[row, 3].Value?.ToString()?.Trim();
+                var supplierNama = worksheet.Cells[row, 4].Value?.ToString()?.Trim();
+                var satuan = worksheet.Cells[row, 5].Value?.ToString()?.Trim();
+                var jumlahStr = worksheet.Cells[row, 6].Value?.ToString()?.Trim();
+                var tglStr = worksheet.Cells[row, 7].Value?.ToString()?.Trim();
+                var ket = worksheet.Cells[row, 8].Value?.ToString()?.Trim();
+                var lokasiNama = worksheet.Cells[row, 9].Value?.ToString()?.Trim();
+
+                if (string.IsNullOrEmpty(kodeBarang) || string.IsNullOrEmpty(jumlahStr)) continue;
+
+                var barang = barangs.FirstOrDefault(b => b.KodeBarang.Equals(kodeBarang, StringComparison.OrdinalIgnoreCase));
+
+                // Auto-create Barang if not exists
+                if (barang == null && !string.IsNullOrEmpty(namaBarang))
+                {
+                    int kategoriId = 0;
+                    if (!string.IsNullOrEmpty(kategoriNama))
+                    {
+                        var kat = kategoris.FirstOrDefault(k => k.NamaKategori.Equals(kategoriNama, StringComparison.OrdinalIgnoreCase));
+                        if (kat != null) kategoriId = kat.Id;
+                        else
+                        {
+                            var newKat = new Kategori { NamaKategori = kategoriNama };
+                            _context.Kategoris.Add(newKat);
+                            await _context.SaveChangesAsync();
+                            kategoris.Add(newKat);
+                            kategoriId = newKat.Id;
+                        }
+                    }
+
+                    int supplierId = 0;
+                    if (!string.IsNullOrEmpty(supplierNama))
+                    {
+                        var sup = suppliers.FirstOrDefault(s => s.NamaSupplier.Equals(supplierNama, StringComparison.OrdinalIgnoreCase));
+                        if (sup != null) supplierId = sup.Id;
+                        else
+                        {
+                            var newSup = new Supplier { NamaSupplier = supplierNama };
+                            _context.Suppliers.Add(newSup);
+                            await _context.SaveChangesAsync();
+                            suppliers.Add(newSup);
+                            supplierId = newSup.Id;
+                        }
+                    }
+
+                    if (kategoriId > 0 && supplierId > 0)
+                    {
+                        barang = new Barang
+                        {
+                            KodeBarang = kodeBarang,
+                            NamaBarang = namaBarang,
+                            KategoriId = kategoriId,
+                            SupplierId = supplierId,
+                            Satuan = !string.IsNullOrEmpty(satuan) ? satuan : "Unit",
+                            Stok = 0,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now
+                        };
+                        _context.Barangs.Add(barang);
+                        await _context.SaveChangesAsync();
+                        barangs.Add(barang);
+                    }
+                }
+
+                if (barang == null) continue;
+                if (!int.TryParse(jumlahStr, out int jumlah) || jumlah <= 0) continue;
+
+                DateTime tanggalMasuk = DateTime.Now;
+                if (!string.IsNullOrEmpty(tglStr))
+                {
+                    if (double.TryParse(tglStr, out double oaDate) && oaDate > 1000) {
+                        tanggalMasuk = DateTime.FromOADate(oaDate);
+                    } else {
+                        DateTime.TryParse(tglStr, out tanggalMasuk);
+                    }
+                }
+
+                int? lokasiId = null;
+                if (!string.IsNullOrEmpty(lokasiNama))
+                {
+                    if (int.TryParse(lokasiNama, out int lId))
+                    {
+                        var lok = lokasis.FirstOrDefault(l => l.Id == lId);
+                        if (lok != null) lokasiId = lok.Id;
+                    }
+                    else
+                    {
+                        var lok = lokasis.FirstOrDefault(l => l.NamaLokasi.Equals(lokasiNama, StringComparison.OrdinalIgnoreCase));
+                        if (lok != null) lokasiId = lok.Id;
+                    }
+                }
+
+                var bm = new BarangMasuk
+                {
+                    BarangId = barang.Id,
+                    Jumlah = jumlah,
+                    TanggalMasuk = tanggalMasuk,
+                    Keterangan = ket,
+                    LokasiId = lokasiId,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.BarangMasuks.Add(bm);
+
+                for (int j = 0; j < jumlah; j++)
+                {
+                    _context.BarangSerials.Add(new BarangSerial
+                    {
+                        BarangId = barang.Id,
+                        SerialNumber = "-",
+                        Status = "Tersedia",
+                        BarangMasuk = bm,
+                        CreatedAt = DateTime.Now
+                    });
+                }
+
+                barang.Stok += jumlah;
+                
+                if (lokasiId.HasValue && lokasiId.Value > 0)
+                {
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == barang.Id && x.LokasiId == lokasiId.Value);
+                    if (bl != null) bl.Stok += jumlah;
+                    else _context.BarangLokasis.Add(new BarangLokasi { BarangId = barang.Id, LokasiId = lokasiId.Value, Stok = jumlah });
+                }
+
+                successCount++;
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"{successCount} baris data berhasil diimport!";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

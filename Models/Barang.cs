@@ -50,6 +50,9 @@ namespace MyGudang.Models
         [Display(Name = "Tanggal Dibuat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        [Display(Name = "Update Terakhir")]
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
         public ICollection<BarangMasuk>? BarangMasuks { get; set; }
         public ICollection<BarangKeluar>? BarangKeluars { get; set; }
         public ICollection<BarangKembali>? BarangKembalis { get; set; }

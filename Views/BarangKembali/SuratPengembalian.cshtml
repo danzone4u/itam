@@ -1,82 +1,82 @@
 @model MyGudang.Models.BarangKembali
-@{ 
-    ViewData["Title"] = "Surat Pengembalian Barang";
-    Layout = "_Layout";
-    var kop = (MyGudang.Models.KopSurat)ViewBag.Kop;
+@{ ViewData["Title"] = "Surat Pengembalian Barang"; Layout = null; }
+@{
+    var kop = ViewBag.Kop as MyGudang.Models.KopSurat ?? new MyGudang.Models.KopSurat();
 }
-<div class="no-print mb-3">
-    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak</button>
-    <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Surat Pengembalian Barang</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/css/site.css">
+    <style>
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; }
+        .surat-container { max-width: 100%; padding: 40px; }
+    </style>
+</head>
+<body>
+<div class="container-fluid p-4">
+    <div class="surat-container">
+        <div class="no-print text-right mb-3">
+            <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
 
-<div class="surat-container">
-    <div class="surat-header">
-        <div style="display:flex; align-items:center; justify-content:center; gap:15px;">
-            @if (kop.TampilkanLogo)
-            {
-                <img src="/images/logo-ppn.png" alt="Logo" style="height:90px;">
-            }
-            <div style="flex:1;">
-                <h2>@(kop.NamaPerusahaan ?? "NAMA PERUSAHAAN")</h2>
-                @if (!string.IsNullOrEmpty(kop.SubJudul))
+        @if (kop.TampilkanLogo)
+        {
+            <table style="width:100%; border-bottom:3px double #333; padding-bottom:15px; margin-bottom:25px;">
+                <tr>
+                    <td style="vertical-align:middle;">
+                        <h3 style="margin:0; font-weight:bold; font-size:18pt;">@kop.NamaPerusahaan</h3>
+                        @if (!string.IsNullOrEmpty(kop.SubJudul)) { <p style="margin:2px 0 0 0; font-size:12pt;">@kop.SubJudul</p> }
+                        @if (!string.IsNullOrEmpty(kop.Alamat)) { <p style="margin:2px 0 0 0; font-size:10pt; color:#555;">@kop.Alamat</p> }
+                    </td>
+                    <td style="text-align:right; vertical-align:middle; width:150px;">
+                        <img src="/images/logo-ppn.png" alt="Logo" style="height:120px;">
+                    </td>
+                </tr>
+            </table>
+        }
+
+        <h4 class="text-center" style="font-weight:bold; margin-bottom:20px;">SURAT PENGEMBALIAN BARANG</h4>
+
+        <table style="margin-bottom:20px;">
+            <tr><td style="width:180px"><strong>Tanggal Kembali</strong></td><td>: @Model.TanggalKembali.ToString("dd MMMM yyyy")</td></tr>
+            <tr><td><strong>Dikembalikan Oleh</strong></td><td>: @Model.DikembalikanOleh</td></tr>
+            <tr><td><strong>Ref. Barang Keluar</strong></td><td>: @(Model.BarangKeluar?.NoSuratJalan ?? "-")</td></tr>
+        </table>
+
+        <p>Dengan ini menyatakan bahwa barang berikut telah dikembalikan:</p>
+        <table class="table table-bordered" style="margin-bottom:20px;">
+            <thead><tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Keterangan</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>@Model.Barang?.NamaBarang</td><td>@Model.Jumlah</td><td>@Model.Barang?.Satuan</td><td>@Model.Kondisi</td><td>@Model.Keterangan</td></tr>
+            </tbody>
+        </table>
+
+        <p>Barang telah diterima kembali dan diserahkan ke gudang dalam kondisi sebagaimana tercantum di atas.</p>
+
+        <div class="surat-ttd" style="display:flex; justify-content:space-between; margin-top:80px; text-align:center; font-size:14pt;">
+            <div style="width:30%;">
+                <p>Yang Mengembalikan,</p><br/><br/><br/><br/>
+                <p>(@Model.DikembalikanOleh)</p>
+            </div>
+            <div style="width:30%;">
+                <p>Mengetahui,</p><br/><br/><br/><br/>
+                <p>(..........................)</p>
+            </div>
+            <div style="width:30%;">
+                <p>Yang Menerima,</p><br/><br/><br/><br/>
+                <p>(@(kop.NamaPengirim ?? ".........................."))</p>
+                @if (!string.IsNullOrEmpty(kop.JabatanPengirim))
                 {
-                    <p style="margin:0; font-size:14px;">@kop.SubJudul</p>
-                }
-                @if (!string.IsNullOrEmpty(kop.Alamat))
-                {
-                    <p style="margin:0; font-size:12px;">@kop.Alamat</p>
-                }
-                @if (!string.IsNullOrEmpty(kop.Telepon) || !string.IsNullOrEmpty(kop.Email))
-                {
-                    <p style="margin:0; font-size:12px;">
-                        @if (!string.IsNullOrEmpty(kop.Telepon)) { <span>Telp: @kop.Telepon</span> }
-                        @if (!string.IsNullOrEmpty(kop.Email)) { <span> | Email: @kop.Email</span> }
-                    </p>
+                    <p style="font-size:10pt; color:#666;">@kop.JabatanPengirim</p>
                 }
             </div>
         </div>
     </div>
-
-    <h4 style="text-align:center; margin:20px 0 5px; text-decoration:underline;">SURAT PENGEMBALIAN BARANG</h4>
-    <p style="text-align:center; margin-bottom:20px; font-size:13px; color:#666;">Tanggal: @Model.TanggalKembali.ToString("dd MMMM yyyy")</p>
-
-    <p>Dengan ini kami menyatakan bahwa barang berikut telah dikembalikan:</p>
-
-    <table class="table table-bordered" style="font-size:14px;">
-        <thead>
-            <tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Keterangan</th></tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>1</td>
-                <td>@Model.Barang?.NamaBarang</td>
-                <td>@Model.Jumlah</td>
-                <td>@Model.Barang?.Satuan</td>
-                <td>@Model.Kondisi</td>
-                <td>@Model.Keterangan</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <div class="surat-ttd">
-        <div>
-            <p><strong>Yang Mengembalikan</strong></p>
-            <br><br><br><br>
-            <p>(@Model.DikembalikanOleh)</p>
-        </div>
-        <div>
-            <p><strong>Mengetahui</strong></p>
-            <br><br><br><br>
-            <p>(........................................)</p>
-        </div>
-        <div>
-            <p><strong>Yang Menerima</strong></p>
-            <br><br><br><br>
-            <p>(@(kop.NamaPengirim ?? "........................................"))</p>
-            @if (!string.IsNullOrEmpty(kop.JabatanPengirim))
-            {
-                <p style="font-size:12px; color:#666;">@kop.JabatanPengirim</p>
-            }
-        </div>
-    </div>
 </div>
+</body>
+</html>

@@ -117,44 +117,42 @@ namespace MyGudang.Controllers
             return View(barang);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Detail(int? id)
         {
-            var barang = await _context.Barangs.FindAsync(id);
-            if (barang != null)
-            {
-                try
-                {
-                    _context.Barangs.Remove(barang);
-                    await _context.SaveChangesAsync();
-                    TempData["Success"] = "Barang berhasil dihapus!";
-                }
-                catch (DbUpdateException)
-                {
-                    TempData["Error"] = "Barang tidak dapat dihapus karena masih memiliki data terkait (Barang Masuk / Barang Keluar). Hapus data terkait terlebih dahulu.";
-                }
-            }
-            return RedirectToAction(nameof(Index));
-        }
+            if (id == null) return NotFound();
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BulkDelete(int[] ids)
-        {
-            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
-            var items = await _context.Barangs.Where(b => ids.Contains(b.Id)).ToListAsync();
-            try
-            {
-                _context.Barangs.RemoveRange(items);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = $"{items.Count} barang berhasil dihapus!";
-            }
-            catch (DbUpdateException)
-            {
-                TempData["Error"] = "Beberapa barang tidak dapat dihapus karena masih memiliki data terkait.";
-            }
-            return RedirectToAction(nameof(Index));
+            var barang = await _context.Barangs
+                .Include(b => b.Kategori)
+                .Include(b => b.Supplier)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (barang == null) return NotFound();
+
+            // Ambil histori masuk
+            var historiMasuk = await _context.BarangMasuks
+                .Include(bm => bm.Lokasi)
+                .Where(bm => bm.BarangId == id)
+                .OrderByDescending(bm => bm.TanggalMasuk)
+                .ToListAsync();
+
+            // Ambil histori keluar
+            var historiKeluar = await _context.BarangKeluars
+                .Include(bk => bk.Lokasi)
+                .Where(bk => bk.BarangId == id)
+                .OrderByDescending(bk => bk.TanggalKeluar)
+                .ToListAsync();
+
+            // Ambil histori peminjaman
+            var historiPinjam = await _context.Peminjamans
+                .Where(p => p.BarangId == id)
+                .OrderByDescending(p => p.TanggalPinjam)
+                .ToListAsync();
+
+            ViewBag.HistoriMasuk = historiMasuk;
+            ViewBag.HistoriKeluar = historiKeluar;
+            ViewBag.HistoriPinjam = historiPinjam;
+
+            return View(barang);
         }
 
         public async Task<IActionResult> ExportExcel()

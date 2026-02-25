@@ -28,6 +28,20 @@ namespace MyGudang.Data
         public DbSet<Lokasi> Lokasis { get; set; }
         public DbSet<BarangLokasi> BarangLokasis { get; set; }
         public DbSet<TransferBarang> TransferBarangs { get; set; }
+        public DbSet<BackupSetting> BackupSettings { get; set; }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var entries = ChangeTracker.Entries<Barang>()
+                .Where(e => e.State == EntityState.Modified);
+
+            foreach (var entityEntry in entries)
+            {
+                entityEntry.Entity.UpdatedAt = DateTime.Now;
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
+        }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

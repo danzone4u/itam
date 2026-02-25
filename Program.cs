@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MyGudang.Data;
 using MyGudang.Models;
+using MyGudang.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+        o => o.UseCompatibilityLevel(120)));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
@@ -22,6 +24,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddHostedService<BackupService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {

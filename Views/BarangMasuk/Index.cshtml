@@ -7,6 +7,7 @@
     <div class="card-body">
         <div class="mb-3">
             <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
+            <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#importModal"><i class="fas fa-file-import"></i> Import</button>
             <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
             <button class="btn btn-danger btn-sm d-none" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
         </div>
@@ -28,5 +29,36 @@
                 }
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import Data Barang Masuk</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form asp-action="Import" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Format File (Template)</label><br />
+                        <a href="@Url.Action("DownloadTemplate")" class="btn btn-outline-success btn-sm"><i class="fas fa-download"></i> Download Template</a>
+                        <small class="form-text text-muted d-block mt-1">Harap gunakan template (kolom: Kode Barang, Nama Barang, Jumlah, Tanggal, dll).</small>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label>Pilih File Excel (.xlsx)</label>
+                        <input type="file" name="file" class="form-control-file" accept=".xlsx" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload && Import</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
