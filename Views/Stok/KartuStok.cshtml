@@ -1,0 +1,40 @@
+@{ ViewData["Title"] = "Kartu Stok"; var barang = (MyGudang.Models.Barang)ViewBag.Barang; var transactions = (List<dynamic>)ViewBag.Transactions; }
+<a href="@Url.Action("Index")" class="btn btn-secondary btn-sm mb-3"><i class="fas fa-arrow-left"></i> Kembali</a>
+<div class="card card-outline card-info">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-id-card"></i> Kartu Stok - @barang.NamaBarang</h3>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-3"><strong>Kode:</strong> @barang.KodeBarang</div>
+            <div class="col-md-3"><strong>Kategori:</strong> @barang.Kategori?.NamaKategori</div>
+            <div class="col-md-3"><strong>Satuan:</strong> @barang.Satuan</div>
+            <div class="col-md-3"><strong>Stok Saat Ini:</strong> <span class="badge @(barang.Stok == 0 ? "badge-stok-habis" : barang.Stok <= 5 ? "badge-stok-rendah" : "badge-stok-aman") p-2">@barang.Stok</span></div>
+        </div>
+        <table class="table table-bordered table-sm">
+            <thead class="thead-light">
+                <tr><th>No</th><th>Tanggal</th><th>Tipe</th><th>Jumlah</th><th>Keterangan</th></tr>
+            </thead>
+            <tbody>
+                @if (transactions.Any())
+                {
+                    int no = 1;
+                    foreach (var t in transactions)
+                    {
+                        <tr class="@(t.Tipe == "Masuk" ? "table-success" : "table-danger")">
+                            <td>@(no++)</td>
+                            <td>@(((DateTime)t.Tanggal).ToString("dd/MM/yyyy"))</td>
+                            <td><span class="badge @(t.Tipe == "Masuk" ? "bg-success" : "bg-danger")">@t.Tipe</span></td>
+                            <td>@(t.Tipe == "Masuk" ? "+" : "-")@t.Jumlah</td>
+                            <td>@t.Keterangan</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="5" class="text-center">Belum ada transaksi</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

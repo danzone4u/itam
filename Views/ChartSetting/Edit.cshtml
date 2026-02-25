@@ -1,0 +1,48 @@
+@model MyGudang.Models.ChartSetting
+@{ ViewData["Title"] = "Edit Chart"; }
+<div class="card card-outline card-warning">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-edit"></i> Edit Chart</h3></div>
+    <form asp-action="Edit" method="post">@Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="CreatedAt" />
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6"><div class="form-group"><label asp-for="NamaChart"></label><input asp-for="NamaChart" class="form-control" /><span asp-validation-for="NamaChart" class="text-danger"></span></div></div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="TipeChart"></label>
+                    <select asp-for="TipeChart" class="form-control">
+                        <option value="bar">Bar Chart</option>
+                        <option value="line">Line Chart</option>
+                        <option value="doughnut">Doughnut Chart</option>
+                        <option value="pie">Pie Chart</option>
+                        <option value="polarArea">Polar Area</option>
+                        <option value="radar">Radar Chart</option>
+                    </select>
+                </div></div>
+            </div>
+            <div class="row">
+                <div class="col-md-4"><div class="form-group"><label asp-for="SumberData"></label>
+                    <select asp-for="SumberData" class="form-control">
+                        <option value="masuk_keluar">Barang Masuk vs Keluar (per bulan)</option>
+                        <option value="per_kategori">Barang per Kategori</option>
+                        <option value="stok_barang">Stok Barang Top 10</option>
+                    </select>
+                </div></div>
+                <div class="col-md-2"><div class="form-group"><label asp-for="JumlahBulan"></label><input asp-for="JumlahBulan" class="form-control" type="number" min="1" max="24" /></div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="WarnaUtama"></label><input asp-for="WarnaUtama" class="form-control" type="color" /></div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="WarnaKedua"></label><input asp-for="WarnaKedua" class="form-control" type="color" /></div></div>
+            </div>
+            <div class="row">
+                <div class="col-md-3"><div class="form-group"><label asp-for="Lebar"></label>
+                    <select asp-for="Lebar" class="form-control">
+                        <option value="4">Kecil (col-md-4)</option>
+                        <option value="6">Sedang (col-md-6)</option>
+                        <option value="8">Besar (col-md-8)</option>
+                        <option value="12">Penuh (col-md-12)</option>
+                    </select>
+                </div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="Urutan"></label><input asp-for="Urutan" class="form-control" type="number" min="0" /></div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="Aktif" class="d-block"></label><div class="custom-control custom-switch mt-2"><input type="checkbox" asp-for="Aktif" class="custom-control-input" id="aktifSwitch" /><label class="custom-control-label" for="aktifSwitch">Tampilkan di Dashboard</label></div></div></div>
+            </div>
+        </div>
+        <div class="card-footer"><button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Update</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+    </form>
+</div>

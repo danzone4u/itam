@@ -1,0 +1,30 @@
+@model IEnumerable<MyGudang.Models.Barang>
+@{ ViewData["Title"] = "Data Stok"; }
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-cubes"></i> Data Stok</h3>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Status</th><th width="100">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td><td>@item.Kategori?.NamaKategori</td><td>@item.Satuan</td>
+                        <td><strong>@item.Stok</strong></td>
+                        <td>
+                            @if (item.Stok == 0) { <span class="badge badge-stok-habis">Habis</span> }
+                            else if (item.Stok <= 5) { <span class="badge badge-stok-rendah">Rendah</span> }
+                            else { <span class="badge badge-stok-aman">Aman</span> }
+                        </td>
+                        <td><a href="@Url.Action("KartuStok", new { id = item.Id })" class="btn btn-info btn-xs"><i class="fas fa-id-card"></i> Kartu Stok</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

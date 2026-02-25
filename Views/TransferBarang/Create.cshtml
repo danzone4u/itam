@@ -1,0 +1,97 @@
+@model MyGudang.Models.TransferBarang
+@{ ViewData["Title"] = "Transfer Barang"; }
+<div class="card card-outline card-warning">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-exchange-alt"></i> Transfer Barang Antar Ruangan</h3></div>
+    <form asp-action="Create" method="post">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Pilih Barang</label>
+                        <input type="text" id="searchBarang" class="form-control" list="listBarang" placeholder="Ketik nama barang..." autocomplete="off" />
+                        <datalist id="listBarang">
+                            @foreach (var b in ViewBag.Barangs as IEnumerable<MyGudang.Models.Barang>)
+                            {
+                                <option value="@b.NamaBarang" data-id="@b.Id"></option>
+                            }
+                        </datalist>
+                        <input type="hidden" name="BarangId" id="selectedBarangId" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="Jumlah"></label>
+                        <input asp-for="Jumlah" class="form-control" min="1" value="1" required />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="TanggalTransfer"></label>
+                        <input asp-for="TanggalTransfer" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Dari Ruangan</label>
+                        <select name="DariLokasiId" asp-items="@ViewBag.Lokasis" class="form-control" required id="dariLokasi">
+                            <option value="">-- Pilih Asal --</option>
+                        </select>
+                        <small class="text-muted" id="stokInfo"></small>
+                    </div>
+                </div>
+                <div class="col-md-1 text-center" style="padding-top:35px;"><i class="fas fa-arrow-right fa-2x text-warning"></i></div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Ke Ruangan</label>
+                        <select name="KeLokasiId" asp-items="@ViewBag.Lokasis" class="form-control" required>
+                            <option value="">-- Pilih Tujuan --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="Keterangan"></label>
+                        <input asp-for="Keterangan" class="form-control" placeholder="Opsional" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-warning"><i class="fas fa-exchange-alt"></i> Transfer</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+$(function(){
+    // Auto-set BarangId from datalist search
+    $('#searchBarang').on('input', function(){
+        var typed = $(this).val();
+        var matched = null;
+        $('#listBarang option').each(function(){
+            if ($(this).val() === typed) { matched = $(this); return false; }
+        });
+        if (matched) {
+            $('#selectedBarangId').val(matched.data('id'));
+            checkStok();
+        }
+    });
+
+    $('#dariLokasi').on('change', function(){ checkStok(); });
+
+    function checkStok(){
+        var barangId = $('#selectedBarangId').val();
+        var lokasiId = $('#dariLokasi').val();
+        if (barangId && lokasiId) {
+            $.getJSON('@Url.Action("GetStokLokasi")?barangId=' + barangId + '&lokasiId=' + lokasiId, function(data){
+                $('#stokInfo').html('Stok tersedia: <strong>' + data.stok + '</strong>');
+            });
+        }
+    }
+});
+</script>
+}

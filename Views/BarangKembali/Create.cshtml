@@ -1,0 +1,88 @@
+@model MyGudang.Models.BarangKembali
+@{ ViewData["Title"] = "Tambah Pengembalian Barang"; }
+<div class="card card-outline card-success">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-undo-alt"></i> Tambah Pengembalian Barang</h3></div>
+    <form asp-action="Create" method="post">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Referensi Barang Keluar <small class="text-muted">(opsional)</small></label>
+                        <select name="BarangKeluarId" id="barangKeluarSelect" class="form-control select2">
+                            <option value="">-- Pilih Barang Keluar --</option>
+                            @foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.BarangKeluars)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="BarangId"></label>
+                        <select asp-for="BarangId" asp-items="@ViewBag.Barangs" class="form-control select2">
+                            <option value="">-- Pilih Barang --</option>
+                        </select>
+                        <span asp-validation-for="BarangId" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="Jumlah"></label>
+                        <input asp-for="Jumlah" class="form-control" value="@(ViewBag.PrefilledJumlah ?? 1)" />
+                        <span asp-validation-for="Jumlah" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="TanggalKembali"></label>
+                        <input asp-for="TanggalKembali" class="form-control" type="date" />
+                        <span asp-validation-for="TanggalKembali" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="Kondisi"></label>
+                        <select asp-for="Kondisi" class="form-control">
+                            <option value="Baik">Baik</option>
+                            <option value="Rusak Ringan">Rusak Ringan</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="DikembalikanOleh"></label>
+                        <input asp-for="DikembalikanOleh" class="form-control" value="@(ViewBag.PrefilledPenerima ?? "")" />
+                        <span asp-validation-for="DikembalikanOleh" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Keterangan"></label>
+                <textarea asp-for="Keterangan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Simpan</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    $('#barangKeluarSelect').on('change', function() {
+        var id = $(this).val();
+        if (id) {
+            $.getJSON('@Url.Action("GetBarangKeluarDetail")' + '?id=' + id, function(data) {
+                $('#BarangId').val(data.barangId).trigger('change');
+                $('#Jumlah').val(data.jumlah);
+                $('#DikembalikanOleh').val(data.penerima);
+            });
+        }
+    });
+</script>
+}

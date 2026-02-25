@@ -1,0 +1,87 @@
+@model MyGudang.Models.BarangKeluar
+@{ ViewData["Title"] = "Surat Terima Barang"; Layout = "~/Views/Shared/_Layout.cshtml"; var kop = (MyGudang.Models.KopSurat)ViewBag.Kop; }
+
+<div class="no-print mb-3">
+    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak</button>
+    <a href="@Url.Action("EditSuratTerima", new { id = Model.Id })" class="btn btn-warning"><i class="fas fa-edit"></i> Edit</a>
+    <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+</div>
+
+<div class="surat-container">
+    <div class="surat-header" style="text-align:left;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+                <h3 style="margin:0; font-weight:bold; font-size:22px;">@kop.NamaPerusahaan</h3>
+                @if (!string.IsNullOrEmpty(kop.SubJudul))
+                {
+                    <p style="font-size:14px; color:#666; margin:2px 0 0 0;">@kop.SubJudul</p>
+                }
+                @if (!string.IsNullOrEmpty(kop.Alamat))
+                {
+                    <p style="font-size:12px; margin:2px 0 0 0;">@kop.Alamat</p>
+                }
+                @{
+                    var contacts = new List<string>();
+                    if (!string.IsNullOrEmpty(kop.Telepon)) contacts.Add("Telp: " + kop.Telepon);
+                    if (!string.IsNullOrEmpty(kop.Email)) contacts.Add("Email: " + kop.Email);
+                    if (!string.IsNullOrEmpty(kop.Website)) contacts.Add(kop.Website);
+                }
+                @if (contacts.Any())
+                {
+                    <p style="font-size:11px; color:#888; margin:2px 0 0 0;">@string.Join(" | ", contacts)</p>
+                }
+            </div>
+            @if (kop.TampilkanLogo)
+            {
+                <img src="/images/logo-ppn.png" alt="Logo" style="height:90px;">
+            }
+        </div>
+        <hr style="border-top:3px solid #333; margin:10px 0;" />
+        <h2 style="text-align:center;">SURAT TERIMA BARANG</h2>
+    </div>
+
+    <table style="width:100%; margin-bottom:20px;">
+        <tr><td width="150"><strong>No. Referensi</strong></td><td>: @Model.NoSuratJalan</td></tr>
+        <tr><td><strong>Tanggal Terima</strong></td><td>: @Model.TanggalKeluar.ToString("dd MMMM yyyy")</td></tr>
+        <tr><td><strong>Diterima Oleh</strong></td><td>: @Model.Penerima</td></tr>
+        <tr><td><strong>No. HP</strong></td><td>: @Model.NoHpPenerima</td></tr>
+        <tr><td><strong>Alamat</strong></td><td>: @Model.Alamat</td></tr>
+    </table>
+
+    <p>Dengan ini menyatakan telah menerima barang-barang sebagai berikut:</p>
+
+    <table class="table table-bordered" style="margin-top:10px;">
+        <thead><tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>S/N</th><th>Keterangan</th></tr></thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>@Model.Barang?.NamaBarang</td>
+                <td>@Model.Jumlah</td>
+                <td>@{ var serials = (List<string>)ViewBag.Serials; }@(serials.Any() && serials.Any(s => s != "-") ? string.Join(", ", serials.Where(s => s != "-")) : "-")</td>
+                <td>@Model.Keterangan</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="surat-ttd">
+        <div>
+            <p><strong>Yang Menyerahkan</strong></p>
+            <br><br><br><br>
+            <p>(@(kop.NamaPengirim ?? "........................................"))</p>
+            @if (!string.IsNullOrEmpty(kop.JabatanPengirim))
+            {
+                <p style="font-size:12px; color:#666;">@kop.JabatanPengirim</p>
+            }
+        </div>
+        <div>
+            <p><strong>Mengetahui</strong></p>
+            <br><br><br><br>
+            <p>(........................................)</p>
+        </div>
+        <div>
+            <p><strong>Yang Menerima</strong></p>
+            <br><br><br><br>
+            <p>(@Model.Penerima)</p>
+        </div>
+    </div>
+</div>

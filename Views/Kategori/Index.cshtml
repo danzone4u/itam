@@ -1,0 +1,51 @@
+@model IEnumerable<MyGudang.Models.Kategori>
+@{ ViewData["Title"] = "Data Kategori"; }
+
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-tags"></i> Data Kategori</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
+            <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
+            <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#importModal"><i class="fas fa-file-upload"></i> Import</button>
+        </div>
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr><th width="50">No</th><th>Nama Kategori</th><th width="120">Kode Prefix</th><th>Deskripsi</th><th width="120">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@(no++)</td>
+                        <td>@item.NamaKategori</td>
+                        <td><span class="badge bg-primary">@(item.KodePrefix ?? "-")</span></td>
+                        <td>@item.Deskripsi</td>
+                        <td>
+                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="importModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <form asp-action="ImportExcel" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div class="modal-header bg-info"><h5 class="modal-title text-white"><i class="fas fa-file-upload"></i> Import Excel</h5><button type="button" class="close text-white" data-dismiss="modal">&times;</button></div>
+        <div class="modal-body">
+            <p>Format: Kolom B = Nama Kategori, Kolom C = Deskripsi</p>
+            <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+        </div>
+        <div class="modal-footer"><button type="submit" class="btn btn-info"><i class="fas fa-upload"></i> Import</button></div>
+    </form>
+</div></div></div>

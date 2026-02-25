@@ -1,0 +1,32 @@
+@model IEnumerable<MyGudang.Models.BarangMasuk>
+@{ ViewData["Title"] = "Barang Masuk"; }
+<div class="card card-outline card-success">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-arrow-down text-success"></i> Barang Masuk</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
+            <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
+            <button class="btn btn-danger btn-sm d-none" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
+        </div>
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="50">No</th><th>Tanggal</th><th>Nama Barang</th><th>Jumlah</th><th>Ruangan</th><th>Keterangan</th><th width="80">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
+                        <td>@(no++)</td><td>@item.TanggalMasuk.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td><td><span class="badge bg-success">+@item.Jumlah</span></td>
+                        <td>@(item.Lokasi?.NamaLokasi ?? "-")</td>
+                        <td>@item.Keterangan</td>
+                        <td><form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus? Stok akan dikurangi kembali.')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

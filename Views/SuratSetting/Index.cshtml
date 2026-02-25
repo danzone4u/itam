@@ -1,0 +1,90 @@
+@model MyGudang.Models.SuratSetting
+@{ ViewData["Title"] = "Setting Nomor Surat"; }
+<div class="card card-outline card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-file-invoice"></i> Setting Nomor Surat</h3></div>
+    <form asp-action="Index" method="post">@Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> <strong>Preview Surat Jalan:</strong> <code>@ViewBag.Preview</code><br/>
+                <i class="fas fa-info-circle"></i> <strong>Preview Surat Terima Barang:</strong> <code>@ViewBag.PreviewTerima</code><br/>
+                <i class="fas fa-info-circle"></i> <strong>Preview Surat Pengembalian:</strong> <code>@ViewBag.PreviewKembali</code>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="PrefixSuratJalan"></label>
+                        <input asp-for="PrefixSuratJalan" class="form-control" placeholder="SJ" />
+                        <small class="text-muted">Surat Jalan</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="PrefixSuratTerima"></label>
+                        <input asp-for="PrefixSuratTerima" class="form-control" placeholder="STB" />
+                        <small class="text-muted">Surat Terima Barang</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="PrefixSuratKembali"></label>
+                        <input asp-for="PrefixSuratKembali" class="form-control" placeholder="SK" />
+                        <small class="text-muted">Surat Pengembalian</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="Separator"></label>
+                        <select asp-for="Separator" class="form-control">
+                            <option value="-">Dash ( - )</option>
+                            <option value="/">Slash ( / )</option>
+                            <option value=".">Dot ( . )</option>
+                            <option value="_">Underscore ( _ )</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="FormatTanggal"></label>
+                        <select asp-for="FormatTanggal" class="form-control">
+                            <option value="yyyyMMdd">Tahun-Bulan-Hari (@DateTime.Now.ToString("yyyyMMdd"))</option>
+                            <option value="ddMMyyyy">Hari-Bulan-Tahun (@DateTime.Now.ToString("ddMMyyyy"))</option>
+                            <option value="yyyyMM">Tahun-Bulan (@DateTime.Now.ToString("yyyyMM"))</option>
+                            <option value="MMyyyy">Bulan-Tahun (@DateTime.Now.ToString("MMyyyy"))</option>
+                            <option value="yyyy">Tahun saja (@DateTime.Now.ToString("yyyy"))</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="PanjangNomorUrut"></label>
+                        <select asp-for="PanjangNomorUrut" class="form-control">
+                            <option value="3">3 digit (001)</option>
+                            <option value="4">4 digit (0001)</option>
+                            <option value="5">5 digit (00001)</option>
+                            <option value="6">6 digit (000001)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label asp-for="Suffix"></label>
+                        <input asp-for="Suffix" class="form-control" placeholder="Opsional, misal: PPN" />
+                        <small class="text-muted">Contoh: PPN, DEPT-IT, dll</small>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" asp-for="ResetBulanan" id="resetBulanan">
+                    <label class="custom-control-label" for="resetBulanan">Reset nomor urut setiap bulan baru</label>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+        </div>
+    </form>
+</div>

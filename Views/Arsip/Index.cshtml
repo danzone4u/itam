@@ -1,0 +1,34 @@
+@model IEnumerable<MyGudang.Models.Arsip>
+@{ ViewData["Title"] = "Arsip"; }
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-archive"></i> Arsip Dokumen</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
+        </div>
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr><th width="50">No</th><th>Nama Dokumen</th><th>Jenis</th><th>Keterangan</th><th>Tanggal</th><th width="180">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@(no++)</td><td>@item.NamaDokumen</td><td><span class="badge bg-info">@item.JenisDokumen</span></td><td>@item.Keterangan</td><td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.FilePath))
+                            {
+                                <a href="@Url.Action("Download", new { id = item.Id })" class="btn btn-success btn-xs"><i class="fas fa-download"></i></a>
+                            }
+                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

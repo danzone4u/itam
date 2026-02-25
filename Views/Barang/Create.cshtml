@@ -1,0 +1,21 @@
+@model MyGudang.Models.Barang
+@{ ViewData["Title"] = "Tambah Barang"; }
+<div class="card card-outline card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-plus"></i> Tambah Barang</h3></div>
+    <form asp-action="Create" method="post" enctype="multipart/form-data">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6"><div class="form-group"><label asp-for="KodeBarang"></label><input asp-for="KodeBarang" class="form-control" /><span asp-validation-for="KodeBarang" class="text-danger"></span></div></div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="NamaBarang"></label><input asp-for="NamaBarang" class="form-control" /><span asp-validation-for="NamaBarang" class="text-danger"></span></div></div>
+            </div>
+            <div class="row">
+                <div class="col-md-4"><div class="form-group"><label asp-for="KategoriId"></label><select asp-for="KategoriId" asp-items="@ViewBag.Kategoris" class="form-control"><option value="">-- Pilih Kategori --</option></select><span asp-validation-for="KategoriId" class="text-danger"></span></div></div>
+                <div class="col-md-4"><div class="form-group"><label asp-for="SupplierId"></label><select asp-for="SupplierId" asp-items="@ViewBag.Suppliers" class="form-control"><option value="">-- Pilih Supplier --</option></select><span asp-validation-for="SupplierId" class="text-danger"></span></div></div>
+                <div class="col-md-4"><div class="form-group"><label asp-for="Satuan"></label><select asp-for="Satuan" class="form-control" required><option value="">-- Pilih Satuan --</option><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select><span asp-validation-for="Satuan" class="text-danger"></span></div></div>
+            </div>
+            <div class="form-group"><label>Gambar</label><input type="file" name="gambarFile" class="form-control" accept="image/*" /></div>
+            <div class="form-group"><label asp-for="Deskripsi"></label><textarea asp-for="Deskripsi" class="form-control" rows="3"></textarea></div>
+        </div>
+        <div class="card-footer"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+    </form>
+</div>

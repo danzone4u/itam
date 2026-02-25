@@ -1,0 +1,69 @@
+@model MyGudang.Models.KopSurat
+@{ ViewData["Title"] = "Setting Kop Surat"; }
+<div class="row">
+    <div class="col-md-7">
+        <div class="card card-outline card-primary">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-file-alt"></i> Setting Kop Surat</h3></div>
+            <form asp-action="Index" method="post">@Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8"><div class="form-group"><label asp-for="NamaPerusahaan"></label><input asp-for="NamaPerusahaan" class="form-control" /></div></div>
+                        <div class="col-md-4"><div class="form-group"><label asp-for="TampilkanLogo"></label><br/><input asp-for="TampilkanLogo" type="checkbox" data-toggle="toggle" data-on="Ya" data-off="Tidak" /></div></div>
+                    </div>
+                    <div class="form-group"><label asp-for="SubJudul"></label><input asp-for="SubJudul" class="form-control" /></div>
+                    <div class="form-group"><label asp-for="Alamat"></label><textarea asp-for="Alamat" class="form-control" rows="2"></textarea></div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="form-group"><label asp-for="Telepon"></label><input asp-for="Telepon" class="form-control" /></div></div>
+                        <div class="col-md-4"><div class="form-group"><label asp-for="Email"></label><input asp-for="Email" class="form-control" type="email" /></div></div>
+                        <div class="col-md-4"><div class="form-group"><label asp-for="Website"></label><input asp-for="Website" class="form-control" /></div></div>
+                    </div>
+                    <hr/>
+                    <h5><i class="fas fa-signature"></i> Penandatangan Pengirim</h5>
+                    <div class="row">
+                        <div class="col-md-6"><div class="form-group"><label asp-for="NamaPengirim"></label><input asp-for="NamaPengirim" class="form-control" /></div></div>
+                        <div class="col-md-6"><div class="form-group"><label asp-for="JabatanPengirim"></label><input asp-for="JabatanPengirim" class="form-control" /></div></div>
+                    </div>
+                </div>
+                <div class="card-footer"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card card-outline card-info">
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-eye"></i> Preview Kop Surat</h3></div>
+            <div class="card-body">
+                <div style="border:2px solid #333; padding:15px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <div style="text-align:left;">
+                            <h4 style="margin:0;">@Model.NamaPerusahaan</h4>
+                            @if (!string.IsNullOrEmpty(Model.SubJudul))
+                            {
+                                <p style="margin:2px 0 0; font-size:13px; color:#666;">@Model.SubJudul</p>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Alamat))
+                            {
+                                <p style="margin:2px 0 0; font-size:12px;">@Model.Alamat</p>
+                            }
+                            @{
+                                var contacts = new List<string>();
+                                if (!string.IsNullOrEmpty(Model.Telepon)) contacts.Add("Telp: " + Model.Telepon);
+                                if (!string.IsNullOrEmpty(Model.Email)) contacts.Add("Email: " + Model.Email);
+                                if (!string.IsNullOrEmpty(Model.Website)) contacts.Add(Model.Website);
+                            }
+                            @if (contacts.Any())
+                            {
+                                <p style="margin:2px 0 0; font-size:11px; color:#888;">@string.Join(" | ", contacts)</p>
+                            }
+                        </div>
+                        @if (Model.TampilkanLogo)
+                        {
+                            <img src="/images/logo-ppn.png" alt="Logo" style="height:70px;">
+                        }
+                    </div>
+                    <hr style="border-top:3px solid #333; margin:8px 0;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

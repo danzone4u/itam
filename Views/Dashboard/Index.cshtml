@@ -1,0 +1,168 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var charts = (List<MyGudang.Models.ChartSetting>)ViewBag.Charts;
+}
+
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@ViewBag.TotalBarang</h3>
+                <p>Total Barang</p>
+            </div>
+            <div class="icon"><i class="fas fa-boxes"></i></div>
+            <a href="@Url.Action("Index","Barang")" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-gradient-teal">
+            <div class="inner">
+                <h3>@ViewBag.TotalBarangMasuk</h3>
+                <p>Total Barang Masuk</p>
+            </div>
+            <div class="icon"><i class="fas fa-arrow-down"></i></div>
+            <a href="@Url.Action("Index","BarangMasuk")" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-gradient-orange">
+            <div class="inner">
+                <h3>@ViewBag.TotalBarangKeluar</h3>
+                <p>Total Barang Keluar</p>
+            </div>
+            <div class="icon"><i class="fas fa-arrow-up"></i></div>
+            <a href="@Url.Action("Index","BarangKeluar")" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>@ViewBag.StokRendah</h3>
+                <p>Stok Rendah</p>
+            </div>
+            <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <a href="@Url.Action("Index","Stok")" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+</div>
+
+@if (charts.Any())
+{
+    <div class="row">
+        @foreach (var chart in charts)
+        {
+            <div class="col-md-@chart.Lebar">
+                <div class="card card-outline card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-chart-bar"></i> @chart.NamaChart</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chart_@chart.Id" height="@(chart.Lebar >= 8 ? 100 : 200)"></canvas>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <i class="fas fa-info-circle"></i> Belum ada chart yang dikonfigurasi. <a href="@Url.Action("Index","ChartSetting")">Setting Chart & Grafik</a> untuk menambahkan chart ke dashboard.
+    </div>
+}
+
+@if (((List<MyGudang.Models.Barang>)ViewBag.LowStockItems).Any())
+{
+    <div class="card card-outline card-danger">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-exclamation-triangle text-danger"></i> Barang Stok Rendah</h3>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>Kode</th>
+                        <th>Nama Barang</th>
+                        <th>Kategori</th>
+                        <th>Stok</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in (List<MyGudang.Models.Barang>)ViewBag.LowStockItems)
+                    {
+                        <tr>
+                            <td>@item.KodeBarang</td>
+                            <td>@item.NamaBarang</td>
+                            <td>@item.Kategori?.NamaKategori</td>
+                            <td><strong>@item.Stok</strong></td>
+                            <td>
+                                @if (item.Stok == 0)
+                                {
+                                    <span class="badge badge-stok-habis">Habis</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-stok-rendah">Rendah</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        fetch('@Url.Action("GetChartData", "Dashboard")')
+            .then(r => r.json())
+            .then(data => {
+                const defaultColors = ['#007bff','#28a745','#ffc107','#dc3545','#17a2b8','#6f42c1','#fd7e14','#20c997','#e83e8c','#6c757d'];
+
+                @foreach (var chart in charts)
+                {
+                    <text>
+                    (function() {
+                        var ctx = document.getElementById('chart_@chart.Id');
+                        if (!ctx) return;
+                        var chartType = '@chart.TipeChart';
+                        var sumber = '@chart.SumberData';
+                        var color1 = '@chart.WarnaUtama' || '#007bff';
+                        var color2 = '@chart.WarnaKedua' || '#dc3545';
+                        var config = { type: chartType, options: { responsive: true } };
+
+                        if (sumber === 'masuk_keluar') {
+                            config.data = {
+                                labels: data.labels,
+                                datasets: [
+                                    { label: 'Barang Masuk', data: data.masuk, backgroundColor: color1 + 'B3', borderColor: color1, borderWidth: 1 },
+                                    { label: 'Barang Keluar', data: data.keluar, backgroundColor: color2 + 'B3', borderColor: color2, borderWidth: 1 }
+                                ]
+                            };
+                            if (chartType === 'bar' || chartType === 'line') {
+                                config.options.scales = { y: { beginAtZero: true } };
+                            }
+                        } else if (sumber === 'per_kategori') {
+                            config.data = {
+                                labels: data.kategoriLabels,
+                                datasets: [{ data: data.kategoriCounts, backgroundColor: defaultColors.slice(0, data.kategoriLabels.length) }]
+                            };
+                            config.options.plugins = { legend: { position: 'bottom' } };
+                        } else if (sumber === 'stok_barang') {
+                            config.data = {
+                                labels: data.stokLabels,
+                                datasets: [{ label: 'Stok', data: data.stokValues, backgroundColor: color1 + 'B3', borderColor: color1, borderWidth: 1 }]
+                            };
+                            if (chartType === 'bar' || chartType === 'line') {
+                                config.options.scales = { y: { beginAtZero: true } };
+                            }
+                        }
+                        new Chart(ctx, config);
+                    })();
+                    </text>
+                }
+            });
+    </script>
+}

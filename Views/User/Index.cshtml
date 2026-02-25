@@ -1,0 +1,50 @@
+@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityUser>
+@{ ViewData["Title"] = "Manajemen User"; var userRoles = (Dictionary<string, string>)ViewBag.UserRoles; }
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users"></i> Manajemen User</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah User</a>
+        </div>
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr><th width="50">No</th><th>Username</th><th>Email</th><th>Role</th><th width="150">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var user in Model)
+                {
+                    var role = userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : "-";
+                    <tr>
+                        <td>@(no++)</td>
+                        <td><i class="fas fa-user-circle text-info"></i> @user.UserName</td>
+                        <td>@user.Email</td>
+                        <td>
+                            @if (role == "SuperAdmin")
+                            {
+                                <span class="badge badge-danger"><i class="fas fa-crown"></i> @role</span>
+                            }
+                            else if (role == "AdminGudang")
+                            {
+                                <span class="badge badge-primary"><i class="fas fa-warehouse"></i> @role</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">@role</span>
+                            }
+                        </td>
+                        <td>
+                            <a href="@Url.Action("Edit", new { id = user.Id })" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
+                            @if (user.UserName != "admin")
+                            {
+                                <form asp-action="Delete" asp-route-id="@user.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus user ini?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

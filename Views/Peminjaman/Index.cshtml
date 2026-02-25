@@ -1,0 +1,76 @@
+@model IEnumerable<MyGudang.Models.Peminjaman>
+@{ ViewData["Title"] = "Peminjaman Barang"; }
+<div class="card card-outline card-purple">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-handshake"></i> Peminjaman Barang</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah Peminjaman</a>
+            <button class="btn btn-danger btn-sm d-none" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
+            @{
+                var aktif = Model.Count(p => p.Status == "Dipinjam");
+                var terlambat = Model.Count(p => p.Status == "Terlambat");
+            }
+            @if (aktif > 0 || terlambat > 0)
+            {
+                <span class="float-right">
+                    @if (aktif > 0) { <span class="badge badge-info p-2"><i class="fas fa-clock"></i> @aktif Aktif</span> }
+                    @if (terlambat > 0) { <span class="badge badge-danger p-2"><i class="fas fa-exclamation-triangle"></i> @terlambat Terlambat</span> }
+                </span>
+            }
+        </div>
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr>
+                    <th width="40"><input type="checkbox" id="checkAll"></th>
+                    <th width="50">No</th>
+                    <th>No. Peminjaman</th>
+                    <th>Tgl Pinjam</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Barang</th>
+                    <th>Jml</th>
+                    <th>Peminjam</th>
+                    <th>Status</th>
+                    <th width="180">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    var isLate = item.Status == "Terlambat";
+                    <tr class="@(isLate ? "table-danger" : item.Status == "Dikembalikan" ? "table-success" : "")">
+                        <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
+                        <td>@(no++)</td>
+                        <td><span class="badge bg-secondary">@item.NoPeminjaman</span></td>
+                        <td>@item.TanggalPinjam.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            @item.TanggalJatuhTempo.ToString("dd/MM/yyyy")
+                            @if (isLate) { <i class="fas fa-exclamation-triangle text-danger" title="Terlambat!"></i> }
+                        </td>
+                        <td>@item.Barang?.NamaBarang</td>
+                        <td>@item.Jumlah</td>
+                        <td>
+                            @item.Peminjam
+                            @if (!string.IsNullOrEmpty(item.Departemen)) { <br/><small class="text-muted">@item.Departemen</small> }
+                        </td>
+                        <td>
+                            @if (item.Status == "Dipinjam") { <span class="badge badge-info"><i class="fas fa-clock"></i> Dipinjam</span> }
+                            else if (item.Status == "Terlambat") { <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Terlambat</span> }
+                            else { <span class="badge badge-success"><i class="fas fa-check-circle"></i> Dikembalikan</span> }
+                        </td>
+                        <td>
+                            @if (item.Status != "Dikembalikan")
+                            {
+                                <a href="@Url.Action("Kembalikan", new { id = item.Id })" class="btn btn-success btn-xs" title="Kembalikan"><i class="fas fa-undo"></i> Kembali</a>
+                            }
+                            <a href="@Url.Action("SuratPeminjaman", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat"><i class="fas fa-file-alt"></i></a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

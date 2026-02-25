@@ -1,0 +1,385 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MyGudang - @ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="~/css/site.css">
+</head>
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
+<div class="wrapper">
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#">
+                    <i class="fas fa-user-circle"></i> @User.Identity?.Name
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a href="@Url.Action("Profile","Account")" class="dropdown-item"><i class="fas fa-user-edit mr-2"></i> Edit Profil</a>
+                    <div class="dropdown-divider"></div>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="dropdown-item text-danger">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="/" class="brand-link text-center" style="padding:12px 8px;">
+            <i class="fas fa-warehouse" style="font-size:22px; color:#ffc107;"></i>
+            <span class="brand-text font-weight-bold" style="font-size:18px; letter-spacing:1px;"> MyGudang</span>
+        </a>
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu">
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Dashboard")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                    <li class="nav-item has-treeview @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
+                        <a href="#" class="nav-link @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
+                            <i class="nav-icon fas fa-boxes"></i>
+                            <p>Barang <i class="right fas fa-angle-left"></i></p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","Barang")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Barang" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Data Barang</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","BarangMasuk")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon text-success"></i><p>Barang Masuk</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","BarangKeluar")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon text-danger"></i><p>Barang Keluar</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","BarangKembali")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKembali" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon text-info"></i><p>Barang Kembali</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item has-treeview @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
+                        <a href="#" class="nav-link @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
+                            <i class="nav-icon fas fa-cubes"></i>
+                            <p>Stok <i class="right fas fa-angle-left"></i></p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","Stok")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stok" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Data Stok</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","StokOpname")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StokOpname" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon text-warning"></i><p>Stock Opname</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Peminjaman")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Peminjaman" ? "active" : "")">
+                            <i class="nav-icon fas fa-handshake" style="color:#6f42c1;"></i>
+                            <p>Peminjaman</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Kategori")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Kategori" ? "active" : "")">
+                            <i class="nav-icon fas fa-tags"></i>
+                            <p>Kategori</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Supplier")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Supplier" ? "active" : "")">
+                            <i class="nav-icon fas fa-truck"></i>
+                            <p>Supplier</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Arsip")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Arsip" ? "active" : "")">
+                            <i class="nav-icon fas fa-archive"></i>
+                            <p>Arsip</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Lokasi")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lokasi" ? "active" : "")">
+                            <i class="nav-icon fas fa-door-open" style="color:#17a2b8;"></i>
+                            <p>Ruangan</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","TransferBarang")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TransferBarang" ? "active" : "")">
+                            <i class="nav-icon fas fa-exchange-alt" style="color:#ffc107;"></i>
+                            <p>Transfer Antar Ruangan</p>
+                        </a>
+                    </li>
+                    @if (User.IsInRole("SuperAdmin"))
+                    {
+                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting" };
+                        var isSettingActive = settingControllers.Contains(ViewContext.RouteData.Values["controller"]?.ToString());
+                    <li class="nav-item has-treeview @(isSettingActive ? "menu-open" : "")">
+                        <a href="#" class="nav-link @(isSettingActive ? "active" : "")">
+                            <i class="nav-icon fas fa-cogs" style="color:#6c757d;"></i>
+                            <p>Pengaturan <i class="right fas fa-angle-left"></i></p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","ChartSetting")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ChartSetting" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Setting Chart</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","User")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "User" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Manajemen User</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","KopSurat")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "KopSurat" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Kop Surat</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","SuratSetting")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "SuratSetting" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Nomor Surat</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">@ViewData["Title"]</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                @if (TempData["Success"] != null || TempData["Error"] != null)
+                {
+                    <script>
+                    $(function(){
+                        @if (TempData["Success"] != null)
+                        {
+                            <text>
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                html: '<p style="font-size:15px;color:#555">@Html.Raw(TempData["Success"]?.ToString()?.Replace("'", "\\'"))</p>',
+                                showConfirmButton: false,
+                                timer: 2500,
+                                timerProgressBar: true,
+                                background: '#fff',
+                                iconColor: '#28a745',
+                                customClass: {
+                                    popup: 'animate__animated animate__fadeInDown',
+                                    title: 'text-dark'
+                                }
+                            });
+                            </text>
+                        }
+                        @if (TempData["Error"] != null)
+                        {
+                            <text>
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops!',
+                                html: '<p style="font-size:15px;color:#555">@Html.Raw(TempData["Error"]?.ToString()?.Replace("'", "\\'"))</p>',
+                                confirmButtonColor: '#e74c3c',
+                                confirmButtonText: '<i class="fas fa-check"></i> OK',
+                                background: '#fff',
+                                customClass: {
+                                    popup: 'animate__animated animate__shakeX',
+                                    title: 'text-danger'
+                                }
+                            });
+                            </text>
+                        }
+                    });
+                    </script>
+                }
+                @RenderBody()
+            </div>
+        </section>
+    </div>
+
+    <footer class="main-footer">
+        <strong>&copy; @DateTime.Now.Year <a href="#">MyGudang</a>.</strong> All rights reserved.
+        <div class="float-right d-none d-sm-inline-block">
+            <b>Version</b> 1.0
+        </div>
+    </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/js/adminlte.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.data-table').DataTable({
+            "language": {
+                "search": "Cari:",
+                "lengthMenu": "Tampilkan _MENU_ data",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                "paginate": { "first": "Pertama", "last": "Terakhir", "next": "Berikutnya", "previous": "Sebelumnya" },
+                "emptyTable": "Tidak ada data",
+                "zeroRecords": "Data tidak ditemukan"
+            },
+            "responsive": true,
+            "autoWidth": false
+        });
+        $('.select2').select2({ theme: 'bootstrap4', placeholder: '-- Pilih --', allowClear: true });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(function(){ $('.select2').select2({ theme: 'bootstrap4', placeholder: '-- Pilih --', allowClear: true }); });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $(document).ready(function () {
+        // Strip all onsubmit confirm() attributes and replace with SweetAlert2
+        $('form[onsubmit*="confirm"]').each(function () {
+            var $form = $(this);
+            var onsubmitAttr = $form.attr('onsubmit');
+            var match = onsubmitAttr ? onsubmitAttr.match(/confirm\(['"](.*?)['"]\)/) : null;
+            var message = match ? match[1] : 'Apakah Anda yakin ingin menghapus data ini?';
+            // Remove native onsubmit so confirm() never fires
+            $form.removeAttr('onsubmit');
+            $form.data('delete-msg', message);
+        });
+
+        // Intercept delete form submissions with SweetAlert2
+        $(document).on('submit', 'form[data-swal-delete]', function (e) {
+            e.preventDefault();
+        });
+        $(document).on('click', 'form .btn-danger', function (e) {
+            var $form = $(this).closest('form');
+            if (!$form.data('delete-msg')) return; // not a delete form
+            e.preventDefault();
+            var form = $form[0];
+            var message = $form.data('delete-msg');
+            Swal.fire({
+                title: '<i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i>',
+                html: '<h5 style="margin-bottom:5px;">Konfirmasi Hapus</h5><p style="color:#666; font-size:14px;">' + message + '</p>',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus!',
+                cancelButtonText: '<i class="fas fa-times"></i> Batal',
+                customClass: {
+                    popup: 'swal-delete-popup',
+                    confirmButton: 'swal-confirm-btn',
+                    cancelButton: 'swal-cancel-btn'
+                },
+                backdrop: 'rgba(0,0,0,0.5)',
+                focusCancel: true
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>
+<script>
+    // Bulk Delete
+    $(function(){
+        $('#checkAll').on('change', function(){ $('.bulk-check').prop('checked', this.checked).trigger('change'); });
+        $(document).on('change', '.bulk-check', function(){
+            var cnt = $('.bulk-check:checked').length;
+            $('#bulkCount').text(cnt);
+            if(cnt > 0) $('#btnBulkDelete').removeClass('d-none'); else $('#btnBulkDelete').addClass('d-none');
+            var all = $('.bulk-check').length;
+            $('#checkAll').prop('checked', cnt === all && all > 0);
+        });
+        $('#btnBulkDelete').on('click', function(){
+            var ids = []; $('.bulk-check:checked').each(function(){ ids.push($(this).val()); });
+            if(ids.length === 0) return;
+            var url = $(this).data('url');
+            Swal.fire({
+                icon: 'warning',
+                html: '<h5>Hapus '+ids.length+' data?</h5><p style="color:#666">Data yang dihapus tidak dapat dikembalikan.</p>',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus!',
+                cancelButtonText: '<i class="fas fa-times"></i> Batal',
+                focusCancel: true
+            }).then(function(result){
+                if(result.isConfirmed){
+                    var form = $('<form method="post" action="'+url+'"></form>');
+                    form.append('@Html.AntiForgeryToken()');
+                    ids.forEach(function(id){ form.append('<input type="hidden" name="ids" value="'+id+'">'); });
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
+        });
+
+        // Global: upgrade all confirm('Yakin hapus?') to SweetAlert2
+        $(document).on('click', 'form[onsubmit] button[class*="btn-danger"], form[onsubmit] button.btn-danger', function(e){
+            var form = $(this).closest('form');
+            if(form.attr('onsubmit') && form.attr('onsubmit').indexOf('confirm') >= 0){
+                e.preventDefault();
+                form.removeAttr('onsubmit');
+                Swal.fire({
+                    icon: 'warning',
+                    title: '<span style="color:#e74c3c">Hapus Data?</span>',
+                    html: '<p style="font-size:14px;color:#666">Data yang dihapus tidak dapat dikembalikan!</p>',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus!',
+                    cancelButtonText: '<i class="fas fa-times"></i> Batal',
+                    focusCancel: true,
+                    customClass: { popup: 'animate__animated animate__fadeInDown' }
+                }).then(function(result){
+                    if(result.isConfirmed) form.submit();
+                    else form.attr('onsubmit', "return confirm('Yakin hapus?')");
+                });
+            }
+        });
+    });
+</script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

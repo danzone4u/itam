@@ -1,0 +1,36 @@
+@{ ViewData["Title"] = "Buat Stock Opname"; var barangs = (List<MyGudang.Models.Barang>)ViewBag.Barangs; }
+<div class="card card-outline card-warning">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check"></i> Buat Stock Opname Baru</h3></div>
+    <form asp-action="Create" method="post">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><div class="form-group"><label>Tanggal Opname</label><input type="date" name="TanggalOpname" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required /></div></div>
+                <div class="col-md-8"><div class="form-group"><label>Keterangan</label><input type="text" name="Keterangan" class="form-control" placeholder="Keterangan opname..." /></div></div>
+            </div>
+            <hr/>
+            <h5><i class="fas fa-list"></i> Daftar Barang</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="thead-dark">
+                        <tr><th>No</th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Keterangan</th></tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < barangs.Count; i++)
+                        {
+                            <tr>
+                                <td>@(i + 1)</td><td>@barangs[i].KodeBarang</td><td>@barangs[i].NamaBarang</td><td>@barangs[i].Kategori?.NamaKategori</td>
+                                <td><strong>@barangs[i].Stok</strong></td>
+                                <td>
+                                    <input type="hidden" name="BarangId" value="@barangs[i].Id" />
+                                    <input type="number" name="StokFisik" class="form-control form-control-sm" value="@barangs[i].Stok" min="0" required style="width:100px;" />
+                                </td>
+                                <td><input type="text" name="DetailKeterangan" class="form-control form-control-sm" placeholder="-" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer"><button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Simpan Draft</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+    </form>
+</div>

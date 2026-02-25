@@ -1,0 +1,21 @@
+@model MyGudang.Models.BarangKeluar
+@{ ViewData["Title"] = "Edit Surat Terima Barang"; }
+<div class="card card-outline card-warning">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-edit"></i> Edit Surat Terima Barang - @Model.NoSuratJalan</h3></div>
+    <form asp-action="EditSuratTerima" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="alert alert-info"><i class="fas fa-info-circle"></i> Barang: <strong>@Model.Barang?.NamaBarang</strong> | Jumlah: <strong>@Model.Jumlah @Model.Barang?.Satuan</strong> | Tanggal: <strong>@Model.TanggalKeluar.ToString("dd/MM/yyyy")</strong></div>
+            <div class="row">
+                <div class="col-md-8"><div class="form-group"><label>Penerima / Yang Menerima</label><input type="text" name="penerima" class="form-control" value="@Model.Penerima" required /></div></div>
+                <div class="col-md-4"><div class="form-group"><label>No. HP</label><input type="text" name="noHpPenerima" class="form-control" value="@Model.NoHpPenerima" /></div></div>
+            </div>
+            <div class="form-group"><label>Alamat</label><textarea name="alamat" class="form-control" rows="2">@Model.Alamat</textarea></div>
+            <div class="form-group"><label>Keterangan</label><textarea name="keterangan" class="form-control" rows="2">@Model.Keterangan</textarea></div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Update</button>
+            <a href="@Url.Action("SuratTerimaBarang", new { id = Model.Id })" class="btn btn-secondary"><i class="fas fa-receipt"></i> Lihat Surat</a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>

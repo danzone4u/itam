@@ -1,0 +1,51 @@
+@model IEnumerable<MyGudang.Models.ChartSetting>
+@{ ViewData["Title"] = "Setting Chart & Grafik"; }
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-line"></i> Setting Chart & Grafik</h3>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah Chart</a>
+        </div>
+        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Chart yang aktif akan ditampilkan di Dashboard. Atur urutan, tipe, dan sumber data sesuai kebutuhan.</div>
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr><th width="50">No</th><th>Nama Chart</th><th>Tipe</th><th>Sumber Data</th><th>Bulan</th><th>Lebar</th><th>Status</th><th>Urutan</th><th width="180">Aksi</th></tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@(no++)</td>
+                        <td><strong>@item.NamaChart</strong></td>
+                        <td>
+                            <span class="badge bg-primary">
+                                @(item.TipeChart == "bar" ? "Bar" : item.TipeChart == "line" ? "Line" : item.TipeChart == "doughnut" ? "Doughnut" : item.TipeChart == "pie" ? "Pie" : item.TipeChart == "polarArea" ? "Polar Area" : "Radar")
+                            </span>
+                        </td>
+                        <td>
+                            @(item.SumberData == "masuk_keluar" ? "Barang Masuk vs Keluar" : item.SumberData == "per_kategori" ? "Barang per Kategori" : "Stok Barang Top 10")
+                        </td>
+                        <td>@item.JumlahBulan</td>
+                        <td>col-md-@item.Lebar</td>
+                        <td>
+                            <form asp-action="ToggleAktif" asp-route-id="@item.Id" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm @(item.Aktif ? "btn-success" : "btn-secondary")">
+                                    <i class="fas @(item.Aktif ? "fa-toggle-on" : "fa-toggle-off")"></i> @(item.Aktif ? "Aktif" : "Nonaktif")
+                                </button>
+                            </form>
+                        </td>
+                        <td>@item.Urutan</td>
+                        <td>
+                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

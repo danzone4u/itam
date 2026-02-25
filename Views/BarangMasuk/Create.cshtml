@@ -1,0 +1,125 @@
+@{ ViewData["Title"] = "Tambah Barang Masuk"; }
+<div class="card card-outline card-success">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-plus"></i> Tambah Barang Masuk</h3></div>
+    <form asp-action="CreateMultiple" method="post">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3"><div class="form-group"><label>Tanggal Masuk</label><input type="date" name="tanggalMasuk" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required /></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Ruangan</label><select name="lokasiId" class="form-control"><option value="">-- Opsional --</option>@foreach (var item in (SelectList)ViewBag.Lokasis){<option value="@item.Value">@item.Text</option>}</select></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Supplier</label><select name="supplierId" class="form-control"><option value="">-- Opsional --</option>@foreach (var item in (SelectList)ViewBag.Suppliers){<option value="@item.Value">@item.Text</option>}</select></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Keterangan (Global)</label><input type="text" name="keteranganGlobal" class="form-control" placeholder="Keterangan" /></div></div>
+            </div>
+            <hr/>
+            <h5><i class="fas fa-list"></i> Daftar Barang
+                <button type="button" class="btn btn-success btn-sm ml-2" id="addRowMasuk"><i class="fas fa-plus"></i> Tambah Baris</button>
+                <button type="button" class="btn btn-info btn-sm ml-1" data-toggle="modal" data-target="#modalBarangBaru"><i class="fas fa-box"></i> Barang Baru</button>
+            </h5>
+            <datalist id="listBarangMasuk">
+                @foreach (var item in (SelectList)ViewBag.Barangs)
+                {
+                    <option value="@item.Text" data-id="@item.Value"></option>
+                }
+            </datalist>
+            <table class="table table-bordered mt-2" id="tableMasuk">
+                <thead class="thead-light">
+                    <tr><th width="50">No</th><th>Barang</th><th width="140">Jumlah</th><th width="180">S/N</th><th width="200">Keterangan</th><th width="50"></th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="row-num">1</td>
+                        <td><input type="text" class="form-control search-barang" list="listBarangMasuk" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>
+                        <td><input type="number" name="jumlahs" class="form-control" min="1" value="1" required /></td>
+                        <td><input type="text" name="serialNumbers" class="form-control" value="-" /></td>
+                        <td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>
+                        <td><button type="button" class="btn btn-danger btn-xs remove-row" title="Hapus"><i class="fas fa-times"></i></button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer"><button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Simpan Semua</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+$('#addRowMasuk').click(function(){
+    var n = $('#tableMasuk tbody tr').length + 1;
+    var row = '<tr><td class="row-num">'+n+'</td>'
+        +'<td><input type="text" class="form-control search-barang" list="listBarangMasuk" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>'
+        +'<td><input type="number" name="jumlahs" class="form-control" min="1" value="1" required /></td>'
+        +'<td><input type="text" name="serialNumbers" class="form-control" value="-" /></td>'
+        +'<td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>'
+        +'<td><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fas fa-times"></i></button></td></tr>';
+    $('#tableMasuk tbody').append(row);
+    renumberMasuk();
+});
+
+$(document).on('input', '.search-barang', function(){
+    var typed = $(this).val();
+    var hiddenInput = $(this).siblings('input[name="barangIds"]');
+    var matched = null;
+    $('#listBarangMasuk option').each(function(){
+        if ($(this).val() === typed) { matched = $(this); return false; }
+    });
+    hiddenInput.val(matched ? matched.data('id') : '');
+});
+
+$(document).on('click','.remove-row',function(){
+    if($('#tableMasuk tbody tr').length > 1){ $(this).closest('tr').remove(); renumberMasuk(); }
+    else { alert('Minimal 1 baris barang!'); }
+});
+
+function renumberMasuk(){ $('#tableMasuk tbody tr').each(function(i){ $(this).find('.row-num').text(i+1); }); }
+
+// Create Barang Baru via AJAX
+$('#btnSaveBarangBaru').click(function(){
+    var data = {
+        kodeBarang: $('#newKode').val(),
+        namaBarang: $('#newNama').val(),
+        kategoriId: $('#newKategori').val() || null,
+        supplierId: $('#newSupplier').val() || null,
+        satuan: $('#newSatuan').val()
+    };
+    if (!data.namaBarang) { alert('Nama barang wajib diisi!'); return; }
+    $.ajax({
+        url: '@Url.Action("CreateAjax","Barang")',
+        type: 'POST',
+        data: $.extend(data, { __RequestVerificationToken: $('input[name=__RequestVerificationToken]').val() }),
+        success: function(res) {
+            if (res.success) {
+                $('#listBarangMasuk').append('<option value="'+res.nama+'" data-id="'+res.id+'"></option>');
+                $('#modalBarangBaru').modal('hide');
+                $('#newKode, #newNama').val('');
+                alert('Barang "'+res.nama+'" berhasil dibuat! Silakan ketik namanya di kolom Barang.');
+            } else { alert(res.message); }
+        }
+    });
+});
+
+// Auto-generate kode when kategori selected
+$('#newKategori').on('change', function(){
+    var katId = $(this).val();
+    if (!katId) { $('#newKode').val(''); return; }
+    $.getJSON('@Url.Action("GetNextKode","Barang")' + '?kategoriId=' + katId, function(res){
+        $('#newKode').val(res.kode);
+    });
+});
+</script>
+}
+
+<!-- Modal Barang Baru -->
+<div class="modal fade" id="modalBarangBaru" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header bg-info"><h5 class="modal-title text-white"><i class="fas fa-box"></i> Tambah Barang Baru</h5><button type="button" class="close text-white" data-dismiss="modal">&times;</button></div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-md-6"><div class="form-group"><label>Kode Barang <small class="text-muted">(otomatis)</small></label><input type="text" id="newKode" class="form-control" readonly style="background:#e9ecef" /></div></div>
+            <div class="col-md-6"><div class="form-group"><label>Nama Barang <span class="text-danger">*</span></label><input type="text" id="newNama" class="form-control" required /></div></div>
+        </div>
+        <div class="row">
+            <div class="col-md-4"><div class="form-group"><label>Kategori</label><select id="newKategori" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Kategoris){<option value="@item.Value">@item.Text</option>}</select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Supplier</label><select id="newSupplier" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Suppliers){<option value="@item.Value">@item.Text</option>}</select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Satuan</label><select id="newSatuan" class="form-control"><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
+        </div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-info" id="btnSaveBarangBaru"><i class="fas fa-save"></i> Simpan Barang</button></div>
+</div></div></div>

@@ -1,0 +1,148 @@
+@{ ViewData["Title"] = "Tambah Barang Keluar"; }
+<div class="card card-outline card-danger">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-plus"></i> Tambah Barang Keluar</h3></div>
+    <form asp-action="CreateMultiple" method="post" id="formKeluar">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3"><div class="form-group"><label>Tanggal Keluar</label><input type="date" name="tanggalKeluar" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required /></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Penerima</label><input type="text" name="penerima" class="form-control" required /></div></div>
+                <div class="col-md-3"><div class="form-group"><label>No. HP Penerima</label><input type="text" name="noHpPenerima" class="form-control" placeholder="08xxxxxxxxxx" /></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Alamat</label><input type="text" name="alamat" class="form-control" /></div></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4"><div class="form-group"><label>Ruangan Asal</label><select name="lokasiId" class="form-control"><option value="">-- Opsional --</option>@foreach (var item in (SelectList)ViewBag.Lokasis){<option value="@item.Value">@item.Text</option>}</select></div></div>
+                <div class="col-md-8"><div class="form-group"><label>Keterangan (Global)</label><input type="text" name="keteranganGlobal" class="form-control" placeholder="Keterangan berlaku untuk semua item" /></div></div>
+            </div>
+            <hr/>
+            <h5><i class="fas fa-list"></i> Pilih Barang & Serial Number</h5>
+            <div class="form-group">
+                <label>Pilih Barang</label>
+                <select id="selectBarang" class="form-control select2" style="width:100%">
+                    <option value="">-- Pilih Barang --</option>
+                    @foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Barangs)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div id="snContainer" style="display:none;">
+                <div class="card card-outline card-info">
+                    <div class="card-header py-2">
+                        <h3 class="card-title"><i class="fas fa-barcode"></i> Serial Number Tersedia</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-xs btn-info" id="btnCheckAll"><i class="fas fa-check-double"></i> Pilih Semua</button>
+                            <button type="button" class="btn btn-xs btn-secondary" id="btnUncheckAll"><i class="fas fa-times"></i> Batal Semua</button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="snList" style="max-height:300px; overflow-y:auto;">
+                        <!-- SN checkboxes loaded via AJAX -->
+                    </div>
+                    <div class="card-footer py-2">
+                        <span>Terpilih: <strong id="selectedCount">0</strong> unit</span>
+                        <button type="button" class="btn btn-danger btn-sm float-right" id="btnAddSelected"><i class="fas fa-plus"></i> Tambahkan ke Daftar</button>
+                    </div>
+                </div>
+            </div>
+            <hr/>
+            <h5><i class="fas fa-clipboard-list"></i> Daftar Barang Keluar</h5>
+            <table class="table table-bordered mt-2" id="tableKeluar">
+                <thead class="thead-light">
+                    <tr><th width="50">No</th><th>Barang</th><th>Serial Number</th><th width="100">Jumlah</th><th width="50"></th></tr>
+                </thead>
+                <tbody>
+                    <!-- Rows added via JavaScript -->
+                </tbody>
+            </table>
+            <div class="text-muted" id="emptyMsg"><i class="fas fa-info-circle"></i> Belum ada barang. Pilih barang dan SN di atas, lalu klik "Tambahkan ke Daftar".</div>
+        </div>
+        <div class="card-footer"><button type="submit" class="btn btn-danger"><i class="fas fa-save"></i> Simpan Semua</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+$(function(){
+    $('.select2').select2({ theme:'bootstrap4', placeholder:'-- Pilih --', allowClear:true });
+
+    // Load SNs when barang selected
+    $('#selectBarang').on('change', function(){
+        var barangId = $(this).val();
+        if (!barangId) { $('#snContainer').hide(); return; }
+        $.getJSON('@Url.Action("GetAvailableSerials","BarangKeluar")' + '?barangId=' + barangId, function(data){
+            var html = '';
+            if (data.length === 0) {
+                html = '<p class="text-muted">Tidak ada serial number tersedia untuk barang ini.</p>';
+            } else {
+                var unitNo = 0;
+                data.forEach(function(sn){
+                    var label = sn.serialNumber === '-' ? 'Unit ' + (++unitNo) : sn.serialNumber;
+                    html += '<div class="custom-control custom-checkbox d-inline-block mr-3 mb-2">'
+                        + '<input type="checkbox" class="custom-control-input sn-check" id="sn_'+sn.id+'" data-sn-id="'+sn.id+'" data-sn="'+label+'">'
+                        + '<label class="custom-control-label" for="sn_'+sn.id+'">'+label+'</label></div>';
+                });
+            }
+            $('#snList').html(html);
+            $('#snContainer').show();
+            updateCount();
+        });
+    });
+
+    // Check/Uncheck all
+    $('#btnCheckAll').click(function(){ $('.sn-check').prop('checked', true); updateCount(); });
+    $('#btnUncheckAll').click(function(){ $('.sn-check').prop('checked', false); updateCount(); });
+    $(document).on('change', '.sn-check', function(){ updateCount(); });
+
+    function updateCount(){ $('#selectedCount').text($('.sn-check:checked').length); }
+
+    // Add selected SNs to table
+    $('#btnAddSelected').click(function(){
+        var barangId = $('#selectBarang').val();
+        var barangName = $('#selectBarang option:selected').text();
+        var checked = $('.sn-check:checked');
+        if (checked.length === 0) { alert('Pilih minimal 1 SN!'); return; }
+
+        var snNames = [];
+        var snIds = [];
+        checked.each(function(){
+            snIds.push($(this).data('sn-id'));
+            snNames.push($(this).data('sn'));
+        });
+
+        var n = $('#tableKeluar tbody tr').length + 1;
+        var row = '<tr>'
+            + '<td class="row-num">' + n + '</td>'
+            + '<td>' + barangName + '<input type="hidden" name="barangIds" value="' + barangId + '"></td>'
+            + '<td><small>' + snNames.join(', ') + '</small>';
+        snIds.forEach(function(id){ row += '<input type="hidden" name="serialIds" value="' + id + '">'; });
+        row += '</td>'
+            + '<td><strong>' + checked.length + '</strong><input type="hidden" name="jumlahs" value="' + checked.length + '"></td>'
+            + '<td><button type="button" class="btn btn-danger btn-xs remove-row-k"><i class="fas fa-times"></i></button></td>'
+            + '</tr>';
+
+        $('#tableKeluar tbody').append(row);
+        $('#emptyMsg').hide();
+
+        // Reset selection
+        $('#selectBarang').val('').trigger('change');
+        $('#snContainer').hide();
+        renumberKeluar();
+    });
+
+    $(document).on('click','.remove-row-k',function(){
+        $(this).closest('tr').remove();
+        renumberKeluar();
+        if ($('#tableKeluar tbody tr').length === 0) $('#emptyMsg').show();
+    });
+
+    function renumberKeluar(){ $('#tableKeluar tbody tr').each(function(i){ $(this).find('.row-num').text(i+1); }); }
+
+    // Validate at least 1 row before submit
+    $('#formKeluar').on('submit', function(e){
+        if ($('#tableKeluar tbody tr').length === 0) {
+            e.preventDefault();
+            alert('Tambahkan minimal 1 barang ke daftar!');
+        }
+    });
+});
+</script>
+}

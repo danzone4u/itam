@@ -1,0 +1,24 @@
+@model MyGudang.Models.Kategori
+@{ ViewData["Title"] = "Edit Kategori"; }
+<div class="card card-outline card-warning">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-edit"></i> Edit Kategori</h3></div>
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedAt" />
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6"><div class="form-group"><label asp-for="NamaKategori"></label><input asp-for="NamaKategori" class="form-control" /><span asp-validation-for="NamaKategori" class="text-danger"></span></div></div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="KodePrefix"></label><input asp-for="KodePrefix" class="form-control" placeholder="Contoh: ELK, ATK, JRG" maxlength="10" style="text-transform:uppercase" /><small class="text-muted">Prefix untuk auto-generate kode barang</small></div></div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Deskripsi"></label>
+                <textarea asp-for="Deskripsi" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Update</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>

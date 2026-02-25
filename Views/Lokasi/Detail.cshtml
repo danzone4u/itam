@@ -1,0 +1,39 @@
+@model IEnumerable<MyGudang.Models.BarangLokasi>
+@{ ViewData["Title"] = "Detail Ruangan"; var lokasi = ViewBag.Lokasi as MyGudang.Models.Lokasi; }
+<div class="card card-outline card-info">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-warehouse"></i> @lokasi?.NamaLokasi <span class="badge bg-info">@lokasi?.Kode</span></h3>
+    </div>
+    <div class="card-body">
+        @if (lokasi != null)
+        {
+            <div class="row mb-3">
+                <div class="col-md-4"><strong>Alamat:</strong> @(lokasi.Alamat ?? "-")</div>
+                <div class="col-md-4"><strong>PIC:</strong> @(lokasi.PenanggungJawab ?? "-")</div>
+                <div class="col-md-4"><strong>Telp:</strong> @(lokasi.NoTelp ?? "-")</div>
+            </div>
+        }
+        <h5><i class="fas fa-boxes"></i> Stok Barang di Ruangan Ini</h5>
+        <table class="table table-bordered table-hover data-table">
+            <thead class="thead-light">
+                <tr><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Satuan</th><th>Stok</th></tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@(no++)</td>
+                        <td>@item.Barang?.KodeBarang</td>
+                        <td>@item.Barang?.NamaBarang</td>
+                        <td>@item.Barang?.Satuan</td>
+                        <td><span class="badge bg-success">@item.Stok</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+    </div>
+</div>

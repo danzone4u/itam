@@ -1,0 +1,40 @@
+@model MyGudang.Models.Peminjaman
+@{ ViewData["Title"] = "Kembalikan Barang"; }
+<div class="card card-outline card-success">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-undo"></i> Kembalikan Barang Pinjaman</h3></div>
+    <form asp-action="Kembalikan" method="post">@Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="card-body">
+            <div class="alert alert-info">
+                <strong><i class="fas fa-info-circle"></i> Detail Peminjaman:</strong><br/>
+                No. Peminjaman: <strong>@Model.NoPeminjaman</strong><br/>
+                Barang: <strong>@Model.Barang?.NamaBarang</strong> — Jumlah: <strong>@Model.Jumlah</strong><br/>
+                Peminjam: <strong>@Model.Peminjam</strong> @(Model.Departemen != null ? $"({Model.Departemen})" : "")<br/>
+                Tgl Pinjam: <strong>@Model.TanggalPinjam.ToString("dd/MM/yyyy")</strong> — Jatuh Tempo: <strong>@Model.TanggalJatuhTempo.ToString("dd/MM/yyyy")</strong>
+                @if (Model.Status == "Terlambat") { <br/><span class="text-danger"><i class="fas fa-exclamation-triangle"></i> <strong>TERLAMBAT!</strong></span> }
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Kondisi Barang Kembali</label>
+                        <select name="kondisiKembali" class="form-control" required>
+                            <option value="Baik">Baik</option>
+                            <option value="Rusak Ringan">Rusak Ringan</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label>Keterangan Pengembalian</label>
+                        <input type="text" name="keterangan" class="form-control" placeholder="Opsional" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Konfirmasi Pengembalian</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>

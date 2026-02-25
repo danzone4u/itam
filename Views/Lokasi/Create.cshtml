@@ -1,0 +1,28 @@
+@model MyGudang.Models.Lokasi
+@{ ViewData["Title"] = ViewData["Title"] ?? "Tambah Ruangan"; }
+<div class="card card-outline card-primary">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-plus"></i> @ViewData["Title"]</h3></div>
+    <form asp-action="@(Model != null && Model.Id > 0 ? "Edit" : "Create")" method="post">@Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@(Model?.Id ?? 0)" />
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Nama Ruangan</label>
+                        <input asp-for="NamaLokasi" class="form-control" placeholder="Ruangan 1" required />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="PenanggungJawab">PIC</label>
+                        <input asp-for="PenanggungJawab" class="form-control" placeholder="Nama penanggung jawab" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>
