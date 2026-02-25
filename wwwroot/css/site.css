@@ -200,3 +200,69 @@
 .swal-cancel-btn:hover {
     transform: translateY(-1px) !important;
 }
+
+/* Dark Mode */
+.dark-mode .content-wrapper {
+    background-color: #1a1a2e !important;
+}
+
+.dark-mode .card {
+    background-color: #16213e;
+    color: #e0e0e0;
+}
+
+.dark-mode .card-header {
+    border-bottom-color: #1a1a2e;
+}
+
+.dark-mode .table {
+    color: #e0e0e0;
+}
+
+.dark-mode .table-bordered th,
+.dark-mode .table-bordered td {
+    border-color: #2a2a4a;
+}
+
+.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dark-mode .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark-mode .thead-light th {
+    background-color: #1a1a2e !important;
+    color: #e0e0e0 !important;
+}
+
+.dark-mode .form-control {
+    background-color: #0f3460;
+    border-color: #2a2a4a;
+    color: #e0e0e0;
+}
+
+.dark-mode .form-control:focus {
+    background-color: #1a1a3e;
+    color: #fff;
+}
+
+.dark-mode .select2-container--bootstrap4 .select2-selection--single {
+    background-color: #0f3460;
+    border-color: #2a2a4a;
+    color: #e0e0e0;
+}
+
+.dark-mode .modal-content {
+    background-color: #16213e;
+    color: #e0e0e0;
+}
+
+.dark-mode .callout {
+    background-color: #1a1a2e;
+}
+
+.dark-mode a:not(.btn):not(.nav-link):not(.brand-link):not(.small-box-footer) {
+    color: #64b5f6;
+}

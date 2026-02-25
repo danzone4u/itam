@@ -21,14 +21,26 @@ namespace MyGudang.Controllers
             ViewBag.TotalBarang = await _context.Barangs.CountAsync();
             ViewBag.TotalBarangMasuk = await _context.BarangMasuks.SumAsync(x => (int?)x.Jumlah) ?? 0;
             ViewBag.TotalBarangKeluar = await _context.BarangKeluars.SumAsync(x => (int?)x.Jumlah) ?? 0;
-            ViewBag.StokRendah = await _context.Barangs.CountAsync(b => b.Stok <= 5);
+            ViewBag.StokRendah = await _context.Barangs.CountAsync(b => b.Stok <= b.StokMinimum);
 
-            // Low stock items
+            // Low stock items (per-barang threshold)
             ViewBag.LowStockItems = await _context.Barangs
                 .Include(b => b.Kategori)
-                .Where(b => b.Stok <= 5)
+                .Where(b => b.Stok <= b.StokMinimum)
                 .OrderBy(b => b.Stok)
                 .Take(10)
+                .ToListAsync();
+
+            // Overdue peminjaman
+            ViewBag.OverduePeminjaman = await _context.Set<Peminjaman>()
+                .Where(p => p.Status == "Dipinjam" && p.TanggalJatuhTempo < DateTime.Now)
+                .CountAsync();
+
+            ViewBag.OverdueItems = await _context.Set<Peminjaman>()
+                .Include(p => p.Barang)
+                .Where(p => p.Status == "Dipinjam" && p.TanggalJatuhTempo < DateTime.Now)
+                .OrderBy(p => p.TanggalJatuhTempo)
+                .Take(5)
                 .ToListAsync();
 
             // Active chart settings

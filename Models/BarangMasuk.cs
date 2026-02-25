@@ -24,6 +24,10 @@ namespace MyGudang.Models
         [DataType(DataType.Date)]
         public DateTime TanggalMasuk { get; set; } = DateTime.Now;
 
+        [Display(Name = "Harga Satuan")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? HargaSatuan { get; set; }
+
         [Display(Name = "Keterangan")]
         [StringLength(500)]
         public string? Keterangan { get; set; }

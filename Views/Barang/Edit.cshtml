@@ -14,6 +14,9 @@
                 <div class="col-md-4"><div class="form-group"><label asp-for="SupplierId"></label><select asp-for="SupplierId" asp-items="@ViewBag.Suppliers" class="form-control"><option value="">-- Pilih --</option></select></div></div>
                 <div class="col-md-4"><div class="form-group"><label asp-for="Satuan"></label><select asp-for="Satuan" class="form-control" required><option value="">-- Pilih Satuan --</option><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
             </div>
+            <div class="row">
+                <div class="col-md-6"><div class="form-group"><label asp-for="StokMinimum"></label><input asp-for="StokMinimum" class="form-control" /><small class="text-muted">Alert ditampilkan di Dashboard jika stok <= nilai ini</small></div></div>
+            </div>
             @if (!string.IsNullOrEmpty(Model.Gambar))
             {
                 <div class="form-group"><label>Gambar Saat Ini</label><br/><img src="@Model.Gambar" alt="Gambar" style="max-height:150px;" class="img-thumbnail" /></div>

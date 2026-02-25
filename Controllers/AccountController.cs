@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using MyGudang.Data;
+using MyGudang.Services;
 
 namespace MyGudang.Controllers
 {
@@ -8,11 +10,13 @@ namespace MyGudang.Controllers
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ApplicationDbContext _context;
 
-        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
+        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ApplicationDbContext context)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _context = context;
         }
 
         [HttpGet]
@@ -40,6 +44,8 @@ namespace MyGudang.Controllers
             var result = await _signInManager.PasswordSignInAsync(username, password, isPersistent: true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+                await ActivityLogger.LogAsync(_context, username, "Login", "Account", $"User '{username}' berhasil login", ip);
                 return LocalRedirect(returnUrl ?? "/");
             }
 
@@ -52,6 +58,9 @@ namespace MyGudang.Controllers
         [Authorize]
         public async Task<IActionResult> Logout()
         {
+            var userName = User.Identity?.Name ?? "Unknown";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            await ActivityLogger.LogAsync(_context, userName, "Logout", "Account", $"User '{userName}' logout", ip);
             await _signInManager.SignOutAsync();
             return RedirectToAction("Login");
         }

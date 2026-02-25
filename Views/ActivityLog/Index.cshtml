@@ -1,0 +1,52 @@
+@model IEnumerable<MyGudang.Models.ActivityLog>
+@{ ViewData["Title"] = "Log Aktivitas"; }
+
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-history"></i> Log Aktivitas</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row mb-3">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari user/detail..." value="@ViewBag.Search">
+            </div>
+            <div class="col-md-2">
+                <select name="module" class="form-control form-control-sm">
+                    <option value="">Semua Modul</option>
+                    @foreach (var m in (List<string>)ViewBag.Modules)
+                    {
+                        <option value="@m" selected="@(ViewBag.Module == m)">@m</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="from" class="form-control form-control-sm" value="@(ViewBag.From != null ? ((DateTime)ViewBag.From).ToString("yyyy-MM-dd") : "")">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="to" class="form-control form-control-sm" value="@(ViewBag.To != null ? ((DateTime)ViewBag.To).ToString("yyyy-MM-dd") : "")">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i></a>
+            </div>
+        </form>
+        <table class="table table-bordered table-hover table-sm data-table">
+            <thead class="thead-light">
+                <tr><th width="160">Waktu</th><th width="120">User</th><th width="80">Aksi</th><th width="120">Modul</th><th>Detail</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    var badgeClass = log.Action switch { "Create" => "badge-success", "Delete" => "badge-danger", "Update" => "badge-warning", "Login" => "badge-info", "Export" => "badge-primary", _ => "badge-secondary" };
+                    <tr>
+                        <td><small>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</small></td>
+                        <td>@log.UserName</td>
+                        <td><span class="badge @badgeClass">@log.Action</span></td>
+                        <td>@log.Module</td>
+                        <td><small>@log.Detail</small></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

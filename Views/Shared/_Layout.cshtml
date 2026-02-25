@@ -38,6 +38,11 @@
                     </form>
                 </div>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" id="darkModeToggle" title="Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </a>
+            </li>
         </ul>
     </nav>
 
@@ -138,9 +143,15 @@
                             <p>Transfer Antar Ruangan</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Laporan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Laporan" ? "active" : "")">
+                            <i class="nav-icon fas fa-chart-pie" style="color:#6f42c1;"></i>
+                            <p>Laporan Rekap</p>
+                        </a>
+                    </li>
                     @if (User.IsInRole("SuperAdmin"))
                     {
-                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup" };
+                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup", "ActivityLog" };
                         var isSettingActive = settingControllers.Contains(ViewContext.RouteData.Values["controller"]?.ToString());
                     <li class="nav-item has-treeview @(isSettingActive ? "menu-open" : "")">
                         <a href="#" class="nav-link @(isSettingActive ? "active" : "")">
@@ -171,6 +182,11 @@
                             <li class="nav-item">
                                 <a href="@Url.Action("Index","Backup")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Backup" ? "active" : "")">
                                     <i class="far fa-circle nav-icon"></i><p>Backup & Restore</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","ActivityLog")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ActivityLog" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Log Aktivitas</p>
                                 </a>
                             </li>
                         </ul>
@@ -277,6 +293,25 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(function(){ $('.select2').select2({ theme: 'bootstrap4', placeholder: '-- Pilih --', allowClear: true }); });
+
+    // Dark Mode Toggle
+    (function() {
+        var body = document.body;
+        var toggle = document.getElementById('darkModeToggle');
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
+            if(toggle) toggle.querySelector('i').className = 'fas fa-sun';
+        }
+        if (toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                body.classList.toggle('dark-mode');
+                var isDark = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDark);
+                this.querySelector('i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            });
+        }
+    })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>

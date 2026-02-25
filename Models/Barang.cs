@@ -39,6 +39,9 @@ namespace MyGudang.Models
         [Display(Name = "Stok")]
         public int Stok { get; set; } = 0;
 
+        [Display(Name = "Stok Minimum")]
+        public int StokMinimum { get; set; } = 5;
+
         [Display(Name = "Gambar")]
         [StringLength(500)]
         public string? Gambar { get; set; }

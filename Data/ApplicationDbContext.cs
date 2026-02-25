@@ -29,6 +29,7 @@ namespace MyGudang.Data
         public DbSet<BarangLokasi> BarangLokasis { get; set; }
         public DbSet<TransferBarang> TransferBarangs { get; set; }
         public DbSet<BackupSetting> BackupSettings { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

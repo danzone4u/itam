@@ -114,6 +114,34 @@ else
     </div>
 }
 
+@{ var overdueCount = (int)ViewBag.OverduePeminjaman; }
+@if (overdueCount > 0)
+{
+    <div class="card card-outline card-warning">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-clock text-warning"></i> Peminjaman Jatuh Tempo (@overdueCount)</h3>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped table-sm">
+                <thead><tr><th>No Peminjaman</th><th>Barang</th><th>Peminjam</th><th>Jatuh Tempo</th><th>Terlambat</th></tr></thead>
+                <tbody>
+                    @foreach (var p in (List<MyGudang.Models.Peminjaman>)ViewBag.OverdueItems)
+                    {
+                        var days = (DateTime.Now - p.TanggalJatuhTempo).Days;
+                        <tr class="table-warning">
+                            <td>@p.NoPeminjaman</td>
+                            <td>@p.Barang?.NamaBarang</td>
+                            <td>@p.Peminjam</td>
+                            <td>@p.TanggalJatuhTempo.ToString("dd/MM/yyyy")</td>
+                            <td><span class="badge badge-danger">@days hari</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <script>
         fetch('@Url.Action("GetChartData", "Dashboard")')
