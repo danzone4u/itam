@@ -282,7 +282,7 @@ namespace MyGudang.Controllers
             
             ViewBag.Kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == id).Select(s => s.SerialNumber).ToListAsync();
-            ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "BAST");
+            ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "STB");
             
             return View(bk);
         }
