@@ -1,95 +1,94 @@
 @model MyGudang.Models.Peremajaan
-@{ ViewData["Title"] = "Berita Acara Peremajaan"; Layout = null; }
-@{
-    var kop = ViewBag.Kop as MyGudang.Models.KopSurat ?? new MyGudang.Models.KopSurat();
-}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Berita Acara Peremajaan Barang</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="/css/site.css">
-    <style>
-        body { font-family: 'Times New Roman', serif; font-size: 12pt; }
-        .surat-container { max-width: 100%; padding: 40px; }
-    </style>
-</head>
-<body>
-<div class="container-fluid p-4">
-    <div class="surat-container">
-        <div class="no-print text-right mb-3">
-            <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak</button>
-            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
-        </div>
+@{ ViewData["Title"] = "Berita Acara Peremajaan Barang"; Layout = "~/Views/Shared/_Layout.cshtml"; var kop = (MyGudang.Models.KopSurat)ViewBag.Kop; }
 
-        @if (kop.TampilkanLogo)
-        {
-            <table style="width:100%; border-bottom:3px double #333; padding-bottom:15px; margin-bottom:25px;">
-                <tr>
-                    <td style="vertical-align:middle;">
-                        <h3 style="margin:0; font-weight:bold; font-size:18pt;">@kop.NamaPerusahaan</h3>
-                        @if (!string.IsNullOrEmpty(kop.SubJudul)) { <p style="margin:2px 0 0 0; font-size:12pt;">@kop.SubJudul</p> }
-                        @if (!string.IsNullOrEmpty(kop.Alamat)) { <p style="margin:2px 0 0 0; font-size:10pt; color:#555;">@kop.Alamat</p> }
-                    </td>
-                    <td style="text-align:right; vertical-align:middle; width:150px;">
-                        <img src="/images/logo-ppn.png" alt="Logo" style="height:120px;">
-                    </td>
-                </tr>
-            </table>
-        }
+<div class="no-print mb-3">
+    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak</button>
+    <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+</div>
 
-        <h4 class="text-center" style="font-weight:bold; margin-bottom:20px;">BERITA ACARA PEREMAJAAN BARANG</h4>
-
-        <table style="margin-bottom:20px;">
-            <tr><td style="width:200px"><strong>Tanggal Peremajaan</strong></td><td>: @Model.TanggalPeremajaan.ToString("dd MMMM yyyy")</td></tr>
-            <tr><td><strong>Dikembalikan Oleh</strong></td><td>: @Model.DikembalikanOleh</td></tr>
-            @if (Model.BarangKeluar != null)
-            {
-                <tr><td><strong>Ref. Barang Keluar</strong></td><td>: @Model.BarangKeluar.NoSuratJalan (@Model.BarangKeluar.TanggalKeluar.ToString("dd/MM/yyyy"))</td></tr>
-            }
-        </table>
-
-        <p>Dengan ini menyatakan bahwa barang berikut telah dikembalikan dalam rangka peremajaan:</p>
-        <table class="table table-bordered" style="margin-bottom:20px;">
-            <thead><tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Tindak Lanjut</th></tr></thead>
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>@Model.Barang?.NamaBarang</td>
-                    <td>@Model.Jumlah</td>
-                    <td>@Model.Barang?.Satuan</td>
-                    <td><strong>@Model.Kondisi</strong></td>
-                    <td><strong>@Model.TindakLanjut</strong></td>
-                </tr>
-            </tbody>
-        </table>
-
-        @if (!string.IsNullOrEmpty(Model.Keterangan))
-        {
-            <p><strong>Keterangan:</strong> @Model.Keterangan</p>
-        }
-
-        <div class="surat-ttd" style="display:flex; justify-content:space-between; margin-top:80px; text-align:center; font-size:14pt;">
-            <div style="width:30%;">
-                <p>Yang Menyerahkan,</p><br/><br/><br/><br/>
-                <p>(@Model.DikembalikanOleh)</p>
-            </div>
-            <div style="width:30%;">
-                <p>Mengetahui,</p><br/><br/><br/><br/>
-                <p>(..........................)</p>
-            </div>
-            <div style="width:30%;">
-                <p>Yang Menerima,</p><br/><br/><br/><br/>
-                <p>(@(kop.NamaPengirim ?? ".........................."))</p>
-                @if (!string.IsNullOrEmpty(kop.JabatanPengirim))
+<div class="surat-container">
+    <div class="surat-header" style="text-align:left; border-bottom:none !important;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+                <h3 style="margin:0; font-weight:bold; font-size:22px;">@kop.NamaPerusahaan</h3>
+                @if (!string.IsNullOrEmpty(kop.SubJudul))
                 {
-                    <p style="font-size:10pt; color:#666;">@kop.JabatanPengirim</p>
+                    <p style="font-size:14px; color:#666; margin:2px 0 0 0;">@kop.SubJudul</p>
+                }
+                @if (!string.IsNullOrEmpty(kop.Alamat))
+                {
+                    <p style="font-size:12px; margin:2px 0 0 0;">@kop.Alamat</p>
+                }
+                @{
+                    var contacts = new List<string>();
+                    if (!string.IsNullOrEmpty(kop.Telepon)) contacts.Add("Telp: " + kop.Telepon);
+                    if (!string.IsNullOrEmpty(kop.Email)) contacts.Add("Email: " + kop.Email);
+                    if (!string.IsNullOrEmpty(kop.Website)) contacts.Add(kop.Website);
+                }
+                @if (contacts.Any())
+                {
+                    <p style="font-size:11px; color:#888; margin:2px 0 0 0;">@string.Join(" | ", contacts)</p>
                 }
             </div>
+            @if (kop.TampilkanLogo)
+            {
+                <img src="/images/logo-ppn.png" alt="Logo" style="height:112px;">
+            }
+        </div>
+    </div>
+    
+    <hr style="border-top:3px solid #333; margin:10px 0;" />
+    <h2 style="text-align:center; margin-top:20px; font-weight:bold; margin-bottom:25px;">BERITA ACARA PEREMAJAAN BARANG</h2>
+
+    <table style="width:100%; margin-bottom:20px;">
+        <tr><td width="200"><strong>Tanggal Peremajaan</strong></td><td>: @Model.TanggalPeremajaan.ToString("dd MMMM yyyy")</td></tr>
+        <tr><td><strong>Dikembalikan Oleh</strong></td><td>: @Model.DikembalikanOleh</td></tr>
+        @if (Model.BarangKeluar != null)
+        {
+            <tr><td><strong>Ref. Barang Keluar</strong></td><td>: @Model.BarangKeluar.NoSuratJalan (@Model.BarangKeluar.TanggalKeluar.ToString("dd MMMM yyyy"))</td></tr>
+        }
+    </table>
+
+    <p>Dengan ini menyatakan bahwa barang berikut telah dikembalikan dalam rangka peremajaan:</p>
+
+    <table class="table table-bordered" style="margin-top:10px; margin-bottom:20px;">
+        <thead><tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Tindak Lanjut</th></tr></thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>@Model.Barang?.NamaBarang</td>
+                <td>@Model.Jumlah</td>
+                <td>@Model.Barang?.Satuan</td>
+                <td><strong>@Model.Kondisi</strong></td>
+                <td><strong>@Model.TindakLanjut</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    @if (!string.IsNullOrEmpty(Model.Keterangan))
+    {
+        <p><strong>Keterangan:</strong> @Model.Keterangan</p>
+    }
+
+    <div class="surat-ttd" style="margin-top:40px;">
+        <div>
+            <p><strong>Yang Menyerahkan</strong></p>
+            <br><br><br><br>
+            <p>(@Model.DikembalikanOleh)</p>
+        </div>
+        <div>
+            <p><strong>Mengetahui</strong></p>
+            <br><br><br><br>
+            <p>(........................................)</p>
+        </div>
+        <div>
+            <p><strong>Yang Menerima</strong></p>
+            <br><br><br><br>
+            <p>(@(kop.NamaPengirim ?? "........................................"))</p>
+            @if (!string.IsNullOrEmpty(kop.JabatanPengirim))
+            {
+                <p style="font-size:12px; color:#666;">@kop.JabatanPengirim</p>
+            }
         </div>
     </div>
 </div>
-</body>
-</html>
