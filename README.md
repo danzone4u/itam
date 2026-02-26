@@ -1,4 +1,4 @@
-# 📦 MyGudang — Sistem Manajemen Gudang
+# 📦 IT Asset Management — Sistem Manajemen Gudang
 
 Aplikasi manajemen gudang berbasis web yang dibangun menggunakan **ASP.NET Core 8 MVC** dengan **SQL Server Express**. Digunakan untuk mengelola stok barang, transaksi masuk/keluar, peminjaman, pengembalian, transfer antar lokasi, stok opname, arsip dokumen, dan pencetakan surat.
 
