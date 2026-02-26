@@ -126,20 +126,15 @@ erDiagram
     Kategori {
         int Id PK
         string NamaKategori
+        DateTime CreatedAt
     }
 
     Supplier {
         int Id PK
         string NamaSupplier
+        string Kontak
         string Alamat
-        string Telepon
-        string Email
-    }
-
-    Lokasi {
-        int Id PK
-        string NamaLokasi
-        string Deskripsi
+        DateTime CreatedAt
     }
 
     Barang {
@@ -150,45 +145,49 @@ erDiagram
         int SupplierId FK
         string Satuan
         int Stok
-        int StokMinimum
         string Gambar
+        string Deskripsi
         DateTime CreatedAt
-        DateTime UpdatedAt
+    }
+
+    Lokasi {
+        int Id PK
+        string Kode
+        string NamaLokasi
+        string Alamat
+        string PenanggungJawab
+        string NoTelp
+        DateTime CreatedAt
+    }
+
+    BarangLokasi {
+        int Id PK
+        int BarangId FK
+        int LokasiId FK
+        int Stok
     }
 
     BarangMasuk {
         int Id PK
         int BarangId FK
+        int LokasiId FK
         int Jumlah
-        decimal HargaSatuan
         DateTime TanggalMasuk
         string Keterangan
-        int LokasiId FK
         DateTime CreatedAt
     }
 
     BarangKeluar {
         int Id PK
         int BarangId FK
+        int LokasiId FK
         int Jumlah
         DateTime TanggalKeluar
         string Penerima
-        string NoHpPenerima
         string Alamat
+        string NoHpPenerima
         string Keterangan
         string NoSuratJalan
-        DateTime CreatedAt
-    }
-
-    BarangKembali {
-        int Id PK
-        int BarangId FK
-        int BarangKeluarId FK
-        int Jumlah
-        DateTime TanggalKembali
-        string DikembalikanOleh
-        string Kondisi
-        string Keterangan
         DateTime CreatedAt
     }
 
@@ -202,16 +201,19 @@ erDiagram
         DateTime CreatedAt
     }
 
-    BarangLokasi {
+    BarangKembali {
         int Id PK
         int BarangId FK
-        int LokasiId FK
-        int Stok
+        int BarangKeluarId FK
+        int Jumlah
+        DateTime TanggalKembali
+        string Kondisi
+        string Keterangan
+        DateTime CreatedAt
     }
 
     Peminjaman {
         int Id PK
-        string NoPeminjaman
         int BarangId FK
         int Jumlah
         string Peminjam
@@ -220,8 +222,12 @@ erDiagram
         string NoHp
         DateTime TanggalPinjam
         DateTime TanggalJatuhTempo
+        DateTime TanggalKembali
         string Status
+        string KondisiKembali
+        string NoPeminjaman
         string Keterangan
+        DateTime CreatedAt
     }
 
     TransferBarang {
@@ -232,13 +238,16 @@ erDiagram
         int Jumlah
         DateTime TanggalTransfer
         string Keterangan
+        string NoTransfer
+        DateTime CreatedAt
     }
 
     StokOpname {
         int Id PK
-        DateTime Tanggal
+        DateTime TanggalOpname
         string Keterangan
         string Status
+        DateTime CreatedAt
     }
 
     StokOpnameDetail {
@@ -251,71 +260,78 @@ erDiagram
         string Keterangan
     }
 
-    Arsip {
-        int Id PK
-        string NamaDokumen
-        string JenisDokumen
-        string FilePath
-        DateTime TanggalUpload
-        string Keterangan
-    }
-
-    BackupSetting {
-        int Id PK
-        bool AutoBackupEnabled
-        int IntervalHours
-        DateTime LastBackupAt
-        string BackupPath
-    }
-
     KopSurat {
         int Id PK
         string NamaPerusahaan
         string SubJudul
         string Alamat
-        string Telepon
-        string Email
-        string Website
-        bool TampilkanLogo
         string NamaPengirim
-        string JabatanPengirim
+        bool TampilkanLogo
     }
 
     SuratSetting {
         int Id PK
-        string JenisSurat
         string Prefix
-        int NomorTerakhir
+        string Format
+        bool IncludeDate
+        int Counter
+    }
+
+    Peremajaan {
+        int Id PK
+        int BarangId FK
+        int BarangKeluarId FK
+        int Jumlah
+        DateTime TanggalPeremajaan
+        string DikembalikanOleh
+        string Kondisi
+        string TindakLanjut
+        string Keterangan
+        DateTime CreatedAt
+    }
+
+    Arsip {
+        int Id PK
+        string NamaDokumen
+        string NomorDokumen
+        string JenisDokumen
+        string FilePath
+        string NamaFile
+        string Keterangan
+        DateTime CreatedAt
     }
 
     ActivityLog {
         int Id PK
-        string UserId
-        string Area
+        string UserName
         string Action
-        string Target
+        string Module
         string Detail
-        DateTime Timestamp
+        DateTime CreatedAt
+        string IpAddress
     }
 
-    Kategori ||--o{ Barang : "memiliki"
-    Supplier ||--o{ Barang : "memasok"
-    Barang ||--o{ BarangMasuk : "diterima"
-    Barang ||--o{ BarangKeluar : "dikeluarkan"
-    Barang ||--o{ BarangKembali : "dikembalikan"
-    Barang ||--o{ BarangSerial : "punya serial"
-    Barang ||--o{ BarangLokasi : "disimpan di"
-    Barang ||--o{ Peminjaman : "dipinjam"
-    Barang ||--o{ TransferBarang : "ditransfer"
-    Lokasi ||--o{ BarangLokasi : "menyimpan"
-    Lokasi ||--o{ BarangMasuk : "lokasi masuk"
-    Lokasi ||--o{ TransferBarang : "asal"
-    Lokasi ||--o{ TransferBarang : "tujuan"
-    BarangKeluar ||--o{ BarangKembali : "dikembalikan dari"
-    BarangMasuk ||--o{ BarangSerial : "serial dari masuk"
-    BarangKeluar ||--o{ BarangSerial : "serial keluar"
-    StokOpname ||--o{ StokOpnameDetail : "detail opname"
-    Barang ||--o{ StokOpnameDetail : "dicek"
+    Kategori ||--o{ Barang : "has"
+    Supplier ||--o{ Barang : "has"
+    Barang ||--o{ BarangMasuk : "has"
+    Barang ||--o{ BarangKeluar : "has"
+    Barang ||--o{ BarangSerial : "has"
+    Barang ||--o{ BarangKembali : "has"
+    Barang ||--o{ Peminjaman : "has"
+    Barang ||--o{ BarangLokasi : "stored in"
+    Barang ||--o{ TransferBarang : "transferred"
+    Barang ||--o{ StokOpnameDetail : "audited"
+    Lokasi ||--o{ BarangLokasi : "stores"
+    Lokasi ||--o{ BarangMasuk : "receives"
+    Lokasi ||--o{ BarangKeluar : "sends"
+    Lokasi ||--o{ TransferBarang : "from"
+    Lokasi ||--o{ TransferBarang : "to"
+    BarangMasuk ||--o{ BarangSerial : "generates"
+    BarangKeluar ||--o{ BarangSerial : "assigns"
+    BarangKeluar ||--o{ BarangKembali : "returned"
+    BarangKeluar ||--o{ Peremajaan : "processed"
+    Barang ||--o{ Peremajaan : "replaced"
+    StokOpname ||--o{ StokOpnameDetail : "contains"
 ```
 
 ---
