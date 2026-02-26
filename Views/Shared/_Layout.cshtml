@@ -310,8 +310,8 @@
                         var $th = $($table.find('thead tr.dt-filter-row th').eq(idx));
                         var header = $headerRow.find('th').eq(idx).text().trim();
 
-                        // Skip columns that shouldn't be filtered like No, Aksi, Stok, Jumlah
-                        if (!header || header === 'No' || header === 'Aksi' || header === '#' || header.toLowerCase() === 'stok' || header.toLowerCase() === 'jumlah' || header.length < 2) {
+                        // Skip columns that shouldn't be filtered like No, Aksi
+                        if (!header || header === 'No' || header === 'Aksi' || header === '#' || header.length < 2) {
                             $th.html('');
                             return;
                         }
