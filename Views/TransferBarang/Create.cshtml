@@ -10,9 +10,12 @@
                         <label>Pilih Barang</label>
                         <input type="text" id="searchBarang" class="form-control" list="listBarang" placeholder="Ketik nama barang..." autocomplete="off" />
                         <datalist id="listBarang">
-                            @foreach (var b in ViewBag.Barangs as IEnumerable<MyGudang.Models.Barang>)
+                            @if (ViewBag.Barangs != null)
                             {
-                                <option value="@b.NamaBarang" data-id="@b.Id"></option>
+                                foreach (var b in (IEnumerable<MyGudang.Models.Barang>)ViewBag.Barangs)
+                                {
+                                    <option value="@b.NamaBarang" data-id="@b.Id"></option>
+                                }
                             }
                         </datalist>
                         <input type="hidden" name="BarangId" id="selectedBarangId" />
