@@ -82,16 +82,30 @@
 @section Scripts {
 <script>
 var allBarangs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(barangs.Select(b => new { id = b.Id, kodeBarang = b.KodeBarang, namaBarang = b.NamaBarang, kategori = b.Kategori != null ? b.Kategori.NamaKategori : "-", stok = b.Stok, satuan = b.Satuan })));
-var selectedIds = new Set();
+
+function getCheckedIds() {
+    var ids = [];
+    $('.check-barang:checked').each(function() { ids.push(Number($(this).val())); });
+    return ids;
+}
 
 function renderOpnameTable() {
-    var tbody = $('#opnameBody');
-    tbody.empty();
-    var items = allBarangs.filter(function(b) { return selectedIds.has(b.id); });
-    if ($('#modeOpname').val() === 'all') items = allBarangs;
+    var tbody = document.getElementById('opnameBody');
+    tbody.innerHTML = '';
+    var mode = document.getElementById('modeOpname').value;
+    var items;
 
-    items.forEach(function(b, i) {
-        tbody.append(
+    if (mode === 'all') {
+        items = allBarangs;
+    } else {
+        var checkedIds = getCheckedIds();
+        items = allBarangs.filter(function(b) { return checkedIds.indexOf(b.id) !== -1; });
+    }
+
+    for (var i = 0; i < items.length; i++) {
+        var b = items[i];
+        var removeBtn = mode === 'select' ? '<button type="button" class="btn btn-xs btn-danger btn-remove" data-id="' + b.id + '"><i class="fas fa-times"></i></button>' : '';
+        tbody.innerHTML +=
             '<tr>' +
             '<td>' + (i+1) + '</td>' +
             '<td>' + b.kodeBarang + '</td>' +
@@ -100,19 +114,18 @@ function renderOpnameTable() {
             '<td><strong>' + b.stok + '</strong></td>' +
             '<td><input type="hidden" name="BarangId" value="' + b.id + '"><input type="number" name="StokFisik" class="form-control form-control-sm" value="' + b.stok + '" min="0" required style="width:100px;"></td>' +
             '<td><input type="text" name="DetailKeterangan" class="form-control form-control-sm" placeholder="-"></td>' +
-            '<td>' + ($('#modeOpname').val() === 'select' ? '<button type="button" class="btn btn-xs btn-danger btn-remove" data-id="' + b.id + '"><i class="fas fa-times"></i></button>' : '') + '</td>' +
-            '</tr>'
-        );
-    });
-    $('#itemCount').text(items.length);
-    $('#emptyMsg').toggle(items.length === 0);
-    $('#btnSubmit').prop('disabled', items.length === 0);
+            '<td>' + removeBtn + '</td>' +
+            '</tr>';
+    }
+    document.getElementById('itemCount').textContent = items.length;
+    document.getElementById('emptyMsg').style.display = items.length === 0 ? '' : 'none';
+    document.getElementById('btnSubmit').disabled = items.length === 0;
+    document.getElementById('selectedCount').textContent = getCheckedIds().length + ' dipilih';
 }
 
-$('#modeOpname').on('change', function() {
-    var mode = $(this).val();
-    $('#selectPanel').toggle(mode === 'select');
-    if (mode === 'all') { selectedIds.clear(); }
+// Mode change
+document.getElementById('modeOpname').addEventListener('change', function() {
+    document.getElementById('selectPanel').style.display = this.value === 'select' ? '' : 'none';
     renderOpnameTable();
 });
 
@@ -121,62 +134,44 @@ $('#searchBarang, #filterKategori').on('input change', function() {
     var search = $('#searchBarang').val().toLowerCase();
     var kat = $('#filterKategori').val();
     $('#tableSelectBarang tbody tr').each(function() {
-        var nama = $(this).data('nama').toString().toLowerCase();
-        var kode = $(this).data('kode').toString().toLowerCase();
-        var kategori = $(this).data('kategori') || '';
-        var matchSearch = !search || nama.includes(search) || kode.includes(search);
-        var matchKat = !kat || kategori === kat;
-        $(this).toggle(matchSearch && matchKat);
+        var nama = ($(this).data('nama') || '').toString().toLowerCase();
+        var kode = ($(this).data('kode') || '').toString().toLowerCase();
+        var kategori = ($(this).data('kategori') || '').toString();
+        var show = (!search || nama.indexOf(search) >= 0 || kode.indexOf(search) >= 0) && (!kat || kategori === kat);
+        $(this).toggle(show);
     });
 });
 
-// Checkbox handling
+// Individual checkbox
 $(document).on('change', '.check-barang', function() {
-    var id = parseInt($(this).val());
-    if ($(this).is(':checked')) selectedIds.add(id); else selectedIds.delete(id);
-    updateSelectedCount();
     renderOpnameTable();
 });
 
+// Check all visible
 $('#checkAllBarang').on('change', function() {
     var checked = $(this).is(':checked');
-    $('#tableSelectBarang tbody tr:visible .check-barang').each(function() {
-        $(this).prop('checked', checked);
-        var id = parseInt($(this).val());
-        if (checked) selectedIds.add(id); else selectedIds.delete(id);
-    });
-    updateSelectedCount();
+    $('#tableSelectBarang tbody tr:visible .check-barang').prop('checked', checked);
     renderOpnameTable();
 });
 
 $('#btnSelectAll').on('click', function() {
-    $('#tableSelectBarang tbody tr:visible .check-barang').prop('checked', true).each(function() {
-        selectedIds.add(parseInt($(this).val()));
-    });
-    updateSelectedCount();
+    $('#tableSelectBarang tbody tr:visible .check-barang').prop('checked', true);
     renderOpnameTable();
 });
 
 $('#btnClearAll').on('click', function() {
     $('.check-barang').prop('checked', false);
-    selectedIds.clear();
-    updateSelectedCount();
     renderOpnameTable();
 });
 
+// Remove single item
 $(document).on('click', '.btn-remove', function() {
-    var id = parseInt($(this).data('id'));
-    selectedIds.delete(id);
+    var id = $(this).data('id');
     $('.check-barang[value="' + id + '"]').prop('checked', false);
-    updateSelectedCount();
     renderOpnameTable();
 });
 
-function updateSelectedCount() {
-    $('#selectedCount').text(selectedIds.size + ' dipilih');
-}
-
-// Initialize with "all" mode
-$('#modeOpname').trigger('change');
+// Initialize
+document.getElementById('modeOpname').dispatchEvent(new Event('change'));
 </script>
 }
