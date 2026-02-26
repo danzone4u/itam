@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -275,9 +275,9 @@ namespace MyGudang.Controllers
             worksheet.Cells["A1:J1"].Style.Font.Bold = true;
 
             // Dummy row
-            var kategoriContoh = await _context.Kategoris.FirstOrDefaultAsync();
-            var supplierContoh = await _context.Suppliers.FirstOrDefaultAsync();
-            var lokasiContoh = await _context.Lokasis.FirstOrDefaultAsync();
+            var kategoriContoh = await _context.Kategoris.OrderBy(x => x.Id).FirstOrDefaultAsync();
+            var supplierContoh = await _context.Suppliers.OrderBy(x => x.Id).FirstOrDefaultAsync();
+            var lokasiContoh = await _context.Lokasis.OrderBy(x => x.Id).FirstOrDefaultAsync();
 
             worksheet.Cells[2, 1].Value = "BRG-001";
             worksheet.Cells[2, 2].Value = "Contoh Barang";

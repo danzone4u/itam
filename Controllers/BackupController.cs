@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +30,7 @@ namespace MyGudang.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var setting = await _context.BackupSettings.FirstOrDefaultAsync();
+            var setting = await _context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             if (setting == null)
             {
                 setting = new BackupSetting();
@@ -70,7 +70,7 @@ namespace MyGudang.Controllers
                 await cmd.ExecuteNonQueryAsync();
 
                 // Update last backup time
-                var setting = await _context.BackupSettings.FirstOrDefaultAsync();
+                var setting = await _context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 if (setting != null)
                 {
                     setting.LastBackupAt = DateTime.Now;
@@ -199,7 +199,7 @@ namespace MyGudang.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleAutoBackup()
         {
-            var setting = await _context.BackupSettings.FirstOrDefaultAsync();
+            var setting = await _context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             if (setting != null)
             {
                 setting.AutoBackupEnabled = !setting.AutoBackupEnabled;
@@ -218,7 +218,7 @@ namespace MyGudang.Controllers
             if (hours < 1) hours = 1;
             if (hours > 168) hours = 168; // max 1 week
 
-            var setting = await _context.BackupSettings.FirstOrDefaultAsync();
+            var setting = await _context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             if (setting != null)
             {
                 setting.IntervalHours = hours;

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyGudang.Data;
@@ -18,7 +18,7 @@ namespace MyGudang.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var setting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var setting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             if (setting == null)
             {
                 setting = new SuratSetting();
@@ -42,7 +42,7 @@ namespace MyGudang.Controllers
         {
             if (ModelState.IsValid)
             {
-                var existing = await _context.SuratSettings.FirstOrDefaultAsync();
+                var existing = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 if (existing != null)
                 {
                     existing.PrefixSuratJalan = model.PrefixSuratJalan;

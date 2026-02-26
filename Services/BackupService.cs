@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using MyGudang.Data;
 
@@ -35,7 +35,7 @@ namespace MyGudang.Services
                 using var scope = _serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                var setting = await context.BackupSettings.FirstOrDefaultAsync();
+                var setting = await context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 if (setting == null || !setting.AutoBackupEnabled) return;
 
                 var now = DateTime.Now;

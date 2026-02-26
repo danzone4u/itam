@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +50,7 @@ namespace MyGudang.Controllers
                 return RedirectToAction(nameof(Create));
             }
 
-            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             var baseCount = await _context.Peminjamans.CountAsync();
             var noPeminjaman = GenerateNoPeminjaman(suratSetting, baseCount + 1);
 
@@ -159,9 +159,9 @@ namespace MyGudang.Controllers
         {
             var item = await _context.Peminjamans.Include(p => p.Barang).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null) return NotFound();
-            ViewBag.Kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
+            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
             
-            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             var count = await _context.Peminjamans.Where(b => b.Id <= id).CountAsync();
             ViewBag.NoSuratPeminjaman = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SP");
             

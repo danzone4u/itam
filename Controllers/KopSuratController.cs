@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyGudang.Data;
@@ -18,7 +18,7 @@ namespace MyGudang.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var kop = await _context.KopSurats.FirstOrDefaultAsync();
+            var kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync();
             if (kop == null)
             {
                 kop = new KopSurat();
@@ -32,7 +32,7 @@ namespace MyGudang.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(KopSurat model)
         {
-            var kop = await _context.KopSurats.FirstOrDefaultAsync();
+            var kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync();
             if (kop == null)
             {
                 _context.KopSurats.Add(model);

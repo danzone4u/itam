@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -117,7 +117,7 @@ namespace MyGudang.Controllers
                 .FirstOrDefaultAsync(p => p.Id == id);
             if (item == null) return NotFound();
 
-            var kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
+            var kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Kop = kop;
             return View(item);
         }

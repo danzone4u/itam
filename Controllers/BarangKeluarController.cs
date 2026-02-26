@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +50,7 @@ namespace MyGudang.Controllers
                 }
 
                 var count = await _context.BarangKeluars.CountAsync() + 1;
-                var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+                var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 barangKeluar.NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SJ");
                 barangKeluar.CreatedAt = DateTime.Now;
 
@@ -116,7 +116,7 @@ namespace MyGudang.Controllers
                 if (barang == null) continue;
 
                 baseCount++;
-                var suratSetting2 = await _context.SuratSettings.FirstOrDefaultAsync();
+                var suratSetting2 = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 var bk = new BarangKeluar
                 {
                     BarangId = kvp.Key,
@@ -268,10 +268,10 @@ namespace MyGudang.Controllers
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
             if (bk == null) return NotFound();
             
-            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             var count = await _context.BarangKeluars.Where(b => b.Id <= id).CountAsync(); // Approximate count for this record
             
-            ViewBag.Kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
+            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == id).Select(s => s.SerialNumber).ToListAsync();
             ViewBag.NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SJ");
             
@@ -283,10 +283,10 @@ namespace MyGudang.Controllers
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
             if (bk == null) return NotFound();
             
-            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             var count = await _context.BarangKeluars.Where(b => b.Id <= id).CountAsync(); // Approximate count for this record
             
-            ViewBag.Kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
+            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == id).Select(s => s.SerialNumber).ToListAsync();
             ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "STB");
             

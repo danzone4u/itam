@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -137,10 +137,10 @@ namespace MyGudang.Controllers
                 .FirstOrDefaultAsync(bk => bk.Id == id);
             if (item == null) return NotFound();
 
-            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             var count = await _context.BarangKembalis.Where(b => b.Id <= id).CountAsync();
 
-            var kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
+            var kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Kop = kop;
             ViewBag.NoSuratKembali = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SK");
 
