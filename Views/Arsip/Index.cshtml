@@ -10,20 +10,50 @@
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="50">No</th><th>Nama Dokumen</th><th>Jenis</th><th>Keterangan</th><th>Tanggal</th><th width="180">Aksi</th></tr>
+                <tr><th width="50">No</th><th>Nama Dokumen</th><th>No. Dokumen</th><th>Jenis</th><th>File</th><th>Keterangan</th><th>Tanggal</th><th width="150">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
                 @foreach (var item in Model)
                 {
+                    var jenisBadge = (item.JenisDokumen ?? "") switch {
+                        "Surat Jalan" => "badge-info",
+                        "BAST (Serah Terima)" => "badge-secondary",
+                        "Surat Peminjaman" => "badge-primary",
+                        "Surat Pengembalian" => "badge-success",
+                        "BA Peremajaan" => "badge-purple",
+                        "Stok Opname" => "badge-warning",
+                        "Invoice" or "Purchase Order" or "Faktur" or "Kwitansi" => "badge-danger",
+                        _ => "badge-dark"
+                    };
                     <tr>
-                        <td>@(no++)</td><td>@item.NamaDokumen</td><td><span class="badge bg-info">@item.JenisDokumen</span></td><td>@item.Keterangan</td><td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>@(no++)</td>
+                        <td>@item.NamaDokumen</td>
+                        <td><small class="text-muted">@(item.NomorDokumen ?? "-")</small></td>
+                        <td><span class="badge @jenisBadge">@(item.JenisDokumen ?? "-")</span></td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.NamaFile))
+                            {
+                                <small><i class="fas fa-paperclip"></i> @item.NamaFile</small>
+                            }
+                            else if (!string.IsNullOrEmpty(item.FilePath))
+                            {
+                                <small><i class="fas fa-paperclip"></i> File</small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">-</small>
+                            }
+                        </td>
+                        <td><small>@item.Keterangan</small></td>
+                        <td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td>
                             @if (!string.IsNullOrEmpty(item.FilePath))
                             {
-                                <a href="@Url.Action("Download", new { id = item.Id })" class="btn btn-success btn-xs"><i class="fas fa-download"></i></a>
+                                <a href="@Url.Action("Download", new { id = item.Id })" class="btn btn-success btn-xs" title="Download"><i class="fas fa-download"></i></a>
+                                <a href="@item.FilePath" target="_blank" class="btn btn-info btn-xs" title="Lihat"><i class="fas fa-eye"></i></a>
                             }
-                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs"><i class="fas fa-edit"></i></a>
+                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
                             <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
                         </td>
                     </tr>

@@ -45,6 +45,7 @@ namespace MyGudang.Controllers
                     using var stream = new FileStream(path, FileMode.Create);
                     await dokumenFile.CopyToAsync(stream);
                     arsip.FilePath = "/arsip/" + fileName;
+                    arsip.NamaFile = dokumenFile.FileName;
                 }
                 arsip.CreatedAt = DateTime.Now;
                 _context.Add(arsip);

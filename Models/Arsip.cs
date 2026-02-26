@@ -11,6 +11,10 @@ namespace MyGudang.Models
         [StringLength(200)]
         public string NamaDokumen { get; set; } = string.Empty;
 
+        [Display(Name = "Nomor Dokumen")]
+        [StringLength(100)]
+        public string? NomorDokumen { get; set; }
+
         [Display(Name = "Jenis Dokumen")]
         [StringLength(100)]
         public string? JenisDokumen { get; set; }
@@ -18,6 +22,10 @@ namespace MyGudang.Models
         [Display(Name = "File")]
         [StringLength(500)]
         public string? FilePath { get; set; }
+
+        [Display(Name = "Nama File Asli")]
+        [StringLength(300)]
+        public string? NamaFile { get; set; }
 
         [Display(Name = "Keterangan")]
         [StringLength(500)]

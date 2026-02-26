@@ -6,11 +6,37 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="NamaDokumen"></label><input asp-for="NamaDokumen" class="form-control" /><span asp-validation-for="NamaDokumen" class="text-danger"></span></div></div>
-                <div class="col-md-6"><div class="form-group"><label asp-for="JenisDokumen"></label>
-                    <select asp-for="JenisDokumen" class="form-control"><option value="">-- Pilih --</option><option>Surat Jalan</option><option>Surat Terima</option><option>Invoice</option><option>Laporan</option><option>Lainnya</option></select>
+                <div class="col-md-3"><div class="form-group"><label asp-for="NomorDokumen"></label><input asp-for="NomorDokumen" class="form-control" placeholder="Opsional" /></div></div>
+                <div class="col-md-3"><div class="form-group"><label asp-for="JenisDokumen"></label>
+                    <select asp-for="JenisDokumen" class="form-control">
+                        <option value="">-- Pilih --</option>
+                        <optgroup label="Surat Gudang">
+                            <option>Surat Jalan</option>
+                            <option>BAST (Serah Terima)</option>
+                            <option>Surat Peminjaman</option>
+                            <option>Surat Pengembalian</option>
+                            <option>BA Peremajaan</option>
+                            <option>Stok Opname</option>
+                        </optgroup>
+                        <optgroup label="Dokumen Keuangan">
+                            <option>Invoice</option>
+                            <option>Purchase Order</option>
+                            <option>Faktur</option>
+                            <option>Kwitansi</option>
+                        </optgroup>
+                        <optgroup label="Dokumen Lain">
+                            <option>Laporan</option>
+                            <option>Memo Internal</option>
+                            <option>Surat Masuk</option>
+                            <option>Surat Keluar</option>
+                            <option>Kontrak</option>
+                            <option>Foto/Dokumentasi</option>
+                            <option>Lainnya</option>
+                        </optgroup>
+                    </select>
                 </div></div>
             </div>
-            <div class="form-group"><label>Upload File</label><input type="file" name="dokumenFile" class="form-control" /></div>
+            <div class="form-group"><label>Upload File</label><input type="file" name="dokumenFile" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip,.rar" /><small class="text-muted">Format: PDF, Word, Excel, Gambar, ZIP (maks 10MB)</small></div>
             <div class="form-group"><label asp-for="Keterangan"></label><textarea asp-for="Keterangan" class="form-control" rows="3"></textarea></div>
         </div>
         <div class="card-footer"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
