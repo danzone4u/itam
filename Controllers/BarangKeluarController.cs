@@ -276,8 +276,14 @@ namespace MyGudang.Controllers
         {
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
             if (bk == null) return NotFound();
+            
+            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var count = await _context.BarangKeluars.Where(b => b.Id <= id).CountAsync(); // Approximate count for this record
+            
             ViewBag.Kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == id).Select(s => s.SerialNumber).ToListAsync();
+            ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "BAST");
+            
             return View(bk);
         }
 
