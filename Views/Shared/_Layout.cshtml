@@ -310,33 +310,21 @@
                         var $th = $($table.find('thead tr.dt-filter-row th').eq(idx));
                         var header = $headerRow.find('th').eq(idx).text().trim();
 
-                        // Skip columns: No, Aksi, checkboxes, or columns with few unique values that are just numbers
-                        if (!header || header === 'No' || header === 'Aksi' || header === '#' || header.length < 2) {
+                        // Skip columns that shouldn't be filtered like No, Aksi, Stok, Jumlah
+                        if (!header || header === 'No' || header === 'Aksi' || header === '#' || header.toLowerCase() === 'stok' || header.toLowerCase() === 'jumlah' || header.length < 2) {
                             $th.html('');
                             return;
                         }
 
-                        var uniqueVals = [];
-                        column.data().each(function(val) {
-                            var text = $('<div>').html(val).text().trim();
-                            if (text && text !== '-' && uniqueVals.indexOf(text) === -1) uniqueVals.push(text);
+                        var input = $('<input type="text" class="form-control form-control-sm dt-column-filter" placeholder="Cari..." />');
+                        $th.html(input);
+                        
+                        // Apply search on typing or changing
+                        input.on('keyup change clear', function () {
+                            if (column.search() !== this.value) {
+                                column.search(this.value).draw();
+                            }
                         });
-
-                        // Only add dropdown if there are 2-50 unique values (useful for filtering)
-                        if (uniqueVals.length >= 2 && uniqueVals.length <= 50) {
-                            uniqueVals.sort();
-                            var select = $('<select class="form-control form-control-sm dt-column-filter"><option value="">Semua</option></select>');
-                            uniqueVals.forEach(function(val) {
-                                select.append('<option value="' + val + '">' + val + '</option>');
-                            });
-                            $th.html(select);
-                            select.on('change', function() {
-                                var val = $(this).val();
-                                column.search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw();
-                            });
-                        } else {
-                            $th.html('');
-                        }
                     });
                 }
             });
