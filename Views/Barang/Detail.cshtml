@@ -2,7 +2,12 @@
 @{
     ViewData["Title"] = "Detail Histori Barang";
     var historiMasuk = ViewBag.HistoriMasuk as IEnumerable<MyGudang.Models.BarangMasuk> ?? new List<MyGudang.Models.BarangMasuk>();
+    var historiKembali = ViewBag.HistoriKembali as IEnumerable<MyGudang.Models.BarangKembali> ?? new List<MyGudang.Models.BarangKembali>();
     var historiKeluar = ViewBag.HistoriKeluar as IEnumerable<MyGudang.Models.BarangKeluar> ?? new List<MyGudang.Models.BarangKeluar>();
+
+    var combinedMasuk = historiMasuk.Select(m => new { Tanggal = m.TanggalMasuk, Jumlah = m.Jumlah, Lokasi = m.Lokasi?.NamaLokasi, Keterangan = m.Keterangan, Jenis = "Baru" })
+        .Concat(historiKembali.Select(k => new { Tanggal = k.TanggalKembali, Jumlah = k.Jumlah, Lokasi = "Gudang Utama", Keterangan = k.Keterangan ?? "Pengembalian", Jenis = "Retur" }))
+        .OrderByDescending(x => x.Tanggal).ToList();
 }
 
 <div class="row">
@@ -50,24 +55,26 @@
                     <thead>
                         <tr>
                             <th>Tanggal</th>
+                            <th>Status / Jenis</th>
                             <th>Jumlah</th>
                             <th>Ruangan</th>
                             <th>Keterangan</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @if (!historiMasuk.Any())
+                        @if (!combinedMasuk.Any())
                         {
-                            <tr><td colspan="4" class="text-center text-muted">Belum ada riwayat masuk</td></tr>
+                            <tr><td colspan="5" class="text-center text-muted">Belum ada riwayat masuk</td></tr>
                         }
                         else
                         {
-                            foreach (var item in historiMasuk.Take(10))
+                            foreach (var item in combinedMasuk.Take(10))
                             {
                                 <tr>
-                                    <td>@item.TanggalMasuk.ToString("dd MMM yyyy")</td>
+                                    <td>@item.Tanggal.ToString("dd MMM yyyy")</td>
+                                    <td><span class="badge @(item.Jenis == "Retur" ? "bg-info" : "bg-primary")">@item.Jenis</span></td>
                                     <td><span class="badge bg-success">+@item.Jumlah</span></td>
-                                    <td>@(item.Lokasi?.NamaLokasi ?? "Gudang Utama")</td>
+                                    <td>@(item.Lokasi ?? "Gudang Utama")</td>
                                     <td>@item.Keterangan</td>
                                 </tr>
                             }

@@ -21,11 +21,12 @@
                     int no = 1;
                     foreach (var t in transactions)
                     {
-                        <tr class="@(t.Tipe == "Masuk" ? "table-success" : "table-danger")">
+                        bool isMasuk = t.Tipe == "Masuk" || t.Tipe == "Retur";
+                        <tr class="@(isMasuk ? "table-success" : "table-danger")">
                             <td>@(no++)</td>
                             <td>@(((DateTime)t.Tanggal).ToString("dd/MM/yyyy"))</td>
-                            <td><span class="badge @(t.Tipe == "Masuk" ? "bg-success" : "bg-danger")">@t.Tipe</span></td>
-                            <td>@(t.Tipe == "Masuk" ? "+" : "-")@t.Jumlah</td>
+                            <td><span class="badge @(isMasuk ? "bg-success" : "bg-danger")">@t.Tipe</span></td>
+                            <td>@(isMasuk ? "+" : "-")@t.Jumlah</td>
                             <td>@t.Keterangan</td>
                         </tr>
                     }

@@ -148,9 +148,16 @@ namespace MyGudang.Controllers
                 .OrderByDescending(p => p.TanggalPinjam)
                 .ToListAsync();
 
+            // Ambil histori kembali
+            var historiKembali = await _context.BarangKembalis
+                .Where(bk => bk.BarangId == id)
+                .OrderByDescending(bk => bk.TanggalKembali)
+                .ToListAsync();
+
             ViewBag.HistoriMasuk = historiMasuk;
             ViewBag.HistoriKeluar = historiKeluar;
             ViewBag.HistoriPinjam = historiPinjam;
+            ViewBag.HistoriKembali = historiKembali;
 
             return View(barang);
         }
