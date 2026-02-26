@@ -45,7 +45,6 @@
         <tr><td width="150"><strong>No. Surat Jalan</strong></td><td>: @Model.NoSuratJalan</td></tr>
         <tr><td><strong>Tanggal</strong></td><td>: @Model.TanggalKeluar.ToString("dd MMMM yyyy")</td></tr>
         <tr><td><strong>Penerima</strong></td><td>: @Model.Penerima</td></tr>
-        <tr><td><strong>PIC / Pembawa</strong></td><td>: @(string.IsNullOrEmpty(Model.Pic) ? "-" : Model.Pic)</td></tr>
         <tr><td><strong>No. HP</strong></td><td>: @Model.NoHpPenerima</td></tr>
         <tr><td><strong>Alamat</strong></td><td>: @Model.Alamat</td></tr>
     </table>
@@ -69,7 +68,7 @@
         <div>
             <p><strong>Pengirim</strong></p>
             <br><br><br><br>
-            <p>(@(kop.NamaPengirim ?? "........................................"))</p>
+            <p>(@(!string.IsNullOrEmpty(Model.Pic) ? Model.Pic : (kop.NamaPengirim ?? "........................................")))</p>
             @if (!string.IsNullOrEmpty(kop.JabatanPengirim))
             {
                 <p style="font-size:12px; color:#666;">@kop.JabatanPengirim</p>
