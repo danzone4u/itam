@@ -156,10 +156,19 @@ else
                         var ctx = document.getElementById('chart_@chart.Id');
                         if (!ctx) return;
                         var chartType = '@chart.TipeChart';
+                        var isHorizontal = false;
+                        if (chartType === 'bar-horizontal') {
+                            chartType = 'bar';
+                            isHorizontal = true;
+                        }
+
                         var sumber = '@chart.SumberData';
                         var color1 = '@chart.WarnaUtama' || '#007bff';
                         var color2 = '@chart.WarnaKedua' || '#dc3545';
                         var config = { type: chartType, options: { responsive: true } };
+                        if (isHorizontal) {
+                            config.options.indexAxis = 'y';
+                        }
 
                         if (sumber === 'masuk_keluar') {
                             config.data = {
@@ -170,7 +179,7 @@ else
                                 ]
                             };
                             if (chartType === 'bar' || chartType === 'line') {
-                                config.options.scales = { y: { beginAtZero: true } };
+                                config.options.scales = isHorizontal ? { x: { beginAtZero: true } } : { y: { beginAtZero: true } };
                             }
                         } else if (sumber === 'per_kategori') {
                             config.data = {
@@ -181,10 +190,18 @@ else
                         } else if (sumber === 'stok_barang') {
                             config.data = {
                                 labels: data.stokLabels,
-                                datasets: [{ label: 'Stok', data: data.stokValues, backgroundColor: color1 + 'B3', borderColor: color1, borderWidth: 1 }]
+                                datasets: [{ label: 'Stok Terbanyak', data: data.stokValues, backgroundColor: color1 + 'B3', borderColor: color1, borderWidth: 1 }]
                             };
                             if (chartType === 'bar' || chartType === 'line') {
-                                config.options.scales = { y: { beginAtZero: true } };
+                                config.options.scales = isHorizontal ? { x: { beginAtZero: true } } : { y: { beginAtZero: true } };
+                            }
+                        } else if (sumber === 'top_keluar') {
+                            config.data = {
+                                labels: data.topKeluarLabels,
+                                datasets: [{ label: 'Total Barang Keluar', data: data.topKeluarValues, backgroundColor: color2 + 'B3', borderColor: color2, borderWidth: 1 }]
+                            };
+                            if (chartType === 'bar' || chartType === 'line') {
+                                config.options.scales = isHorizontal ? { x: { beginAtZero: true } } : { y: { beginAtZero: true } };
                             }
                         }
                         new Chart(ctx, config);

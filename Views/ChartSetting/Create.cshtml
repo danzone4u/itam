@@ -9,6 +9,7 @@
                 <div class="col-md-6"><div class="form-group"><label asp-for="TipeChart"></label>
                     <select asp-for="TipeChart" class="form-control">
                         <option value="bar">Bar Chart</option>
+                        <option value="bar-horizontal">Bar Horizontal</option>
                         <option value="line">Line Chart</option>
                         <option value="doughnut">Doughnut Chart</option>
                         <option value="pie">Pie Chart</option>
@@ -22,7 +23,8 @@
                     <select asp-for="SumberData" class="form-control">
                         <option value="masuk_keluar">Barang Masuk vs Keluar (per bulan)</option>
                         <option value="per_kategori">Barang per Kategori</option>
-                        <option value="stok_barang">Stok Barang Top 10</option>
+                        <option value="stok_barang">Stok Barang Terbanyak (Top 10)</option>
+                        <option value="top_keluar">Barang Paling Sering Keluar (Top 10)</option>
                     </select>
                 </div></div>
                 <div class="col-md-2"><div class="form-group"><label asp-for="JumlahBulan"></label><input asp-for="JumlahBulan" class="form-control" type="number" min="1" max="24" /></div></div>

@@ -92,6 +92,15 @@ namespace MyGudang.Controllers
                 .Select(b => new { Label = b.NamaBarang, Value = b.Stok })
                 .ToListAsync();
 
+            // Barang paling sering keluar
+            var topKeluarData = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .GroupBy(b => b.Barang!.NamaBarang)
+                .Select(g => new { Label = g.Key, Value = g.Sum(x => x.Jumlah) })
+                .OrderByDescending(x => x.Value)
+                .Take(10)
+                .ToListAsync();
+
             return Json(new
             {
                 labels,
@@ -100,7 +109,9 @@ namespace MyGudang.Controllers
                 kategoriLabels = kategoriData.Select(k => k.Label),
                 kategoriCounts = kategoriData.Select(k => k.Count),
                 stokLabels = stokData.Select(s => s.Label),
-                stokValues = stokData.Select(s => s.Value)
+                stokValues = stokData.Select(s => s.Value),
+                topKeluarLabels = topKeluarData.Select(x => x.Label),
+                topKeluarValues = topKeluarData.Select(x => x.Value)
             });
         }
     }

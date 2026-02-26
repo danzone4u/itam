@@ -22,11 +22,11 @@
                         <td><strong>@item.NamaChart</strong></td>
                         <td>
                             <span class="badge bg-primary">
-                                @(item.TipeChart == "bar" ? "Bar" : item.TipeChart == "line" ? "Line" : item.TipeChart == "doughnut" ? "Doughnut" : item.TipeChart == "pie" ? "Pie" : item.TipeChart == "polarArea" ? "Polar Area" : "Radar")
+                                @(item.TipeChart == "bar" ? "Bar" : item.TipeChart == "bar-horizontal" ? "Bar (Horizontal)" : item.TipeChart == "line" ? "Line" : item.TipeChart == "doughnut" ? "Doughnut" : item.TipeChart == "pie" ? "Pie" : item.TipeChart == "polarArea" ? "Polar Area" : "Radar")
                             </span>
                         </td>
                         <td>
-                            @(item.SumberData == "masuk_keluar" ? "Barang Masuk vs Keluar" : item.SumberData == "per_kategori" ? "Barang per Kategori" : "Stok Barang Top 10")
+                            @(item.SumberData == "masuk_keluar" ? "Barang Masuk vs Keluar" : item.SumberData == "per_kategori" ? "Barang per Kategori" : item.SumberData == "stok_barang" ? "Stok Barang Top 10" : "Barang Sering Keluar (Top 10)")
                         </td>
                         <td>@item.JumlahBulan</td>
                         <td>col-md-@item.Lebar</td>
