@@ -1,0 +1,98 @@
+@model MyGudang.Models.Peremajaan
+@{ ViewData["Title"] = "Catat Peremajaan Barang"; }
+<div class="card card-outline card-purple">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-sync-alt"></i> Catat Peremajaan Barang</h3></div>
+    <form asp-action="Create" method="post">@Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="callout callout-info">
+                <small><i class="fas fa-info-circle"></i> Peremajaan digunakan untuk mencatat barang lama yang dikembalikan setelah penggantian/upgrade. Berbeda dengan Barang Kembali yang bersifat jangka pendek.</small>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="BarangKeluarId">Referensi Barang Keluar</label>
+                        <select asp-for="BarangKeluarId" asp-items="@ViewBag.BarangKeluars" class="form-control select2">
+                            <option value="">-- Pilih (opsional) --</option>
+                        </select>
+                        <small class="text-muted">Pilih transaksi barang keluar yang terkait</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="BarangId">Barang</label>
+                        <select asp-for="BarangId" asp-items="@ViewBag.Barangs" class="form-control select2" required>
+                            <option value="">-- Pilih Barang --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="Jumlah"></label>
+                        <input asp-for="Jumlah" class="form-control" value="@(ViewBag.PrefilledJumlah ?? 1)" required />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="TanggalPeremajaan"></label>
+                        <input asp-for="TanggalPeremajaan" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="DikembalikanOleh"></label>
+                        <input asp-for="DikembalikanOleh" class="form-control" value="@ViewBag.PrefilledPenerima" required />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Kondisi">Kondisi Barang</label>
+                        <select asp-for="Kondisi" class="form-control" required>
+                            <option value="">-- Pilih Kondisi --</option>
+                            <option value="Layak Pakai">Layak Pakai</option>
+                            <option value="Perlu Perbaikan">Perlu Perbaikan</option>
+                            <option value="Rusak">Rusak</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="TindakLanjut">Tindak Lanjut</label>
+                        <select asp-for="TindakLanjut" class="form-control" required>
+                            <option value="">-- Pilih Tindak Lanjut --</option>
+                            <option value="Masuk Inventaris">Masuk Inventaris (stok bertambah)</option>
+                            <option value="Disposal">Disposal / Penghapusan</option>
+                            <option value="Perbaikan">Kirim Perbaikan</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Keterangan"></label>
+                <textarea asp-for="Keterangan" class="form-control" rows="3" placeholder="Alasan peremajaan, kondisi selengkapnya..."></textarea>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    $('select[name="BarangKeluarId"]').on('change', function() {
+        var id = $(this).val();
+        if (id) {
+            $.getJSON('@Url.Action("GetBarangKeluarDetail")' + '?id=' + id, function(data) {
+                $('select[name="BarangId"]').val(data.barangId).trigger('change');
+                $('input[name="Jumlah"]').val(data.jumlah);
+                $('input[name="DikembalikanOleh"]').val(data.penerima);
+            });
+        }
+    });
+</script>
+}

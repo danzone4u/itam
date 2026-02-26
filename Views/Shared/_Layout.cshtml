@@ -132,6 +132,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="@Url.Action("Index","Peremajaan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Peremajaan" ? "active" : "")">
+                            <i class="nav-icon fas fa-sync-alt" style="color:#6f42c1;"></i>
+                            <p>Peremajaan Barang</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="@Url.Action("Index","Lokasi")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lokasi" ? "active" : "")">
                             <i class="nav-icon fas fa-door-open" style="color:#17a2b8;"></i>
                             <p>Ruangan</p>
@@ -275,17 +281,65 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script>
     $(document).ready(function () {
-        $('.data-table').DataTable({
-            "language": {
-                "search": "Cari:",
-                "lengthMenu": "Tampilkan _MENU_ data",
-                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                "paginate": { "first": "Pertama", "last": "Terakhir", "next": "Berikutnya", "previous": "Sebelumnya" },
-                "emptyTable": "Tidak ada data",
-                "zeroRecords": "Data tidak ditemukan"
-            },
-            "responsive": true,
-            "autoWidth": false
+        $('.data-table').each(function() {
+            var $table = $(this);
+            // Add filter row in thead
+            var $headerRow = $table.find('thead tr').first();
+            var $filterRow = $('<tr class="dt-filter-row"></tr>');
+            $headerRow.find('th').each(function() {
+                $filterRow.append('<th></th>');
+            });
+            $table.find('thead').append($filterRow);
+
+            var dt = $table.DataTable({
+                "language": {
+                    "search": "Cari:",
+                    "lengthMenu": "Tampilkan _MENU_ data",
+                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    "paginate": { "first": "Pertama", "last": "Terakhir", "next": "Berikutnya", "previous": "Sebelumnya" },
+                    "emptyTable": "Tidak ada data",
+                    "zeroRecords": "Data tidak ditemukan"
+                },
+                "responsive": true,
+                "autoWidth": false,
+                "orderCellsTop": true,
+                "initComplete": function() {
+                    var api = this.api();
+                    api.columns().every(function(idx) {
+                        var column = this;
+                        var $th = $($table.find('thead tr.dt-filter-row th').eq(idx));
+                        var header = $headerRow.find('th').eq(idx).text().trim();
+
+                        // Skip columns: No, Aksi, checkboxes, or columns with few unique values that are just numbers
+                        if (!header || header === 'No' || header === 'Aksi' || header === '#' || header.length < 2) {
+                            $th.html('');
+                            return;
+                        }
+
+                        var uniqueVals = [];
+                        column.data().each(function(val) {
+                            var text = $('<div>').html(val).text().trim();
+                            if (text && text !== '-' && uniqueVals.indexOf(text) === -1) uniqueVals.push(text);
+                        });
+
+                        // Only add dropdown if there are 2-50 unique values (useful for filtering)
+                        if (uniqueVals.length >= 2 && uniqueVals.length <= 50) {
+                            uniqueVals.sort();
+                            var select = $('<select class="form-control form-control-sm dt-column-filter"><option value="">Semua</option></select>');
+                            uniqueVals.forEach(function(val) {
+                                select.append('<option value="' + val + '">' + val + '</option>');
+                            });
+                            $th.html(select);
+                            select.on('change', function() {
+                                var val = $(this).val();
+                                column.search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw();
+                            });
+                        } else {
+                            $th.html('');
+                        }
+                    });
+                }
+            });
         });
         $('.select2').select2({ theme: 'bootstrap4', placeholder: '-- Pilih --', allowClear: true });
     });

@@ -55,6 +55,23 @@
     white-space: nowrap;
 }
 
+.dt-filter-row th {
+    padding: 4px 5px !important;
+    background: #f8f9fa;
+}
+
+.dt-column-filter {
+    font-size: 12px !important;
+    padding: 2px 5px !important;
+    height: 28px !important;
+}
+
+@media print {
+    .dt-filter-row {
+        display: none !important;
+    }
+}
+
 /* Print Styles */
 @media print {
     @page {
