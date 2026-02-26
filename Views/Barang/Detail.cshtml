@@ -6,7 +6,7 @@
     var historiKeluar = ViewBag.HistoriKeluar as IEnumerable<MyGudang.Models.BarangKeluar> ?? new List<MyGudang.Models.BarangKeluar>();
 
     var combinedMasuk = historiMasuk.Select(m => new { Tanggal = m.TanggalMasuk, Jumlah = m.Jumlah, Lokasi = m.Lokasi?.NamaLokasi, Keterangan = m.Keterangan, Jenis = "Baru" })
-        .Concat(historiKembali.Select(k => new { Tanggal = k.TanggalKembali, Jumlah = k.Jumlah, Lokasi = "Gudang Utama", Keterangan = k.Keterangan ?? "Pengembalian", Jenis = "Retur" }))
+        .Concat(historiKembali.Select(k => new { Tanggal = k.TanggalKembali, Jumlah = k.Jumlah, Lokasi = (string?)"Gudang Utama", Keterangan = (string?)(k.Keterangan ?? "Pengembalian"), Jenis = "Retur" }))
         .OrderByDescending(x => x.Tanggal).ToList();
 }
 
