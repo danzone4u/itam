@@ -29,7 +29,11 @@ namespace MyGudang.Controllers
             return View(await query.OrderByDescending(a => a.CreatedAt).ToListAsync());
         }
 
-        public IActionResult Create() => View();
+        public async Task<IActionResult> Create()
+        {
+            await PopulateNomorDokumens();
+            return View();
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -53,6 +57,7 @@ namespace MyGudang.Controllers
                 TempData["Success"] = "Arsip berhasil ditambahkan!";
                 return RedirectToAction(nameof(Index));
             }
+            await PopulateNomorDokumens();
             return View(arsip);
         }
 
@@ -61,7 +66,18 @@ namespace MyGudang.Controllers
             if (id == null) return NotFound();
             var arsip = await _context.Arsips.FindAsync(id);
             if (arsip == null) return NotFound();
+            await PopulateNomorDokumens();
             return View(arsip);
+        }
+
+        private async Task PopulateNomorDokumens()
+        {
+            var noSuratJalan = await _context.BarangKeluars.Where(b => !string.IsNullOrEmpty(b.NoSuratJalan)).Select(b => b.NoSuratJalan!).Distinct().ToListAsync();
+            var noPeminjaman = await _context.Peminjamans.Where(p => !string.IsNullOrEmpty(p.NoPeminjaman)).Select(p => p.NoPeminjaman!).Distinct().ToListAsync();
+            var existingArsip = await _context.Arsips.Where(a => !string.IsNullOrEmpty(a.NomorDokumen)).Select(a => a.NomorDokumen!).Distinct().ToListAsync();
+            
+            var allNumbers = noSuratJalan.Concat(noPeminjaman).Concat(existingArsip).Distinct().OrderBy(n => n).ToList();
+            ViewBag.NomorDokumens = allNumbers;
         }
 
         [HttpPost]

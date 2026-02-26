@@ -7,7 +7,23 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="NamaDokumen"></label><input asp-for="NamaDokumen" class="form-control" /><span asp-validation-for="NamaDokumen" class="text-danger"></span></div></div>
-                <div class="col-md-6"><div class="form-group"><label asp-for="JenisDokumen"></label>
+                <div class="col-md-4"><div class="form-group"><label asp-for="NomorDokumen"></label>
+                    <select asp-for="NomorDokumen" class="form-control select2-tags" style="width: 100%;">
+                        <option value="">-- Ketik atau Pilih --</option>
+                        @if (ViewBag.NomorDokumens != null)
+                        {
+                            foreach (var n in (List<string>)ViewBag.NomorDokumens)
+                            {
+                                <option value="@n" selected="@(Model?.NomorDokumen == n ? "selected" : null)">@n</option>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(Model?.NomorDokumen) && ((List<string>)ViewBag.NomorDokumens)?.Contains(Model.NomorDokumen) != true)
+                        {
+                            <option value="@Model.NomorDokumen" selected="selected">@Model.NomorDokumen</option>
+                        }
+                    </select>
+                </div></div>
+                <div class="col-md-4"><div class="form-group"><label asp-for="JenisDokumen"></label>
                     <select asp-for="JenisDokumen" class="form-control"><option value="">-- Pilih --</option><option>Surat Jalan</option><option>Surat Terima</option><option>Invoice</option><option>Laporan</option><option>Lainnya</option></select>
                 </div></div>
             </div>
@@ -21,3 +37,16 @@
         <div class="card-footer"><button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Update</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('.select2-tags').select2({
+                theme: 'bootstrap4',
+                tags: true,
+                placeholder: 'Ketik baru atau pilih',
+                allowClear: true
+            });
+        });
+    </script>
+}

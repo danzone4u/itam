@@ -6,7 +6,18 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="NamaDokumen"></label><input asp-for="NamaDokumen" class="form-control" /><span asp-validation-for="NamaDokumen" class="text-danger"></span></div></div>
-                <div class="col-md-3"><div class="form-group"><label asp-for="NomorDokumen"></label><input asp-for="NomorDokumen" class="form-control" placeholder="Opsional" /></div></div>
+                <div class="col-md-4"><div class="form-group"><label asp-for="NomorDokumen"></label>
+                    <select asp-for="NomorDokumen" class="form-control select2-tags" style="width: 100%;">
+                        <option value="">-- Ketik atau Pilih --</option>
+                        @if (ViewBag.NomorDokumens != null)
+                        {
+                            foreach (var n in (List<string>)ViewBag.NomorDokumens)
+                            {
+                                <option value="@n">@n</option>
+                            }
+                        }
+                    </select>
+                </div></div>
                 <div class="col-md-3"><div class="form-group"><label asp-for="JenisDokumen"></label>
                     <select asp-for="JenisDokumen" class="form-control">
                         <option value="">-- Pilih --</option>
@@ -42,3 +53,16 @@
         <div class="card-footer"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('.select2-tags').select2({
+                theme: 'bootstrap4',
+                tags: true,
+                placeholder: 'Ketik baru atau pilih',
+                allowClear: true
+            });
+        });
+    </script>
+}
