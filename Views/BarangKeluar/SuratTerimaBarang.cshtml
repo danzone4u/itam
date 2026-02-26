@@ -42,7 +42,8 @@
     <h2 style="text-align:center; margin-top:20px; font-weight:bold; margin-bottom:25px;">BERITA ACARA SERAH TERIMA BARANG</h2>
 
     <table style="width:100%; margin-bottom:20px;">
-        <tr><td width="150"><strong>No. Referensi</strong></td><td>: @Model.NoSuratJalan</td></tr>
+        <tr><td width="150"><strong>No. BAST</strong></td><td>: @(Model.NoSuratJalan?.Replace("SJ", "BAST") ?? "-")</td></tr>
+        <tr><td><strong>No. Referensi</strong></td><td>: @Model.NoSuratJalan</td></tr>
         <tr><td><strong>Tanggal Terima</strong></td><td>: @Model.TanggalKeluar.ToString("dd MMMM yyyy")</td></tr>
         <tr><td><strong>Diterima Oleh</strong></td><td>: @Model.Penerima</td></tr>
         <tr><td><strong>No. HP</strong></td><td>: @Model.NoHpPenerima</td></tr>
