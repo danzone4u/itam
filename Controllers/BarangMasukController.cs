@@ -264,13 +264,13 @@ namespace MyGudang.Controllers
             worksheet.Cells[1, 1].Value = "Kode Barang (*Wajib)";
             worksheet.Cells[1, 2].Value = "Nama Barang (*Wajib)";
             worksheet.Cells[1, 3].Value = "Kategori";
-            worksheet.Cells[1, 4].Value = "Supplier";
-            worksheet.Cells[1, 5].Value = "Satuan";
-            worksheet.Cells[1, 6].Value = "Jumlah (*Wajib)";
-            worksheet.Cells[1, 7].Value = "Tanggal Masuk (DD/MM/YYYY)";
-            worksheet.Cells[1, 8].Value = "Keterangan";
-            worksheet.Cells[1, 9].Value = "Lokasi Ruangan";
-            worksheet.Cells[1, 10].Value = "Serial Number (Pisahkan dengan koma)";
+            worksheet.Cells[1, 4].Value = "Serial Number (Pisahkan dengan koma)";
+            worksheet.Cells[1, 5].Value = "Supplier";
+            worksheet.Cells[1, 6].Value = "Satuan";
+            worksheet.Cells[1, 7].Value = "Jumlah (*Wajib)";
+            worksheet.Cells[1, 8].Value = "Tanggal Masuk (DD/MM/YYYY)";
+            worksheet.Cells[1, 9].Value = "Keterangan";
+            worksheet.Cells[1, 10].Value = "Lokasi Ruangan";
 
             worksheet.Cells["A1:J1"].Style.Font.Bold = true;
 
@@ -282,13 +282,13 @@ namespace MyGudang.Controllers
             worksheet.Cells[2, 1].Value = "BRG-001";
             worksheet.Cells[2, 2].Value = "Contoh Barang";
             worksheet.Cells[2, 3].Value = kategoriContoh?.NamaKategori ?? "IT";
-            worksheet.Cells[2, 4].Value = supplierContoh?.NamaSupplier ?? "PT Contoh";
-            worksheet.Cells[2, 5].Value = "Unit";
-            worksheet.Cells[2, 6].Value = 5;
-            worksheet.Cells[2, 7].Value = DateTime.Now.ToString("dd/MM/yyyy");
-            worksheet.Cells[2, 8].Value = "Stok awal";
-            worksheet.Cells[2, 9].Value = lokasiContoh?.NamaLokasi ?? "";
-            worksheet.Cells[2, 10].Value = "SN-001, SN-002, SN-003";
+            worksheet.Cells[2, 4].Value = "SN-001, SN-002, SN-003";
+            worksheet.Cells[2, 5].Value = supplierContoh?.NamaSupplier ?? "PT Contoh";
+            worksheet.Cells[2, 6].Value = "Unit";
+            worksheet.Cells[2, 7].Value = 5;
+            worksheet.Cells[2, 8].Value = DateTime.Now.ToString("dd/MM/yyyy");
+            worksheet.Cells[2, 9].Value = "Stok awal";
+            worksheet.Cells[2, 10].Value = lokasiContoh?.NamaLokasi ?? "";
 
             worksheet.Cells.AutoFitColumns();
 
@@ -334,13 +334,13 @@ namespace MyGudang.Controllers
                 var kodeBarang = worksheet.Cells[row, 1].Value?.ToString()?.Trim();
                 var namaBarang = worksheet.Cells[row, 2].Value?.ToString()?.Trim();
                 var kategoriNama = worksheet.Cells[row, 3].Value?.ToString()?.Trim();
-                var supplierNama = worksheet.Cells[row, 4].Value?.ToString()?.Trim();
-                var satuan = worksheet.Cells[row, 5].Value?.ToString()?.Trim();
-                var jumlahStr = worksheet.Cells[row, 6].Value?.ToString()?.Trim();
-                var tglStr = worksheet.Cells[row, 7].Value?.ToString()?.Trim();
-                var ket = worksheet.Cells[row, 8].Value?.ToString()?.Trim();
-                var lokasiNama = worksheet.Cells[row, 9].Value?.ToString()?.Trim();
-                var serialNumberStr = worksheet.Cells[row, 10].Value?.ToString()?.Trim();
+                var serialNumberStr = worksheet.Cells[row, 4].Value?.ToString()?.Trim();
+                var supplierNama = worksheet.Cells[row, 5].Value?.ToString()?.Trim();
+                var satuan = worksheet.Cells[row, 6].Value?.ToString()?.Trim();
+                var jumlahStr = worksheet.Cells[row, 7].Value?.ToString()?.Trim();
+                var tglStr = worksheet.Cells[row, 8].Value?.ToString()?.Trim();
+                var ket = worksheet.Cells[row, 9].Value?.ToString()?.Trim();
+                var lokasiNama = worksheet.Cells[row, 10].Value?.ToString()?.Trim();
 
                 if (string.IsNullOrEmpty(kodeBarang) || string.IsNullOrEmpty(jumlahStr)) continue;
 
