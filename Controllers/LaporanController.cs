@@ -88,8 +88,8 @@ namespace MyGudang.Controllers
             var row = 3;
             ws.Cell(row, 1).Value = "No"; ws.Cell(row, 2).Value = "Tanggal"; ws.Cell(row, 3).Value = "Kode Barang";
             ws.Cell(row, 4).Value = "Nama Barang"; ws.Cell(row, 5).Value = "Jumlah"; ws.Cell(row, 6).Value = "Penerima";
-            ws.Cell(row, 7).Value = "No Surat Jalan"; ws.Cell(row, 8).Value = "Keterangan";
-            ws.Range(row, 1, row, 8).Style.Font.Bold = true;
+            ws.Cell(row, 7).Value = "PIC"; ws.Cell(row, 8).Value = "No Surat Jalan"; ws.Cell(row, 9).Value = "Keterangan";
+            ws.Range(row, 1, row, 9).Style.Font.Bold = true;
 
             int no = 1;
             foreach (var item in data)
@@ -101,8 +101,9 @@ namespace MyGudang.Controllers
                 ws.Cell(row, 4).Value = item.Barang?.NamaBarang;
                 ws.Cell(row, 5).Value = item.Jumlah;
                 ws.Cell(row, 6).Value = item.Penerima;
-                ws.Cell(row, 7).Value = item.NoSuratJalan;
-                ws.Cell(row, 8).Value = item.Keterangan;
+                ws.Cell(row, 7).Value = item.Pic;
+                ws.Cell(row, 8).Value = item.NoSuratJalan;
+                ws.Cell(row, 9).Value = item.Keterangan;
             }
 
             ws.Columns().AdjustToContents();

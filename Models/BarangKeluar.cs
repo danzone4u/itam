@@ -41,6 +41,10 @@ namespace MyGudang.Models
         [StringLength(500)]
         public string? Keterangan { get; set; }
 
+        [Display(Name = "PIC / Pembawa Barang")]
+        [StringLength(100)]
+        public string? Pic { get; set; }
+
         [Display(Name = "No. Surat Jalan")]
         [StringLength(100)]
         public string? NoSuratJalan { get; set; }

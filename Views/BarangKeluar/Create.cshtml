@@ -6,8 +6,9 @@
             <div class="row mb-3">
                 <div class="col-md-3"><div class="form-group"><label>Tanggal Keluar</label><input type="date" name="tanggalKeluar" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required /></div></div>
                 <div class="col-md-3"><div class="form-group"><label>Penerima</label><input type="text" name="penerima" class="form-control" required /></div></div>
-                <div class="col-md-3"><div class="form-group"><label>No. HP Penerima</label><input type="text" name="noHpPenerima" class="form-control" placeholder="08xxxxxxxxxx" /></div></div>
-                <div class="col-md-3"><div class="form-group"><label>Alamat</label><input type="text" name="alamat" class="form-control" /></div></div>
+                <div class="col-md-2"><div class="form-group"><label>PIC</label><input type="text" name="pic" class="form-control" placeholder="Nama Pembawa" /></div></div>
+                <div class="col-md-2"><div class="form-group"><label>No. HP Penerima</label><input type="text" name="noHpPenerima" class="form-control" placeholder="08xx" /></div></div>
+                <div class="col-md-2"><div class="form-group"><label>Alamat</label><input type="text" name="alamat" class="form-control" /></div></div>
             </div>
             <div class="row mb-3">
                 <div class="col-md-4"><div class="form-group"><label>Ruangan Asal</label><select name="lokasiId" class="form-control"><option value="">-- Opsional --</option>@foreach (var item in (SelectList)ViewBag.Lokasis){<option value="@item.Value">@item.Text</option>}</select></div></div>

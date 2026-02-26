@@ -12,7 +12,7 @@
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="50">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th>Barang</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>No HP</th><th width="220">Aksi</th></tr>
+                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="50">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th>Barang</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="220">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
@@ -23,7 +23,7 @@
                         <td>@(no++)</td><td><span class="badge bg-secondary">@item.NoSuratJalan</span></td><td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td>
                         <td><span class="badge bg-danger">-@item.Jumlah</span></td>
                         <td>@(item.Lokasi?.NamaLokasi ?? "-")</td>
-                        <td>@item.Penerima</td><td>@item.NoHpPenerima</td>
+                        <td>@item.Penerima</td><td>@(item.Pic ?? "-")</td><td>@item.NoHpPenerima</td>
                         <td>
                             <a href="@Url.Action("SuratJalan", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat Jalan"><i class="fas fa-file-alt"></i> SJ</a>
                             <a href="@Url.Action("SuratTerimaBarang", new { id = item.Id })" class="btn btn-secondary btn-xs" title="Berita Acara Serah Terima"><i class="fas fa-receipt"></i> BAST</a>

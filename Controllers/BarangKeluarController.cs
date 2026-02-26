@@ -79,7 +79,7 @@ namespace MyGudang.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, int[] serialIds, DateTime tanggalKeluar,
-            string penerima, string? noHpPenerima, string? alamat, string? keteranganGlobal, int? lokasiId)
+            string penerima, string? noHpPenerima, string? alamat, string? keteranganGlobal, int? lokasiId, string? pic)
         {
             if ((barangIds == null || barangIds.Length == 0) && (serialIds == null || serialIds.Length == 0) || string.IsNullOrWhiteSpace(penerima))
             {
@@ -126,6 +126,7 @@ namespace MyGudang.Controllers
                     NoHpPenerima = noHpPenerima,
                     Alamat = alamat,
                     Keterangan = keteranganGlobal,
+                    Pic = pic,
             NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting2, baseCount, "SJ"),
             LokasiId = (lokasiId.HasValue && lokasiId.Value > 0) ? lokasiId : null,
             CreatedAt = DateTime.Now

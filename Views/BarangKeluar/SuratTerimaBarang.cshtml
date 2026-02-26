@@ -45,6 +45,7 @@
         <tr><td width="150"><strong>No. Referensi</strong></td><td>: @Model.NoSuratJalan</td></tr>
         <tr><td><strong>Tanggal Terima</strong></td><td>: @Model.TanggalKeluar.ToString("dd MMMM yyyy")</td></tr>
         <tr><td><strong>Diterima Oleh</strong></td><td>: @Model.Penerima</td></tr>
+        <tr><td><strong>PIC / Pembawa</strong></td><td>: @(string.IsNullOrEmpty(Model.Pic) ? "-" : Model.Pic)</td></tr>
         <tr><td><strong>No. HP</strong></td><td>: @Model.NoHpPenerima</td></tr>
         <tr><td><strong>Alamat</strong></td><td>: @Model.Alamat</td></tr>
     </table>
