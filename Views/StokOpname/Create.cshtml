@@ -1,36 +1,182 @@
 @{ ViewData["Title"] = "Buat Stock Opname"; var barangs = (List<MyGudang.Models.Barang>)ViewBag.Barangs; }
 <div class="card card-outline card-warning">
     <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check"></i> Buat Stock Opname Baru</h3></div>
-    <form asp-action="Create" method="post">@Html.AntiForgeryToken()
+    <form asp-action="Create" method="post" id="formOpname">@Html.AntiForgeryToken()
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4"><div class="form-group"><label>Tanggal Opname</label><input type="date" name="TanggalOpname" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required /></div></div>
-                <div class="col-md-8"><div class="form-group"><label>Keterangan</label><input type="text" name="Keterangan" class="form-control" placeholder="Keterangan opname..." /></div></div>
+                <div class="col-md-4"><div class="form-group"><label>Keterangan</label><input type="text" name="Keterangan" class="form-control" placeholder="Keterangan opname..." /></div></div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Mode Opname</label>
+                        <select id="modeOpname" class="form-control">
+                            <option value="all">Semua Barang</option>
+                            <option value="select">Pilih Barang</option>
+                        </select>
+                    </div>
+                </div>
             </div>
+
+            <!-- Search/Filter panel for "select" mode -->
+            <div id="selectPanel" class="mb-3" style="display:none;">
+                <div class="row mb-2">
+                    <div class="col-md-4">
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+                            <input type="text" id="searchBarang" class="form-control" placeholder="Cari nama/kode barang...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="filterKategori" class="form-control form-control-sm">
+                            <option value="">Semua Kategori</option>
+                            @foreach (var kat in barangs.Select(b => b.Kategori?.NamaKategori).Where(k => k != null).Distinct().OrderBy(k => k))
+                            {
+                                <option>@kat</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-5 text-right">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSelectAll"><i class="fas fa-check-double"></i> Pilih Semua Hasil</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearAll"><i class="fas fa-times"></i> Hapus Semua</button>
+                        <span class="badge badge-info ml-2" id="selectedCount">0 dipilih</span>
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:4px;">
+                    <table class="table table-sm table-hover m-0" id="tableSelectBarang">
+                        <thead class="thead-light" style="position:sticky; top:0;">
+                            <tr><th width="40"><input type="checkbox" id="checkAllBarang"></th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Stok</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in barangs)
+                            {
+                                <tr data-id="@b.Id" data-kode="@b.KodeBarang" data-nama="@b.NamaBarang" data-kategori="@b.Kategori?.NamaKategori" data-stok="@b.Stok" data-satuan="@b.Satuan">
+                                    <td><input type="checkbox" class="check-barang" value="@b.Id"></td>
+                                    <td>@b.KodeBarang</td><td>@b.NamaBarang</td><td>@b.Kategori?.NamaKategori</td><td><strong>@b.Stok</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <hr/>
-            <h5><i class="fas fa-list"></i> Daftar Barang</h5>
+            <h5><i class="fas fa-list"></i> Daftar Opname <span class="badge badge-primary" id="itemCount">0</span></h5>
             <div class="table-responsive">
-                <table class="table table-bordered table-sm">
+                <table class="table table-bordered table-sm" id="tableOpname">
                     <thead class="thead-dark">
-                        <tr><th>No</th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Keterangan</th></tr>
+                        <tr><th>No</th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Stok Sistem</th><th width="120">Stok Fisik</th><th>Keterangan</th><th width="50">Aksi</th></tr>
                     </thead>
-                    <tbody>
-                        @for (int i = 0; i < barangs.Count; i++)
-                        {
-                            <tr>
-                                <td>@(i + 1)</td><td>@barangs[i].KodeBarang</td><td>@barangs[i].NamaBarang</td><td>@barangs[i].Kategori?.NamaKategori</td>
-                                <td><strong>@barangs[i].Stok</strong></td>
-                                <td>
-                                    <input type="hidden" name="BarangId" value="@barangs[i].Id" />
-                                    <input type="number" name="StokFisik" class="form-control form-control-sm" value="@barangs[i].Stok" min="0" required style="width:100px;" />
-                                </td>
-                                <td><input type="text" name="DetailKeterangan" class="form-control form-control-sm" placeholder="-" /></td>
-                            </tr>
-                        }
+                    <tbody id="opnameBody">
                     </tbody>
                 </table>
+                <div id="emptyMsg" class="text-center text-muted py-3"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Pilih mode dan tambahkan barang untuk memulai opname</div>
             </div>
         </div>
-        <div class="card-footer"><button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Simpan Draft</button> <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-warning" id="btnSubmit" disabled><i class="fas fa-save"></i> Simpan Draft</button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
     </form>
 </div>
+
+@section Scripts {
+<script>
+var allBarangs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(barangs.Select(b => new { b.Id, b.KodeBarang, b.NamaBarang, Kategori = b.Kategori != null ? b.Kategori.NamaKategori : "-", b.Stok, b.Satuan })));
+var selectedIds = new Set();
+
+function renderOpnameTable() {
+    var tbody = $('#opnameBody');
+    tbody.empty();
+    var items = allBarangs.filter(function(b) { return selectedIds.has(b.id); });
+    if ($('#modeOpname').val() === 'all') items = allBarangs;
+
+    items.forEach(function(b, i) {
+        tbody.append(
+            '<tr>' +
+            '<td>' + (i+1) + '</td>' +
+            '<td>' + b.kodeBarang + '</td>' +
+            '<td>' + b.namaBarang + '</td>' +
+            '<td>' + b.kategori + '</td>' +
+            '<td><strong>' + b.stok + '</strong></td>' +
+            '<td><input type="hidden" name="BarangId" value="' + b.id + '"><input type="number" name="StokFisik" class="form-control form-control-sm" value="' + b.stok + '" min="0" required style="width:100px;"></td>' +
+            '<td><input type="text" name="DetailKeterangan" class="form-control form-control-sm" placeholder="-"></td>' +
+            '<td>' + ($('#modeOpname').val() === 'select' ? '<button type="button" class="btn btn-xs btn-danger btn-remove" data-id="' + b.id + '"><i class="fas fa-times"></i></button>' : '') + '</td>' +
+            '</tr>'
+        );
+    });
+    $('#itemCount').text(items.length);
+    $('#emptyMsg').toggle(items.length === 0);
+    $('#btnSubmit').prop('disabled', items.length === 0);
+}
+
+$('#modeOpname').on('change', function() {
+    var mode = $(this).val();
+    $('#selectPanel').toggle(mode === 'select');
+    if (mode === 'all') { selectedIds.clear(); }
+    renderOpnameTable();
+});
+
+// Search and filter
+$('#searchBarang, #filterKategori').on('input change', function() {
+    var search = $('#searchBarang').val().toLowerCase();
+    var kat = $('#filterKategori').val();
+    $('#tableSelectBarang tbody tr').each(function() {
+        var nama = $(this).data('nama').toString().toLowerCase();
+        var kode = $(this).data('kode').toString().toLowerCase();
+        var kategori = $(this).data('kategori') || '';
+        var matchSearch = !search || nama.includes(search) || kode.includes(search);
+        var matchKat = !kat || kategori === kat;
+        $(this).toggle(matchSearch && matchKat);
+    });
+});
+
+// Checkbox handling
+$(document).on('change', '.check-barang', function() {
+    var id = parseInt($(this).val());
+    if ($(this).is(':checked')) selectedIds.add(id); else selectedIds.delete(id);
+    updateSelectedCount();
+    renderOpnameTable();
+});
+
+$('#checkAllBarang').on('change', function() {
+    var checked = $(this).is(':checked');
+    $('#tableSelectBarang tbody tr:visible .check-barang').each(function() {
+        $(this).prop('checked', checked);
+        var id = parseInt($(this).val());
+        if (checked) selectedIds.add(id); else selectedIds.delete(id);
+    });
+    updateSelectedCount();
+    renderOpnameTable();
+});
+
+$('#btnSelectAll').on('click', function() {
+    $('#tableSelectBarang tbody tr:visible .check-barang').prop('checked', true).each(function() {
+        selectedIds.add(parseInt($(this).val()));
+    });
+    updateSelectedCount();
+    renderOpnameTable();
+});
+
+$('#btnClearAll').on('click', function() {
+    $('.check-barang').prop('checked', false);
+    selectedIds.clear();
+    updateSelectedCount();
+    renderOpnameTable();
+});
+
+$(document).on('click', '.btn-remove', function() {
+    var id = parseInt($(this).data('id'));
+    selectedIds.delete(id);
+    $('.check-barang[value="' + id + '"]').prop('checked', false);
+    updateSelectedCount();
+    renderOpnameTable();
+});
+
+function updateSelectedCount() {
+    $('#selectedCount').text(selectedIds.size + ' dipilih');
+}
+
+// Initialize with "all" mode
+$('#modeOpname').trigger('change');
+</script>
+}
