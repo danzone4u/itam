@@ -81,7 +81,7 @@
 
 @section Scripts {
 <script>
-var allBarangs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(barangs.Select(b => new { b.Id, b.KodeBarang, b.NamaBarang, Kategori = b.Kategori != null ? b.Kategori.NamaKategori : "-", b.Stok, b.Satuan })));
+var allBarangs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(barangs.Select(b => new { id = b.Id, kodeBarang = b.KodeBarang, namaBarang = b.NamaBarang, kategori = b.Kategori != null ? b.Kategori.NamaKategori : "-", stok = b.Stok, satuan = b.Satuan })));
 var selectedIds = new Set();
 
 function renderOpnameTable() {
