@@ -79,21 +79,21 @@ using (var scope = app.Services.CreateScope())
     {
         var kategoris = new List<Kategori>
         {
-            new() { NamaKategori = "Elektronik", Deskripsi = "Perangkat elektronik dan komputer" },
-            new() { NamaKategori = "Furniture", Deskripsi = "Meja, kursi, dan perabot kantor" },
-            new() { NamaKategori = "ATK", Deskripsi = "Alat tulis kantor" },
-            new() { NamaKategori = "Jaringan", Deskripsi = "Perangkat jaringan dan kabel" },
-            new() { NamaKategori = "Aksesoris", Deskripsi = "Aksesoris komputer dan gadget" }
+            new() { NamaKategori = "Komputer & Laptop", Deskripsi = "Perangkat komputasi end-user" },
+            new() { NamaKategori = "Server & Storage", Deskripsi = "Server fisik, NAS, dan perangkat penyimpanan" },
+            new() { NamaKategori = "Jaringan", Deskripsi = "Switch, Router, Access Point, Kabel" },
+            new() { NamaKategori = "Peripheral", Deskripsi = "Monitor, Printer, Scanner" },
+            new() { NamaKategori = "Aksesoris IT", Deskripsi = "Keyboard, Mouse, Headset, UPS" }
         };
         context.Kategoris.AddRange(kategoris);
         await context.SaveChangesAsync();
 
         var suppliers = new List<Supplier>
         {
-            new() { NamaSupplier = "PT Maju Jaya Teknologi", Alamat = "Jl. Sudirman No. 123, Jakarta", Telepon = "021-5551234", Email = "info@majujaya.co.id" },
-            new() { NamaSupplier = "CV Sumber Makmur", Alamat = "Jl. Ahmad Yani No. 45, Surabaya", Telepon = "031-4445678", Email = "order@sumbermakmur.com" },
-            new() { NamaSupplier = "UD Berkah Sentosa", Alamat = "Jl. Diponegoro No. 78, Bandung", Telepon = "022-3334567", Email = "sales@berkahsentosa.id" },
-            new() { NamaSupplier = "PT Global Komputer", Alamat = "Jl. Gatot Subroto No. 56, Semarang", Telepon = "024-6667890", Email = "cs@globalkom.co.id" }
+            new() { NamaSupplier = "PT Integra Teknologi", Alamat = "Jl. Sudirman 10, Jakarta", Telepon = "021-5551000", Email = "sales@integra.co.id" },
+            new() { NamaSupplier = "CV Network Solusindo", Alamat = "Jl. Pemuda 45, Surabaya", Telepon = "031-4442000", Email = "info@netsolindo.com" },
+            new() { NamaSupplier = "Bhinneka Enterprise", Alamat = "Jl. Gunung Sahari, Jakarta", Telepon = "021-3333000", Email = "b2b@bhinneka.com" },
+            new() { NamaSupplier = "PT Surya Server", Alamat = "Jl. Gatot Subroto 56, Bandung", Telepon = "022-6664000", Email = "contact@suryaserver.id" }
         };
         context.Suppliers.AddRange(suppliers);
         await context.SaveChangesAsync();
@@ -103,26 +103,23 @@ using (var scope = app.Services.CreateScope())
 
         var barangs = new List<Barang>
         {
-            new() { KodeBarang = "ELK-001", NamaBarang = "Laptop ASUS VivoBook 14", KategoriId = k[0].Id, SupplierId = s[0].Id, Satuan = "Unit", Stok = 15 },
-            new() { KodeBarang = "ELK-002", NamaBarang = "Monitor LED 24 inch", KategoriId = k[0].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 10 },
-            new() { KodeBarang = "ELK-003", NamaBarang = "Printer HP LaserJet Pro", KategoriId = k[0].Id, SupplierId = s[0].Id, Satuan = "Unit", Stok = 8 },
-            new() { KodeBarang = "ELK-004", NamaBarang = "UPS APC 1200VA", KategoriId = k[0].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 12 },
-            new() { KodeBarang = "FRN-001", NamaBarang = "Meja Kerja 120x60 cm", KategoriId = k[1].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 20 },
-            new() { KodeBarang = "FRN-002", NamaBarang = "Kursi Kantor Ergonomis", KategoriId = k[1].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 25 },
-            new() { KodeBarang = "FRN-003", NamaBarang = "Lemari Arsip 4 Laci", KategoriId = k[1].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 6 },
-            new() { KodeBarang = "FRN-004", NamaBarang = "Rak Buku Besi 5 Tingkat", KategoriId = k[1].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 4 },
-            new() { KodeBarang = "ATK-001", NamaBarang = "Kertas HVS A4 80gr", KategoriId = k[2].Id, SupplierId = s[2].Id, Satuan = "Rim", Stok = 50 },
-            new() { KodeBarang = "ATK-002", NamaBarang = "Toner HP 05A", KategoriId = k[2].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 3 },
-            new() { KodeBarang = "ATK-003", NamaBarang = "Pulpen Pilot G2", KategoriId = k[2].Id, SupplierId = s[2].Id, Satuan = "Lusin", Stok = 30 },
-            new() { KodeBarang = "ATK-004", NamaBarang = "Map Ordner", KategoriId = k[2].Id, SupplierId = s[2].Id, Satuan = "Pcs", Stok = 40 },
-            new() { KodeBarang = "ATK-005", NamaBarang = "Stapler Besar HD-12", KategoriId = k[2].Id, SupplierId = s[2].Id, Satuan = "Pcs", Stok = 10 },
-            new() { KodeBarang = "JRG-001", NamaBarang = "Switch Managed 24 Port", KategoriId = k[3].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 5 },
-            new() { KodeBarang = "JRG-002", NamaBarang = "Router Mikrotik RB750Gr3", KategoriId = k[3].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 7 },
-            new() { KodeBarang = "JRG-003", NamaBarang = "Kabel UTP Cat6 305m", KategoriId = k[3].Id, SupplierId = s[3].Id, Satuan = "Box", Stok = 3 },
-            new() { KodeBarang = "JRG-004", NamaBarang = "Access Point UniFi AC Lite", KategoriId = k[3].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 2 },
-            new() { KodeBarang = "AKS-001", NamaBarang = "Mouse Wireless Logitech", KategoriId = k[4].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 20 },
-            new() { KodeBarang = "AKS-002", NamaBarang = "Keyboard Mechanical", KategoriId = k[4].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 15 },
-            new() { KodeBarang = "AKS-003", NamaBarang = "Headset USB Jabra", KategoriId = k[4].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 0 }
+            new() { KodeBarang = "PC-001", NamaBarang = "Lenovo ThinkPad T14 Gen 3", KategoriId = k[0].Id, SupplierId = s[0].Id, Satuan = "Unit", Stok = 25 },
+            new() { KodeBarang = "PC-002", NamaBarang = "Dell OptiPlex 7000 SFF", KategoriId = k[0].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 15 },
+            new() { KodeBarang = "PC-003", NamaBarang = "MacBook Pro 14 M2", KategoriId = k[0].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 5 },
+            new() { KodeBarang = "SRV-001", NamaBarang = "Dell PowerEdge R750", KategoriId = k[1].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 2 },
+            new() { KodeBarang = "SRV-002", NamaBarang = "Synology NAS RackStation RS1221+", KategoriId = k[1].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 3 },
+            new() { KodeBarang = "SRV-003", NamaBarang = "HDD WD Red Pro 10TB", KategoriId = k[1].Id, SupplierId = s[3].Id, Satuan = "Pcs", Stok = 10 },
+            new() { KodeBarang = "NET-001", NamaBarang = "Switch Cisco Catalyst 9200L 48-port", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 4 },
+            new() { KodeBarang = "NET-002", NamaBarang = "MikroTik Cloud Core Router CCR2004", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 3 },
+            new() { KodeBarang = "NET-003", NamaBarang = "Access Point Ubiquiti U6-Pro", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 12 },
+            new() { KodeBarang = "NET-004", NamaBarang = "Kabel UTP Belden Cat6 305m", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Roll", Stok = 8 },
+            new() { KodeBarang = "PRP-001", NamaBarang = "Monitor Dell UltraSharp 27 U2722D", KategoriId = k[3].Id, SupplierId = s[0].Id, Satuan = "Unit", Stok = 20 },
+            new() { KodeBarang = "PRP-002", NamaBarang = "Printer HP Color LaserJet Pro M454dn", KategoriId = k[3].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 6 },
+            new() { KodeBarang = "PRP-003", NamaBarang = "Scanner Epson WorkForce DS-530 II", KategoriId = k[3].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 4 },
+            new() { KodeBarang = "AKS-001", NamaBarang = "Keyboard Logitech MX Keys", KategoriId = k[4].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 15 },
+            new() { KodeBarang = "AKS-002", NamaBarang = "Mouse Logitech MX Master 3S", KategoriId = k[4].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 15 },
+            new() { KodeBarang = "AKS-003", NamaBarang = "Headset Jabra Evolve2 65", KategoriId = k[4].Id, SupplierId = s[2].Id, Satuan = "Pcs", Stok = 10 },
+            new() { KodeBarang = "AKS-004", NamaBarang = "UPS APC Smart-UPS 1500VA", KategoriId = k[4].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 8 }
         };
         context.Barangs.AddRange(barangs);
         await context.SaveChangesAsync();
@@ -137,7 +134,8 @@ using (var scope = app.Services.CreateScope())
                 BarangId = b.Id,
                 Jumlah = b.Stok,
                 TanggalMasuk = DateTime.Now.AddDays(-rng.Next(7, 60)),
-                Keterangan = "Stok awal"
+                Keterangan = "Pengadaan awal perangkat IT",
+                HargaSatuan = rng.Next(5, 150) * 100000 // Random price between 500k and 15M
             });
         }
         await context.SaveChangesAsync();
@@ -145,7 +143,7 @@ using (var scope = app.Services.CreateScope())
         // Seed default charts
         context.ChartSettings.AddRange(
             new ChartSetting { NamaChart = "Barang Masuk vs Keluar", TipeChart = "bar", SumberData = "masuk_keluar", JumlahBulan = 6, WarnaUtama = "#28a745", WarnaKedua = "#dc3545", Lebar = 8, Urutan = 1, Aktif = true },
-            new ChartSetting { NamaChart = "Barang per Kategori", TipeChart = "doughnut", SumberData = "per_kategori", Lebar = 4, Urutan = 2, Aktif = true }
+            new ChartSetting { NamaChart = "Aset IT per Kategori", TipeChart = "doughnut", SumberData = "per_kategori", Lebar = 4, Urutan = 2, Aktif = true }
         );
         await context.SaveChangesAsync();
     }
