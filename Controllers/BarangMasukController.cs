@@ -270,8 +270,9 @@ namespace MyGudang.Controllers
             worksheet.Cells[1, 7].Value = "Tanggal Masuk (DD/MM/YYYY)";
             worksheet.Cells[1, 8].Value = "Keterangan";
             worksheet.Cells[1, 9].Value = "Lokasi Ruangan";
+            worksheet.Cells[1, 10].Value = "Serial Number (Pisahkan dengan koma)";
 
-            worksheet.Cells["A1:I1"].Style.Font.Bold = true;
+            worksheet.Cells["A1:J1"].Style.Font.Bold = true;
 
             // Dummy row
             var kategoriContoh = await _context.Kategoris.FirstOrDefaultAsync();
@@ -287,6 +288,7 @@ namespace MyGudang.Controllers
             worksheet.Cells[2, 7].Value = DateTime.Now.ToString("dd/MM/yyyy");
             worksheet.Cells[2, 8].Value = "Stok awal";
             worksheet.Cells[2, 9].Value = lokasiContoh?.NamaLokasi ?? "";
+            worksheet.Cells[2, 10].Value = "SN-001, SN-002, SN-003";
 
             worksheet.Cells.AutoFitColumns();
 
@@ -338,6 +340,7 @@ namespace MyGudang.Controllers
                 var tglStr = worksheet.Cells[row, 7].Value?.ToString()?.Trim();
                 var ket = worksheet.Cells[row, 8].Value?.ToString()?.Trim();
                 var lokasiNama = worksheet.Cells[row, 9].Value?.ToString()?.Trim();
+                var serialNumberStr = worksheet.Cells[row, 10].Value?.ToString()?.Trim();
 
                 if (string.IsNullOrEmpty(kodeBarang) || string.IsNullOrEmpty(jumlahStr)) continue;
 
@@ -423,10 +426,21 @@ namespace MyGudang.Controllers
                     }
                 }
 
+                var snList = new List<string>();
+                if (!string.IsNullOrEmpty(serialNumberStr))
+                {
+                    snList = serialNumberStr.Split(new[] { ',', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                                   .Select(s => s.Trim())
+                                   .Where(s => !string.IsNullOrEmpty(s))
+                                   .ToList();
+                }
+
+                int actualJumlah = snList.Count > 0 ? snList.Count : jumlah;
+
                 var bm = new BarangMasuk
                 {
                     BarangId = barang.Id,
-                    Jumlah = jumlah,
+                    Jumlah = actualJumlah,
                     TanggalMasuk = tanggalMasuk,
                     Keterangan = ket,
                     LokasiId = lokasiId,
@@ -435,25 +449,42 @@ namespace MyGudang.Controllers
 
                 _context.BarangMasuks.Add(bm);
 
-                for (int j = 0; j < jumlah; j++)
+                if (snList.Count > 0)
                 {
-                    _context.BarangSerials.Add(new BarangSerial
+                    foreach (var sn in snList)
                     {
-                        BarangId = barang.Id,
-                        SerialNumber = "-",
-                        Status = "Tersedia",
-                        BarangMasuk = bm,
-                        CreatedAt = DateTime.Now
-                    });
+                        _context.BarangSerials.Add(new BarangSerial
+                        {
+                            BarangId = barang.Id,
+                            SerialNumber = sn,
+                            Status = "Tersedia",
+                            BarangMasuk = bm,
+                            CreatedAt = DateTime.Now
+                        });
+                    }
+                }
+                else
+                {
+                    for (int j = 0; j < actualJumlah; j++)
+                    {
+                        _context.BarangSerials.Add(new BarangSerial
+                        {
+                            BarangId = barang.Id,
+                            SerialNumber = "-",
+                            Status = "Tersedia",
+                            BarangMasuk = bm,
+                            CreatedAt = DateTime.Now
+                        });
+                    }
                 }
 
-                barang.Stok += jumlah;
+                barang.Stok += actualJumlah;
                 
                 if (lokasiId.HasValue && lokasiId.Value > 0)
                 {
                     var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == barang.Id && x.LokasiId == lokasiId.Value);
-                    if (bl != null) bl.Stok += jumlah;
-                    else _context.BarangLokasis.Add(new BarangLokasi { BarangId = barang.Id, LokasiId = lokasiId.Value, Stok = jumlah });
+                    if (bl != null) bl.Stok += actualJumlah;
+                    else _context.BarangLokasis.Add(new BarangLokasi { BarangId = barang.Id, LokasiId = lokasiId.Value, Stok = actualJumlah });
                 }
 
                 successCount++;
