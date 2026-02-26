@@ -43,7 +43,7 @@
         <h4 class="text-center" style="font-weight:bold; margin-bottom:20px;">SURAT PEMINJAMAN BARANG</h4>
 
         <table style="margin-bottom:20px;">
-            <tr><td style="width:180px"><strong>No. Peminjaman</strong></td><td>: @Model.NoPeminjaman</td></tr>
+            <tr><td style="width:180px"><strong>No. Peminjaman</strong></td><td>: @ViewBag.NoSuratPeminjaman</td></tr>
             <tr><td><strong>Tanggal Pinjam</strong></td><td>: @Model.TanggalPinjam.ToString("dd MMMM yyyy")</td></tr>
             <tr><td><strong>Jatuh Tempo</strong></td><td>: @Model.TanggalJatuhTempo.ToString("dd MMMM yyyy")</td></tr>
             <tr><td><strong>Peminjam</strong></td><td>: @Model.Peminjam</td></tr>

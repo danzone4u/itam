@@ -8,7 +8,8 @@
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i> <strong>Preview Surat Jalan:</strong> <code>@ViewBag.Preview</code><br/>
                 <i class="fas fa-info-circle"></i> <strong>Preview Surat Terima Barang:</strong> <code>@ViewBag.PreviewTerima</code><br/>
-                <i class="fas fa-info-circle"></i> <strong>Preview Surat Pengembalian:</strong> <code>@ViewBag.PreviewKembali</code>
+                <i class="fas fa-info-circle"></i> <strong>Preview Surat Pengembalian:</strong> <code>@ViewBag.PreviewKembali</code><br/>
+                <i class="fas fa-info-circle"></i> <strong>Preview Surat Peminjaman:</strong> <code>@ViewBag.PreviewPeminjaman</code>
             </div>
             <div class="row">
                 <div class="col-md-3">
@@ -45,6 +46,13 @@
                 </div>
             </div>
             <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="PrefixSuratPeminjaman"></label>
+                        <input asp-for="PrefixSuratPeminjaman" class="form-control" placeholder="SP" />
+                        <small class="text-muted">Surat Peminjaman</small>
+                    </div>
+                </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label asp-for="FormatTanggal"></label>

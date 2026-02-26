@@ -18,6 +18,10 @@ namespace MyGudang.Models
         [StringLength(50)]
         public string PrefixSuratTerima { get; set; } = "STB";
 
+        [Display(Name = "Prefix Surat Peminjaman")]
+        [StringLength(50)]
+        public string PrefixSuratPeminjaman { get; set; } = "SP";
+
         [Display(Name = "Format Tanggal")]
         [StringLength(20)]
         public string FormatTanggal { get; set; } = "yyyyMMdd";

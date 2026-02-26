@@ -31,6 +31,7 @@ namespace MyGudang.Controllers
             ViewBag.Preview = GenerateNomorSurat(setting, count, "SJ");
             ViewBag.PreviewKembali = GenerateNomorSurat(setting, 1, "SK");
             ViewBag.PreviewTerima = GenerateNomorSurat(setting, 1, "STB");
+            ViewBag.PreviewPeminjaman = GenerateNomorSurat(setting, 1, "SP");
 
             return View(setting);
         }
@@ -47,6 +48,7 @@ namespace MyGudang.Controllers
                     existing.PrefixSuratJalan = model.PrefixSuratJalan;
                     existing.PrefixSuratKembali = model.PrefixSuratKembali;
                     existing.PrefixSuratTerima = model.PrefixSuratTerima;
+                    existing.PrefixSuratPeminjaman = model.PrefixSuratPeminjaman;
                     existing.FormatTanggal = model.FormatTanggal;
                     existing.PanjangNomorUrut = model.PanjangNomorUrut;
                     existing.Separator = model.Separator;
@@ -71,6 +73,7 @@ namespace MyGudang.Controllers
 
             var prefix = type == "SK" ? setting.PrefixSuratKembali 
                        : type == "STB" ? setting.PrefixSuratTerima 
+                       : type == "SP" ? setting.PrefixSuratPeminjaman
                        : setting.PrefixSuratJalan;
             var sep = setting.Separator ?? "-";
             var tanggal = DateTime.Now.ToString(setting.FormatTanggal ?? "yyyyMMdd");

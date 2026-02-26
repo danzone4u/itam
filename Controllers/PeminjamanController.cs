@@ -160,19 +160,17 @@ namespace MyGudang.Controllers
             var item = await _context.Peminjamans.Include(p => p.Barang).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null) return NotFound();
             ViewBag.Kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
+            
+            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var count = await _context.Peminjamans.Where(b => b.Id <= id).CountAsync();
+            ViewBag.NoSuratPeminjaman = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SP");
+            
             return View(item);
         }
 
         private string GenerateNoPeminjaman(SuratSetting? setting, int counter)
         {
-            if (setting == null) setting = new SuratSetting();
-            var sep = setting.Separator ?? "-";
-            var tanggal = DateTime.Now.ToString(setting.FormatTanggal ?? "yyyyMMdd");
-            var nomor = counter.ToString($"D{setting.PanjangNomorUrut}");
-            var prefix = "PJM";
-            return string.IsNullOrWhiteSpace(setting.Suffix)
-                ? $"{prefix}{sep}{tanggal}{sep}{nomor}"
-                : $"{prefix}{sep}{setting.Suffix}{sep}{tanggal}{sep}{nomor}";
+            return SuratSettingController.GenerateNomorSurat(setting, counter, "SP");
         }
     }
 }
