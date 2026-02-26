@@ -9,20 +9,21 @@ Aplikasi manajemen gudang berbasis web yang dibangun menggunakan **ASP.NET Core 
 | Modul | Deskripsi |
 |-------|-----------|
 | 📊 **Dashboard** | Ringkasan stok, grafik tren barang masuk/keluar, statistik real-time |
-| 📋 **Data Barang** | CRUD barang + detail histori transaksi masuk/keluar/peminjaman |
-| 📥 **Barang Masuk** | Catat penerimaan barang, import via Excel, cetak surat jalan |
+| 📋 **Data Barang** | CRUD barang + detail histori + **notifikasi stok minimum** |
+| 📥 **Barang Masuk** | Catat penerimaan barang + histori harga satuan, import via Excel, cetak surat |
 | 📤 **Barang Keluar** | Catat pengeluaran barang + cetak BAST & Surat Jalan |
 | 🔄 **Pengembalian Barang** | Pengembalian barang keluar + cetak Surat Pengembalian |
-| 🤝 **Peminjaman** | Peminjaman barang + cetak Surat Peminjaman |
+| 🤝 **Peminjaman** | Peminjaman barang + cetak Surat Peminjaman + **Reminder Jatuh Tempo** |
 | 🔀 **Transfer Barang** | Pindah barang antar lokasi/ruangan |
 | 📑 **Stok Opname** | Pengecekan stok fisik vs sistem |
-| 📂 **Arsip Dokumen** | Penyimpanan dan manajemen dokumen digital |
+| 📂 **Arsip Dokumen** | Penyimpanan tiket, surat, dan manajemen dokumen digital dengan _Select2 tags_ |
 | 🏢 **Lokasi / Ruangan** | Manajemen lokasi penyimpanan + stok per lokasi |
 | 🏷️ **Kategori** | Pengelompokan barang |
 | 🚚 **Supplier** | Data pemasok barang |
 | 💾 **Backup & Restore** | Backup/restore database SQL Server, auto-backup terjadwal |
 | 👤 **Manajemen User** | Role-based (SuperAdmin & Admin) |
-| ⚙️ **Pengaturan** | Kop surat, nomor surat otomatis, setting chart dashboard |
+| ⚙️ **Pengaturan** | Kop surat, setting nomor otomatis, setting visualisasi chart/grafik |
+| 📝 **Log Aktivitas** | Audit trail sistem pencatatan riwayat aksi user (SuperAdmin) |
 
 ---
 
@@ -55,8 +56,10 @@ MyGudang/
 │   ├── KategoriController.cs     # CRUD Kategori
 │   ├── SupplierController.cs     # CRUD Supplier
 │   ├── LokasiController.cs       # CRUD Lokasi + Stok per lokasi
+│   ├── LaporanController.cs      # Laporan Rekap, Export PDF/Excel
 │   ├── ArsipController.cs        # Manajemen arsip dokumen
 │   ├── BackupController.cs       # Backup & Restore DB (SuperAdmin)
+│   ├── ActivityLogController.cs  # Log Aktivitas (SuperAdmin)
 │   ├── UserController.cs         # Manajemen user (SuperAdmin)
 │   ├── KopSuratController.cs     # Setting kop surat
 │   ├── SuratSettingController.cs # Nomor surat otomatis
@@ -78,6 +81,7 @@ MyGudang/
 │   ├── Lokasi.cs                 # Lokasi/ruangan
 │   ├── Arsip.cs                  # Arsip dokumen
 │   ├── BackupSetting.cs          # Konfigurasi auto-backup
+│   ├── ActivityLog.cs            # Tabel Audit Log
 │   ├── KopSurat.cs               # Data kop surat
 │   ├── SuratSetting.cs           # Format nomor surat
 │   └── ChartSetting.cs           # Konfigurasi chart
@@ -146,6 +150,7 @@ erDiagram
         int SupplierId FK
         string Satuan
         int Stok
+        int StokMinimum
         string Gambar
         DateTime CreatedAt
         DateTime UpdatedAt
@@ -155,6 +160,7 @@ erDiagram
         int Id PK
         int BarangId FK
         int Jumlah
+        decimal HargaSatuan
         DateTime TanggalMasuk
         string Keterangan
         int LokasiId FK
@@ -282,6 +288,16 @@ erDiagram
         int NomorTerakhir
     }
 
+    ActivityLog {
+        int Id PK
+        string UserId
+        string Area
+        string Action
+        string Target
+        string Detail
+        DateTime Timestamp
+    }
+
     Kategori ||--o{ Barang : "memiliki"
     Supplier ||--o{ Barang : "memasok"
     Barang ||--o{ BarangMasuk : "diterima"
@@ -316,7 +332,9 @@ erDiagram
 | Stok & Stok Opname | ✅ | ✅ |
 | Arsip Dokumen | ✅ | ✅ |
 | Kategori & Supplier | ✅ | ✅ |
+| Laporan Rekap | ✅ | ✅ |
 | Manajemen User | ✅ | ❌ |
+| Log Aktivitas (Audit) | ✅ | ❌ |
 | Setting Kop Surat | ✅ | ❌ |
 | Setting Nomor Surat | ✅ | ❌ |
 | Setting Chart | ✅ | ❌ |
