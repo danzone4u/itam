@@ -53,7 +53,7 @@
                         <small class="text-muted">Surat Peminjaman</small>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="FormatTanggal"></label>
                         <select asp-for="FormatTanggal" class="form-control">
@@ -61,11 +61,11 @@
                             <option value="ddMMyyyy">Hari-Bulan-Tahun (@DateTime.Now.ToString("ddMMyyyy"))</option>
                             <option value="yyyyMM">Tahun-Bulan (@DateTime.Now.ToString("yyyyMM"))</option>
                             <option value="MMyyyy">Bulan-Tahun (@DateTime.Now.ToString("MMyyyy"))</option>
-                            <option value="yyyy">Tahun saja (@DateTime.Now.ToString("yyyy"))</option>
+                            <option value="yyyy">Tahun-saja (@DateTime.Now.ToString("yyyy"))</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="PanjangNomorUrut"></label>
                         <select asp-for="PanjangNomorUrut" class="form-control">
@@ -76,7 +76,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="Suffix"></label>
                         <input asp-for="Suffix" class="form-control" placeholder="Opsional, misal: PPN" />
