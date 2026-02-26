@@ -156,5 +156,194 @@ namespace MyGudang.Controllers
             return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"Laporan_Stok_{DateTime.Now:yyyyMMdd}.xlsx");
         }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportPeminjaman(DateTime? from, DateTime? to)
+        {
+            from ??= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            to ??= DateTime.Now;
+
+            var data = await _context.Peminjamans
+                .Include(p => p.Barang).ThenInclude(b => b!.Kategori)
+                .Where(p => p.TanggalPinjam >= from && p.TanggalPinjam <= to.Value.AddDays(1))
+                .OrderBy(p => p.TanggalPinjam)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Peminjaman");
+            ws.Cell(1, 1).Value = $"Laporan Peminjaman Barang: {from.Value:dd/MM/yyyy} - {to.Value:dd/MM/yyyy}";
+            ws.Range("A1:J1").Merge().Style.Font.Bold = true;
+
+            var row = 3;
+            ws.Cell(row, 1).Value = "No"; ws.Cell(row, 2).Value = "No. Peminjaman"; ws.Cell(row, 3).Value = "Tanggal Pinjam";
+            ws.Cell(row, 4).Value = "Kode Barang"; ws.Cell(row, 5).Value = "Nama Barang"; ws.Cell(row, 6).Value = "Peminjam";
+            ws.Cell(row, 7).Value = "Departemen"; ws.Cell(row, 8).Value = "Jatuh Tempo"; ws.Cell(row, 9).Value = "Status";
+            ws.Cell(row, 10).Value = "Keterangan";
+            ws.Range(row, 1, row, 10).Style.Font.Bold = true;
+
+            int no = 1;
+            foreach (var item in data)
+            {
+                row++;
+                ws.Cell(row, 1).Value = no++;
+                ws.Cell(row, 2).Value = item.NoPeminjaman;
+                ws.Cell(row, 3).Value = item.TanggalPinjam.ToString("dd/MM/yyyy");
+                ws.Cell(row, 4).Value = item.Barang?.KodeBarang;
+                ws.Cell(row, 5).Value = item.Barang?.NamaBarang;
+                ws.Cell(row, 6).Value = item.Peminjam;
+                ws.Cell(row, 7).Value = item.Departemen;
+                ws.Cell(row, 8).Value = item.TanggalJatuhTempo.ToString("dd/MM/yyyy");
+                ws.Cell(row, 9).Value = item.Status;
+                ws.Cell(row, 10).Value = item.Keterangan;
+
+                if (item.Status == "Dipinjam" && item.TanggalJatuhTempo < DateTime.Now)
+                    ws.Range(row, 1, row, 10).Style.Fill.BackgroundColor = XLColor.LightSalmon;
+            }
+
+            ws.Columns().AdjustToContents();
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Laporan_Peminjaman_{from.Value:yyyyMMdd}_{to.Value:yyyyMMdd}.xlsx");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportBarangKembali(DateTime? from, DateTime? to)
+        {
+            from ??= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            to ??= DateTime.Now;
+
+            var data = await _context.BarangKembalis
+                .Include(bk => bk.Barang).ThenInclude(b => b!.Kategori)
+                .Include(bk => bk.BarangKeluar)
+                .Where(bk => bk.TanggalKembali >= from && bk.TanggalKembali <= to.Value.AddDays(1))
+                .OrderBy(bk => bk.TanggalKembali)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Pengembalian Barang");
+            ws.Cell(1, 1).Value = $"Laporan Pengembalian Barang: {from.Value:dd/MM/yyyy} - {to.Value:dd/MM/yyyy}";
+            ws.Range("A1:I1").Merge().Style.Font.Bold = true;
+
+            var row = 3;
+            ws.Cell(row, 1).Value = "No"; ws.Cell(row, 2).Value = "Tanggal Kembali"; ws.Cell(row, 3).Value = "Kode Barang";
+            ws.Cell(row, 4).Value = "Nama Barang"; ws.Cell(row, 5).Value = "Jumlah"; ws.Cell(row, 6).Value = "Dikembalikan Oleh";
+            ws.Cell(row, 7).Value = "Kondisi"; ws.Cell(row, 8).Value = "Ref. Barang Keluar"; ws.Cell(row, 9).Value = "Keterangan";
+            ws.Range(row, 1, row, 9).Style.Font.Bold = true;
+
+            int no = 1;
+            foreach (var item in data)
+            {
+                row++;
+                ws.Cell(row, 1).Value = no++;
+                ws.Cell(row, 2).Value = item.TanggalKembali.ToString("dd/MM/yyyy");
+                ws.Cell(row, 3).Value = item.Barang?.KodeBarang;
+                ws.Cell(row, 4).Value = item.Barang?.NamaBarang;
+                ws.Cell(row, 5).Value = item.Jumlah;
+                ws.Cell(row, 6).Value = item.DikembalikanOleh;
+                ws.Cell(row, 7).Value = item.Kondisi;
+                ws.Cell(row, 8).Value = item.BarangKeluar?.NoSuratJalan ?? "-";
+                ws.Cell(row, 9).Value = item.Keterangan;
+            }
+
+            ws.Columns().AdjustToContents();
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Laporan_Pengembalian_{from.Value:yyyyMMdd}_{to.Value:yyyyMMdd}.xlsx");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportPeremajaan(DateTime? from, DateTime? to)
+        {
+            from ??= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            to ??= DateTime.Now;
+
+            var data = await _context.Peremajaans
+                .Include(p => p.Barang).ThenInclude(b => b!.Kategori)
+                .Include(p => p.BarangKeluar)
+                .Where(p => p.TanggalPeremajaan >= from && p.TanggalPeremajaan <= to.Value.AddDays(1))
+                .OrderBy(p => p.TanggalPeremajaan)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Peremajaan Barang");
+            ws.Cell(1, 1).Value = $"Laporan Peremajaan Barang: {from.Value:dd/MM/yyyy} - {to.Value:dd/MM/yyyy}";
+            ws.Range("A1:I1").Merge().Style.Font.Bold = true;
+
+            var row = 3;
+            ws.Cell(row, 1).Value = "No"; ws.Cell(row, 2).Value = "Tanggal Peremajaan"; ws.Cell(row, 3).Value = "Kode Barang";
+            ws.Cell(row, 4).Value = "Nama Barang"; ws.Cell(row, 5).Value = "Jumlah"; ws.Cell(row, 6).Value = "Dikembalikan Oleh";
+            ws.Cell(row, 7).Value = "Kondisi"; ws.Cell(row, 8).Value = "Tindak Lanjut"; ws.Cell(row, 9).Value = "Keterangan";
+            ws.Range(row, 1, row, 9).Style.Font.Bold = true;
+
+            int no = 1;
+            foreach (var item in data)
+            {
+                row++;
+                ws.Cell(row, 1).Value = no++;
+                ws.Cell(row, 2).Value = item.TanggalPeremajaan.ToString("dd/MM/yyyy");
+                ws.Cell(row, 3).Value = item.Barang?.KodeBarang;
+                ws.Cell(row, 4).Value = item.Barang?.NamaBarang;
+                ws.Cell(row, 5).Value = item.Jumlah;
+                ws.Cell(row, 6).Value = item.DikembalikanOleh;
+                ws.Cell(row, 7).Value = item.Kondisi;
+                ws.Cell(row, 8).Value = item.TindakLanjut;
+                ws.Cell(row, 9).Value = item.Keterangan;
+            }
+
+            ws.Columns().AdjustToContents();
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Laporan_Peremajaan_{from.Value:yyyyMMdd}_{to.Value:yyyyMMdd}.xlsx");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportTransferBarang(DateTime? from, DateTime? to)
+        {
+            from ??= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            to ??= DateTime.Now;
+
+            var data = await _context.TransferBarangs
+                .Include(t => t.Barang).ThenInclude(b => b!.Kategori)
+                .Include(t => t.DariLokasi)
+                .Include(t => t.KeLokasi)
+                .Where(t => t.TanggalTransfer >= from && t.TanggalTransfer <= to.Value.AddDays(1))
+                .OrderBy(t => t.TanggalTransfer)
+                .ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Transfer Barang");
+            ws.Cell(1, 1).Value = $"Laporan Transfer Ruangan: {from.Value:dd/MM/yyyy} - {to.Value:dd/MM/yyyy}";
+            ws.Range("A1:J1").Merge().Style.Font.Bold = true;
+
+            var row = 3;
+            ws.Cell(row, 1).Value = "No"; ws.Cell(row, 2).Value = "No. Transfer"; ws.Cell(row, 3).Value = "Tanggal";
+            ws.Cell(row, 4).Value = "Kode Barang"; ws.Cell(row, 5).Value = "Nama Barang"; ws.Cell(row, 6).Value = "Jumlah";
+            ws.Cell(row, 7).Value = "Dari Ruangan"; ws.Cell(row, 8).Value = "Ke Ruangan"; ws.Cell(row, 9).Value = "Keterangan";
+            ws.Range(row, 1, row, 9).Style.Font.Bold = true;
+
+            int no = 1;
+            foreach (var item in data)
+            {
+                row++;
+                ws.Cell(row, 1).Value = no++;
+                ws.Cell(row, 2).Value = item.NoTransfer;
+                ws.Cell(row, 3).Value = item.TanggalTransfer.ToString("dd/MM/yyyy");
+                ws.Cell(row, 4).Value = item.Barang?.KodeBarang;
+                ws.Cell(row, 5).Value = item.Barang?.NamaBarang;
+                ws.Cell(row, 6).Value = item.Jumlah;
+                ws.Cell(row, 7).Value = item.DariLokasi?.NamaLokasi;
+                ws.Cell(row, 8).Value = item.KeLokasi?.NamaLokasi;
+                ws.Cell(row, 9).Value = item.Keterangan;
+            }
+
+            ws.Columns().AdjustToContents();
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Laporan_TransferRuangan_{from.Value:yyyyMMdd}_{to.Value:yyyyMMdd}.xlsx");
+        }
     }
 }
