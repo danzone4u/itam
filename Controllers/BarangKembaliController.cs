@@ -137,8 +137,13 @@ namespace MyGudang.Controllers
                 .FirstOrDefaultAsync(bk => bk.Id == id);
             if (item == null) return NotFound();
 
+            var suratSetting = await _context.SuratSettings.FirstOrDefaultAsync();
+            var count = await _context.BarangKembalis.Where(b => b.Id <= id).CountAsync();
+
             var kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Kop = kop;
+            ViewBag.NoSuratKembali = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SK");
+
             return View(item);
         }
 

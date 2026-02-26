@@ -42,8 +42,9 @@
 
         <h4 class="text-center" style="font-weight:bold; margin-bottom:20px;">SURAT PENGEMBALIAN BARANG</h4>
 
-        <table style="margin-bottom:20px;">
-            <tr><td style="width:180px"><strong>Tanggal Kembali</strong></td><td>: @Model.TanggalKembali.ToString("dd MMMM yyyy")</td></tr>
+        <table style="width:100%; margin-bottom:20px;">
+            <tr><td style="width:180px"><strong>No. Surat Kembali</strong></td><td>: @ViewBag.NoSuratKembali</td></tr>
+            <tr><td><strong>Tanggal Kembali</strong></td><td>: @Model.TanggalKembali.ToString("dd MMMM yyyy")</td></tr>
             <tr><td><strong>Dikembalikan Oleh</strong></td><td>: @Model.DikembalikanOleh</td></tr>
             <tr><td><strong>Ref. Barang Keluar</strong></td><td>: @(Model.BarangKeluar?.NoSuratJalan ?? "-")</td></tr>
         </table>
