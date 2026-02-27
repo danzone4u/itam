@@ -120,8 +120,8 @@
                     $('#Jumlah').prop('readonly', true).val(0);
                     $('.temp-sn-warning').show();
                 } else {
-                    $('#snList').html('<small class="text-danger">Tidak ada SN yang tersedia untuk dikembalikan.</small>');
-                    $('#snContainer').slideDown();
+                    // Jika barang tidak punya S/N, sembunyikan kotak S/N dan biarkan Input Jumlah manual
+                    $('#snContainer').slideUp();
                     $('#Jumlah').prop('readonly', false).val(data.jumlah);
                     $('.temp-sn-warning').hide();
                 }
