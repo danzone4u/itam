@@ -111,7 +111,7 @@ namespace MyGudang.Data
 
             builder.Entity<BarangSerial>()
                 .HasOne(bs => bs.BarangKeluar)
-                .WithMany()
+                .WithMany(bk => bk.BarangSerials)
                 .HasForeignKey(bs => bs.BarangKeluarId)
                 .OnDelete(DeleteBehavior.Restrict);
 
