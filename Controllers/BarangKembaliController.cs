@@ -80,7 +80,10 @@ namespace MyGudang.Controllers
                     {
                         sn.BarangKembaliId = model.Id;
                         sn.Status = "Tersedia";
-                        sn.Kondisi = "Pernah Dipakai / Layak Pakai";
+                        
+                        // Ambil kondisi S/N dari form
+                        var condVal = Request.Form[$"snConditions_{sn.Id}"].ToString();
+                        sn.Kondisi = string.IsNullOrEmpty(condVal) ? "Pernah Dipakai / Layak Pakai" : condVal;
                     }
                     await _context.SaveChangesAsync();
                 }

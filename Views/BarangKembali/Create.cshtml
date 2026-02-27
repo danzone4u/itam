@@ -92,18 +92,28 @@
                 if (data.serials && data.serials.length > 0) {
                     var html = '';
                     data.serials.forEach(function(s) {
-                        html += '<div class="custom-control custom-checkbox">' +
+                        html += '<div class="custom-control custom-checkbox d-flex align-items-center mb-2">' +
                                 '<input class="custom-control-input sn-check" type="checkbox" name="serialIds" value="' + s.id + '" id="sn_' + s.id + '">' +
-                                '<label for="sn_' + s.id + '" class="custom-control-label">' + s.sn + '</label>' +
+                                '<label for="sn_' + s.id + '" class="custom-control-label mr-3" style="min-width: 150px;">' + s.sn + '</label>' +
+                                '<select name="snConditions_' + s.id + '" id="cond_' + s.id + '" class="form-control form-control-sm" style="display:none; width: auto;">' +
+                                '<option value="Pernah Dipakai / Layak Pakai">Dilabeli: Pernah Dipakai</option>' +
+                                '<option value="Baru">Dilabeli: Belum Dipakai (Baru)</option>' +
+                                '</select>' +
                                 '</div>';
                     });
                     $('#snList').html(html);
                     $('#snContainer').slideDown();
                     
-                    // Update jumlah when checkbox changes
+                    // Update jumlah when checkbox changes and toggle select visibility
                     $('.sn-check').on('change', function(){
                         var count = $('.sn-check:checked').length;
                         $('#Jumlah').val(count);
+                        var id = $(this).val();
+                        if($(this).is(':checked')){
+                            $('#cond_' + id).show();
+                        } else {
+                            $('#cond_' + id).hide();
+                        }
                     });
                     
                     // Make input readonly and set to 0 initially if SNs exist
