@@ -52,11 +52,12 @@
     <p>Dengan ini menyatakan bahwa barang berikut telah dikembalikan dalam rangka peremajaan:</p>
 
     <table class="table table-bordered" style="margin-top:10px; margin-bottom:20px;">
-        <thead><tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Tindak Lanjut</th></tr></thead>
+        <thead><tr><th>No</th><th>Nama Barang</th><th>S/N Perangkat</th><th>Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Tindak Lanjut</th></tr></thead>
         <tbody>
             <tr>
                 <td>1</td>
                 <td>@Model.Barang?.NamaBarang</td>
+                <td><small>@(Model.BarangSerials != null && Model.BarangSerials.Any() ? string.Join(", ", Model.BarangSerials.Select(s => s.SerialNumber)) : "-")</small></td>
                 <td>@Model.Jumlah</td>
                 <td>@Model.Barang?.Satuan</td>
                 <td><strong>@Model.Kondisi</strong></td>

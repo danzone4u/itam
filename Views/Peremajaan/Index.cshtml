@@ -10,7 +10,7 @@
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="30">No</th><th>Tanggal</th><th width="250">Barang</th><th>Jumlah</th><th>Dikembalikan Oleh</th><th>Kondisi</th><th>Tindak Lanjut</th><th width="85">Aksi</th></tr>
+                <tr><th width="30">No</th><th>Tanggal</th><th width="250">Barang</th><th>Jumlah</th><th>S/N</th><th>Dikembalikan Oleh</th><th>Kondisi</th><th>Tindak Lanjut</th><th width="85">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
@@ -23,6 +23,7 @@
                         <td>@item.TanggalPeremajaan.ToString("dd/MM/yyyy")</td>
                         <td>@item.Barang?.NamaBarang</td>
                         <td>@item.Jumlah</td>
+                        <td><small>@(item.BarangSerials != null && item.BarangSerials.Any() ? string.Join(", ", item.BarangSerials.Select(s => s.SerialNumber)) : "-")</small></td>
                         <td>@item.DikembalikanOleh</td>
                         <td><span class="badge @kondisiBadge">@item.Kondisi</span></td>
                         <td><span class="badge @tindakBadge">@item.TindakLanjut</span></td>

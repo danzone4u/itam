@@ -5,7 +5,7 @@
     <form asp-action="Create" method="post">@Html.AntiForgeryToken()
         <div class="card-body">
             <div class="callout callout-info">
-                <small><i class="fas fa-info-circle"></i> Peremajaan digunakan untuk mencatat barang lama yang dikembalikan setelah penggantian/upgrade. Berbeda dengan Barang Kembali yang bersifat jangka pendek.</small>
+                <small><i class="fas fa-info-circle"></i> Peremajaan digunakan untuk mencatat barang lama yang dikembalikan setelah penggantian/upgrade. Pilih Ref. Barang Keluar untuk memunculkan pilihan Serial Number (S/N).</small>
             </div>
             <div class="row">
                 <div class="col-md-6">
@@ -15,6 +15,11 @@
                             <option value="">-- Pilih (opsional) --</option>
                         </select>
                         <small class="text-muted">Pilih transaksi barang keluar yang terkait</small>
+                    </div>
+                    
+                    <div id="snContainer" class="form-group" style="display:none; background:#f4f6f9; padding:10px; border-radius:5px; border:1px solid #ddd;">
+                        <label>Pilih Serial Number (S/N) yang Diremajakan:</label>
+                        <div id="snList"></div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -31,6 +36,7 @@
                     <div class="form-group">
                         <label asp-for="Jumlah"></label>
                         <input asp-for="Jumlah" class="form-control" value="@(ViewBag.PrefilledJumlah ?? 1)" required />
+                        <small class="text-muted temp-sn-warning" style="display:none;">(Otomatis sesuai S/N)</small>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -89,9 +95,50 @@
         if (id) {
             $.getJSON('@Url.Action("GetBarangKeluarDetail")' + '?id=' + id, function(data) {
                 $('select[name="BarangId"]').val(data.barangId).trigger('change');
-                $('input[name="Jumlah"]').val(data.jumlah);
                 $('input[name="DikembalikanOleh"]').val(data.penerima);
+                
+                // Show SN checkboxes
+                $('#snList').empty();
+                if (data.serials && data.serials.length > 0) {
+                    var html = '';
+                    data.serials.forEach(function(s) {
+                        html += '<div class="custom-control custom-checkbox">' +
+                                '<input class="custom-control-input sn-check" type="checkbox" name="serialIds" value="' + s.id + '" id="sn_' + s.id + '">' +
+                                '<label for="sn_' + s.id + '" class="custom-control-label">' + s.sn + '</label>' +
+                                '</div>';
+                    });
+                    $('#snList').html(html);
+                    $('#snContainer').slideDown();
+                    
+                    // Update jumlah when checkbox changes
+                    $('.sn-check').on('change', function(){
+                        var count = $('.sn-check:checked').length;
+                        $('input[name="Jumlah"]').val(count);
+                    });
+                    
+                    // Make input readonly and set to 0 initially if SNs exist
+                    $('input[name="Jumlah"]').prop('readonly', true).val(0);
+                    $('.temp-sn-warning').show();
+                } else {
+                    $('#snList').html('<small class="text-danger">Tidak ada SN yang tersedia untuk dikembalikan.</small>');
+                    $('#snContainer').slideDown();
+                    $('input[name="Jumlah"]').prop('readonly', false).val(data.jumlah);
+                    $('.temp-sn-warning').hide();
+                }
             });
+        } else {
+            $('#snContainer').slideUp();
+            $('input[name="Jumlah"]').prop('readonly', false).val(1);
+            $('.temp-sn-warning').hide();
+        }
+    });
+
+    $('form').on('submit', function(e) {
+        if ($('#snContainer').is(':visible') && $('.sn-check').length > 0) {
+            if ($('.sn-check:checked').length === 0) {
+                e.preventDefault();
+                alert('Silakan pilih minimal 1 Serial Number (S/N) yang akan diremajakan!');
+            }
         }
     });
 </script>

@@ -57,5 +57,7 @@ namespace MyGudang.Models
 
         [ForeignKey("LokasiId")]
         public Lokasi? Lokasi { get; set; }
+
+        public ICollection<BarangSerial> BarangSerials { get; set; } = new List<BarangSerial>();
     }
 }

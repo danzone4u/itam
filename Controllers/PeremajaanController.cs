@@ -22,6 +22,7 @@ namespace MyGudang.Controllers
             var data = await _context.Peremajaans
                 .Include(p => p.Barang)
                 .Include(p => p.BarangKeluar)
+                .Include(p => p.BarangSerials)
                 .OrderByDescending(p => p.TanggalPeremajaan)
                 .ToListAsync();
             return View(data);
@@ -56,7 +57,7 @@ namespace MyGudang.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Peremajaan model)
+        public async Task<IActionResult> Create(Peremajaan model, int[] serialIds)
         {
             if (ModelState.IsValid)
             {
@@ -71,6 +72,33 @@ namespace MyGudang.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                if (serialIds != null && serialIds.Length > 0)
+                {
+                    var serialsToUpdate = await _context.BarangSerials.Where(s => serialIds.Contains(s.Id)).ToListAsync();
+                    foreach (var sn in serialsToUpdate)
+                    {
+                        sn.PeremajaanId = model.Id;
+                        if (model.TindakLanjut == "Masuk Inventaris")
+                        {
+                            sn.Status = "Tersedia";
+                        }
+                        else if (model.TindakLanjut == "Disposal")
+                        {
+                            sn.Status = "Disposal";
+                        }
+                        else if (model.TindakLanjut == "Perbaikan")
+                        {
+                            sn.Status = "Perbaikan";
+                        }
+                        else
+                        {
+                            sn.Status = "Rusak";
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
                 TempData["Success"] = "Peremajaan barang berhasil dicatat!";
                 return RedirectToAction(nameof(Index));
             }
@@ -93,7 +121,7 @@ namespace MyGudang.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var item = await _context.Peremajaans.FindAsync(id);
+            var item = await _context.Peremajaans.Include(p => p.BarangSerials).FirstOrDefaultAsync(p => p.Id == id);
             if (item != null)
             {
                 // Rollback stok if it was added to inventory
@@ -102,6 +130,14 @@ namespace MyGudang.Controllers
                     var barang = await _context.Barangs.FindAsync(item.BarangId);
                     if (barang != null) { barang.Stok -= item.Jumlah; if (barang.Stok < 0) barang.Stok = 0; }
                 }
+                
+                // Rollback SNs
+                foreach (var sn in item.BarangSerials)
+                {
+                    sn.PeremajaanId = null;
+                    sn.Status = "Keluar"; // Return back to previous state since it's connected to BarangKeluar
+                }
+
                 _context.Peremajaans.Remove(item);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Data peremajaan berhasil dihapus!";
@@ -114,6 +150,7 @@ namespace MyGudang.Controllers
             var item = await _context.Peremajaans
                 .Include(p => p.Barang)
                 .Include(p => p.BarangKeluar)
+                .Include(p => p.BarangSerials)
                 .FirstOrDefaultAsync(p => p.Id == id);
             if (item == null) return NotFound();
 
@@ -125,9 +162,18 @@ namespace MyGudang.Controllers
         [HttpGet]
         public async Task<IActionResult> GetBarangKeluarDetail(int id)
         {
-            var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
+            var bk = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.BarangSerials)
+                .FirstOrDefaultAsync(b => b.Id == id);
             if (bk == null) return NotFound();
-            return Json(new { barangId = bk.BarangId, jumlah = bk.Jumlah, penerima = bk.Penerima });
+
+            var serials = bk.BarangSerials
+                .Where(s => s.Status == "Keluar" && s.PeremajaanId == null) // Available for return/renewal
+                .Select(s => new { id = s.Id, sn = s.SerialNumber })
+                .ToList();
+
+            return Json(new { barangId = bk.BarangId, jumlah = bk.Jumlah, penerima = bk.Penerima, serials = serials });
         }
     }
 }

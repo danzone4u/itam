@@ -33,6 +33,11 @@ namespace MyGudang.Models
         [ForeignKey("BarangKeluarId")]
         public BarangKeluar? BarangKeluar { get; set; }
 
+        public int? PeremajaanId { get; set; }
+
+        [ForeignKey("PeremajaanId")]
+        public Peremajaan? Peremajaan { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

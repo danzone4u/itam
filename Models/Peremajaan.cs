@@ -49,6 +49,8 @@ namespace MyGudang.Models
         [StringLength(1000)]
         public string? Keterangan { get; set; }
 
+        public ICollection<BarangSerial> BarangSerials { get; set; } = new List<BarangSerial>();
+
         [Display(Name = "Tanggal Dibuat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
