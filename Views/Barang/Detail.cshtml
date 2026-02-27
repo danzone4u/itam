@@ -4,9 +4,11 @@
     var historiMasuk = ViewBag.HistoriMasuk as IEnumerable<MyGudang.Models.BarangMasuk> ?? new List<MyGudang.Models.BarangMasuk>();
     var historiKembali = ViewBag.HistoriKembali as IEnumerable<MyGudang.Models.BarangKembali> ?? new List<MyGudang.Models.BarangKembali>();
     var historiKeluar = ViewBag.HistoriKeluar as IEnumerable<MyGudang.Models.BarangKeluar> ?? new List<MyGudang.Models.BarangKeluar>();
+    var historiPeremajaan = ViewBag.HistoriPeremajaan as IEnumerable<MyGudang.Models.Peremajaan> ?? new List<MyGudang.Models.Peremajaan>();
 
     var combinedMasuk = historiMasuk.Select(m => new { Tanggal = m.TanggalMasuk, Jumlah = m.Jumlah, Lokasi = m.Lokasi?.NamaLokasi, Keterangan = m.Keterangan, Jenis = "Baru" })
         .Concat(historiKembali.Select(k => new { Tanggal = k.TanggalKembali, Jumlah = k.Jumlah, Lokasi = (string?)"Gudang Utama", Keterangan = (string?)(k.Keterangan ?? "Pengembalian"), Jenis = "Retur" }))
+        .Concat(historiPeremajaan.Where(p => p.TindakLanjut == "Masuk Inventaris").Select(p => new { Tanggal = p.TanggalPeremajaan, Jumlah = p.Jumlah, Lokasi = (string?)"Gudang Utama", Keterangan = (string?)(p.Keterangan ?? "Eks Peremajaan"), Jenis = "Peremajaan" }))
         .OrderByDescending(x => x.Tanggal).ToList();
 }
 
@@ -37,16 +39,56 @@
                         <b>Satuan</b> <a class="float-right">@Model.Satuan</a>
                     </li>
                     <li class="list-group-item">
-                        <b>Total Stok Saat Ini</b> <a class="float-right badge badge-primary" style="font-size: 16px;">@Model.Stok</a>
-                    </li>
-                </ul>
-                <a href="@Url.Action("Index")" class="btn btn-secondary btn-block"><b>Kembali</b></a>
+                            <b>Total Stok Saat Ini</b>
+                            <span class="badge bg-primary float-right" style="font-size: 1.1em;">@Model.Stok</span>
+                        </li>
+                    </ul>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-block"><b>Kembali</b></a>
+                </div>
             </div>
+
+            <!-- Daftar S/N Tersedia -->
+            <div class="card card-outline card-info mt-3">
+                <div class="card-header">
+                    <h3 class="card-title text-info"><i class="fas fa-barcode"></i> Daftar Unit S/N Tersedia</h3>
+                </div>
+                <div class="card-body p-0">
+                    @{
+                        var snList = ViewBag.SnTersedia as IEnumerable<MyGudang.Models.BarangSerial>;
+                        if (snList != null && snList.Any())
+                        {
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>S/N</th>
+                                        <th>Kondisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var sn in snList)
+                                    {
+                                        var badgeClass = sn.Kondisi == "Baru" ? "badge-success" : "badge-warning text-dark";
+                                        <tr>
+                                            <td><small>@sn.SerialNumber</small></td>
+                                            <td><span class="badge @badgeClass">@sn.Kondisi</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="p-3 text-center text-muted">Belum ada S/N atau stok kosong</div>
+                        }
+                    }
+                </div>
+            </div>
+            
         </div>
-    </div>
 
     <div class="col-md-8">
-        <div class="card card-outline card-primary shadow-sm" style="border-top-color: #28a745;">
+        <!-- Riwayat Masuk Terbaru -->
+        <div class="card card-outline card-success shadow-sm">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-arrow-down text-success"></i> Riwayat Masuk Terbaru</h3>
             </div>
@@ -62,21 +104,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (!combinedMasuk.Any())
-                        {
-                            <tr><td colspan="5" class="text-center text-muted">Belum ada riwayat masuk</td></tr>
-                        }
-                        else
-                        {
-                            foreach (var item in combinedMasuk.Take(10))
+                        @{
+                            if (combinedMasuk.Any())
                             {
-                                <tr>
-                                    <td>@item.Tanggal.ToString("dd MMM yyyy")</td>
-                                    <td><span class="badge @(item.Jenis == "Retur" ? "bg-info" : "bg-primary")">@item.Jenis</span></td>
-                                    <td><span class="badge bg-success">+@item.Jumlah</span></td>
-                                    <td>@(item.Lokasi ?? "Gudang Utama")</td>
-                                    <td>@item.Keterangan</td>
-                                </tr>
+                                foreach (var item in combinedMasuk.Take(10))
+                                {
+                                    var badgeClass = item.Jenis switch { "Baru" => "bg-primary", "Retur" => "bg-info", "Peremajaan" => "bg-success", _ => "bg-secondary" };
+                                    <tr>
+                                        <td>@item.Tanggal.ToString("dd MMM yyyy")</td>
+                                        <td><span class="badge @badgeClass">@item.Jenis</span></td>
+                                        <td><span class="badge bg-success">+@item.Jumlah</span></td>
+                                        <td>@(item.Lokasi ?? "Gudang Utama")</td>
+                                        <td>@item.Keterangan</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="5" class="text-center text-muted">Belum ada riwayat masuk</td></tr>
                             }
                         }
                     </tbody>
@@ -99,20 +144,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (!historiKeluar.Any())
-                        {
-                            <tr><td colspan="4" class="text-center text-muted">Belum ada riwayat keluar</td></tr>
-                        }
-                        else
-                        {
-                            foreach (var item in historiKeluar.Take(10))
+                        @{
+                            if (historiKeluar.Any())
                             {
-                                <tr>
-                                    <td>@item.TanggalKeluar.ToString("dd MMM yyyy")</td>
-                                    <td><span class="badge bg-danger">-@item.Jumlah</span></td>
-                                    <td>@(item.Lokasi?.NamaLokasi ?? "Gudang Utama")</td>
-                                    <td>@item.Penerima</td>
-                                </tr>
+                                foreach (var item in historiKeluar.Take(10))
+                                {
+                                    <tr>
+                                        <td>@item.TanggalKeluar.ToString("dd MMM yyyy")</td>
+                                        <td><span class="badge bg-danger">-@item.Jumlah</span></td>
+                                        <td>@(item.Lokasi?.NamaLokasi ?? "Gudang Utama")</td>
+                                        <td>@item.Penerima</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="4" class="text-center text-muted">Belum ada riwayat keluar</td></tr>
                             }
                         }
                     </tbody>

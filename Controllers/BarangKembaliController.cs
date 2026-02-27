@@ -57,7 +57,7 @@ namespace MyGudang.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(BarangKembali model)
+        public async Task<IActionResult> Create(BarangKembali model, int[] serialIds)
         {
             if (ModelState.IsValid)
             {
@@ -72,6 +72,19 @@ namespace MyGudang.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                if (serialIds != null && serialIds.Length > 0)
+                {
+                    var serialsToUpdate = await _context.BarangSerials.Where(s => serialIds.Contains(s.Id)).ToListAsync();
+                    foreach (var sn in serialsToUpdate)
+                    {
+                        sn.BarangKembaliId = model.Id;
+                        sn.Status = "Tersedia";
+                        sn.Kondisi = "Pernah Dipakai / Layak Pakai";
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
                 TempData["Success"] = "Pengembalian barang berhasil dicatat! Stok telah diperbarui.";
                 return RedirectToAction(nameof(Index));
             }
@@ -94,7 +107,7 @@ namespace MyGudang.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var item = await _context.BarangKembalis.FindAsync(id);
+            var item = await _context.BarangKembalis.Include(bk => bk.BarangSerials).FirstOrDefaultAsync(bk => bk.Id == id);
             if (item != null)
             {
                 // Kembalikan stok (kurangi lagi)
@@ -103,6 +116,14 @@ namespace MyGudang.Controllers
                 {
                     barang.Stok -= item.Jumlah;
                     if (barang.Stok < 0) barang.Stok = 0;
+                }
+
+                // Rollback SNs
+                foreach (var sn in item.BarangSerials)
+                {
+                    sn.BarangKembaliId = null;
+                    sn.Status = "Keluar"; 
+                    // SN condition might have been different before, but standardizing back to string.Empty or keep as is.
                 }
 
                 _context.BarangKembalis.Remove(item);
@@ -150,9 +171,19 @@ namespace MyGudang.Controllers
         [HttpGet]
         public async Task<IActionResult> GetBarangKeluarDetail(int id)
         {
-            var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
+            var bk = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.BarangSerials)
+                .FirstOrDefaultAsync(b => b.Id == id);
+            
             if (bk == null) return NotFound();
-            return Json(new { barangId = bk.BarangId, jumlah = bk.Jumlah, penerima = bk.Penerima });
+
+            var serials = bk.BarangSerials
+                .Where(s => s.Status == "Keluar" && s.BarangKembaliId == null && s.PeremajaanId == null)
+                .Select(s => new { id = s.Id, sn = s.SerialNumber })
+                .ToList();
+
+            return Json(new { barangId = bk.BarangId, jumlah = bk.Jumlah, penerima = bk.Penerima, serials = serials });
         }
     }
 }

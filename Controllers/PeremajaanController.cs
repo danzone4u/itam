@@ -95,6 +95,7 @@ namespace MyGudang.Controllers
                         {
                             sn.Status = "Rusak";
                         }
+                        sn.Kondisi = model.Kondisi ?? "Baru";
                     }
                     await _context.SaveChangesAsync();
                 }

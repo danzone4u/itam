@@ -54,6 +54,11 @@ namespace MyGudang.Controllers
                 .OrderBy(b => b.TanggalKembali)
                 .ToListAsync();
 
+            var peremajaan = await _context.Peremajaans
+                .Where(b => b.BarangId == id && b.TindakLanjut == "Masuk Inventaris")
+                .OrderBy(b => b.TanggalPeremajaan)
+                .ToListAsync();
+
             ViewBag.Barang = barang;
             ViewBag.BarangMasuk = masuk;
             ViewBag.BarangKeluar = keluar;
@@ -71,6 +76,10 @@ namespace MyGudang.Controllers
             foreach (var ret in kembali)
             {
                 transactions.Add(new { Tanggal = ret.TanggalKembali, Tipe = "Retur", Jumlah = ret.Jumlah, Keterangan = ret.Keterangan ?? "Barang Kembali" });
+            }
+            foreach (var p in peremajaan)
+            {
+                transactions.Add(new { Tanggal = p.TanggalPeremajaan, Tipe = "Peremajaan", Jumlah = p.Jumlah, Keterangan = p.Keterangan ?? "Eks Peremajaan" });
             }
             ViewBag.Transactions = transactions.OrderBy(t => t.Tanggal).ToList();
 

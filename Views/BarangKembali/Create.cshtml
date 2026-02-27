@@ -16,11 +16,16 @@
                             }
                         </select>
                     </div>
+                    
+                    <div id="snContainer" class="form-group" style="display:none; background:#f4f6f9; padding:10px; border-radius:5px; border:1px solid #ddd;">
+                        <label>Pilih Serial Number (S/N) yang Dikembalikan:</label>
+                        <div id="snList"></div>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label asp-for="BarangId"></label>
-                        <select asp-for="BarangId" asp-items="@ViewBag.Barangs" class="form-control select2">
+                        <select asp-for="BarangId" id="BarangId" asp-items="@ViewBag.Barangs" class="form-control select2">
                             <option value="">-- Pilih Barang --</option>
                         </select>
                         <span asp-validation-for="BarangId" class="text-danger"></span>
@@ -31,14 +36,15 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="Jumlah"></label>
-                        <input asp-for="Jumlah" class="form-control" value="@(ViewBag.PrefilledJumlah ?? 1)" />
+                        <input asp-for="Jumlah" id="Jumlah" class="form-control" value="@(ViewBag.PrefilledJumlah ?? 1)" />
                         <span asp-validation-for="Jumlah" class="text-danger"></span>
+                        <small class="text-muted temp-sn-warning" style="display:none;">(Otomatis sesuai S/N)</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="TanggalKembali"></label>
-                        <input asp-for="TanggalKembali" class="form-control" type="date" />
+                        <input asp-for="TanggalKembali" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
                         <span asp-validation-for="TanggalKembali" class="text-danger"></span>
                     </div>
                 </div>
@@ -55,7 +61,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="DikembalikanOleh"></label>
-                        <input asp-for="DikembalikanOleh" class="form-control" value="@(ViewBag.PrefilledPenerima ?? "")" />
+                        <input asp-for="DikembalikanOleh" id="DikembalikanOleh" class="form-control" value="@(ViewBag.PrefilledPenerima ?? "")" />
                         <span asp-validation-for="DikembalikanOleh" class="text-danger"></span>
                     </div>
                 </div>
@@ -79,9 +85,50 @@
         if (id) {
             $.getJSON('@Url.Action("GetBarangKeluarDetail")' + '?id=' + id, function(data) {
                 $('#BarangId').val(data.barangId).trigger('change');
-                $('#Jumlah').val(data.jumlah);
                 $('#DikembalikanOleh').val(data.penerima);
+                
+                // Show SN checkboxes
+                $('#snList').empty();
+                if (data.serials && data.serials.length > 0) {
+                    var html = '';
+                    data.serials.forEach(function(s) {
+                        html += '<div class="custom-control custom-checkbox">' +
+                                '<input class="custom-control-input sn-check" type="checkbox" name="serialIds" value="' + s.id + '" id="sn_' + s.id + '">' +
+                                '<label for="sn_' + s.id + '" class="custom-control-label">' + s.sn + '</label>' +
+                                '</div>';
+                    });
+                    $('#snList').html(html);
+                    $('#snContainer').slideDown();
+                    
+                    // Update jumlah when checkbox changes
+                    $('.sn-check').on('change', function(){
+                        var count = $('.sn-check:checked').length;
+                        $('#Jumlah').val(count);
+                    });
+                    
+                    // Make input readonly and set to 0 initially if SNs exist
+                    $('#Jumlah').prop('readonly', true).val(0);
+                    $('.temp-sn-warning').show();
+                } else {
+                    $('#snList').html('<small class="text-danger">Tidak ada SN yang tersedia untuk dikembalikan.</small>');
+                    $('#snContainer').slideDown();
+                    $('#Jumlah').prop('readonly', false).val(data.jumlah);
+                    $('.temp-sn-warning').hide();
+                }
             });
+        } else {
+            $('#snContainer').slideUp();
+            $('#Jumlah').prop('readonly', false).val(1);
+            $('.temp-sn-warning').hide();
+        }
+    });
+
+    $('form').on('submit', function(e) {
+        if ($('#snContainer').is(':visible') && $('.sn-check').length > 0) {
+            if ($('.sn-check:checked').length === 0) {
+                e.preventDefault();
+                alert('Silakan pilih minimal 1 Serial Number (S/N) yang dikembalikan!');
+            }
         }
     });
 </script>

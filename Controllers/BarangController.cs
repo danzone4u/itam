@@ -154,10 +154,24 @@ namespace MyGudang.Controllers
                 .OrderByDescending(bk => bk.TanggalKembali)
                 .ToListAsync();
 
+            // Ambil histori peremajaan untuk melengkapi riwayat stok masuk
+            var historiPeremajaan = await _context.Peremajaans
+                .Where(p => p.BarangId == id)
+                .OrderByDescending(p => p.TanggalPeremajaan)
+                .ToListAsync();
+
+            // Ambil daftar S/N yang tersedia saat ini beserta kondisinya
+            var snTersedia = await _context.BarangSerials
+                .Where(s => s.BarangId == id && s.Status == "Tersedia")
+                .OrderBy(s => s.SerialNumber)
+                .ToListAsync();
+
             ViewBag.HistoriMasuk = historiMasuk;
             ViewBag.HistoriKeluar = historiKeluar;
             ViewBag.HistoriPinjam = historiPinjam;
             ViewBag.HistoriKembali = historiKembali;
+            ViewBag.HistoriPeremajaan = historiPeremajaan;
+            ViewBag.SnTersedia = snTersedia;
 
             return View(barang);
         }

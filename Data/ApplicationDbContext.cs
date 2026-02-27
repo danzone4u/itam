@@ -115,6 +115,12 @@ namespace MyGudang.Data
                 .HasForeignKey(bs => bs.BarangKeluarId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<BarangSerial>()
+                .HasOne(bs => bs.BarangKembali)
+                .WithMany(bk => bk.BarangSerials)
+                .HasForeignKey(bs => bs.BarangKembaliId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<BarangLokasi>()
                 .HasOne(bl => bl.Barang)
                 .WithMany()
