@@ -7,7 +7,7 @@ using itam.Models;
 
 namespace itam.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,AdminGudang,User")]
     public class BarangKembaliController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -27,6 +27,7 @@ namespace itam.Controllers
             return View(data);
         }
 
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Create(int? barangKeluarId)
         {
             ViewBag.Barangs = new SelectList(
@@ -57,6 +58,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Create(BarangKembali model, int[] serialIds)
         {
             if (ModelState.IsValid)
@@ -127,6 +129,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Delete(int id)
         {
             var item = await _context.BarangKembalis.Include(bk => bk.BarangSerials).FirstOrDefaultAsync(bk => bk.Id == id);
@@ -169,6 +172,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> BulkDelete(int[] ids)
         {
             if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));

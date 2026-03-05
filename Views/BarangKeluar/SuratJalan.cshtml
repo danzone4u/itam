@@ -52,12 +52,13 @@
     <p>Dengan ini kami kirimkan barang-barang sebagai berikut:</p>
 
     <table class="table table-bordered" style="margin-top:10px;">
-        <thead><tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>S/N</th><th>Keterangan</th></tr></thead>
+        <thead><tr><th>No</th><th>Nama Barang</th><th>Merk & Type</th><th width="50">Jumlah</th><th>S/N</th><th>Keterangan</th></tr></thead>
         <tbody>
             <tr>
-                <td>1</td>
+                <td class="text-center">1</td>
                 <td>@Model.Barang?.NamaBarang</td>
-                <td>@Model.Jumlah</td>
+                <td>@Model.Barang?.Merk @Model.Barang?.Type</td>
+                <td class="text-center">@Model.Jumlah</td>
                 <td>@{ var serials = (List<string>)ViewBag.Serials; }@(serials.Any() && serials.Any(s => s != "-") ? string.Join(", ", serials.Where(s => s != "-")) : "-")</td>
                 <td>@Model.Keterangan</td>
             </tr>
@@ -69,10 +70,6 @@
             <p><strong>Pengirim</strong></p>
             <br><br><br><br>
             <p>(@(!string.IsNullOrEmpty(Model.Pic) ? Model.Pic : (kop.NamaPengirim ?? "........................................")))</p>
-            @if (!string.IsNullOrEmpty(kop.JabatanPengirim))
-            {
-                <p style="font-size:12px; color:#666;">@kop.JabatanPengirim</p>
-            }
         </div>
         <div>
             <p><strong>Mengetahui</strong></p>

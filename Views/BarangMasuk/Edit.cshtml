@@ -1,0 +1,116 @@
+@model itam.Models.BarangMasuk
+@{ ViewData["Title"] = "Edit Barang Masuk"; }
+<div class="card card-outline card-warning">
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-edit"></i> Edit Barang Masuk</h3></div>
+    <form asp-action="Edit" method="post">@Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group mb-2">
+                        <label>Barang</label>
+                        <input type="text" class="form-control" value="@Model.Barang?.NamaBarang" readonly style="background:#e9ecef" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mb-2">
+                        <label>Merk & Type</label>
+                        <input type="text" class="form-control" value="@Model.Barang?.Merk @Model.Barang?.Type" readonly style="background:#e9ecef" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mb-2">
+                        <label>Tanggal Masuk</label>
+                        <input type="date" name="tanggalMasuk" class="form-control" value="@Model.TanggalMasuk.ToString("yyyy-MM-dd")" required />
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-3"><div class="form-group"><label>Jumlah <small class="text-danger">* otomatis terisi</small></label><input type="number" name="jumlahBaru" id="jumlahBaru" class="form-control" min="1" value="@Model.Jumlah" readonly /></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Ruangan</label><select name="lokasiId" class="form-control" asp-items="@ViewBag.Lokasis"><option value="">-- Opsional --</option></select></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Supplier</label><select name="supplierId" class="form-control" asp-items="@ViewBag.Suppliers"><option value="">-- Opsional --</option></select></div></div>
+                <div class="col-md-3"><div class="form-group"><label>Keterangan</label><input type="text" name="keterangan" class="form-control" value="@Model.Keterangan" /></div></div>
+            </div>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i><strong> PERHATIAN:</strong> Mengubah jumlah disini akan otomatis menyesuaikan Stok Utama dan Stok Ruangan barang ini.
+            </div>
+
+            <hr/>
+            <h5><i class="fas fa-barcode"></i> Serial Number(s)
+                <button type="button" class="btn btn-success btn-sm ml-2" id="btnAddSn"><i class="fas fa-plus"></i> Tambah Baris S/N</button>
+            </h5>
+            <small class="text-muted">Kosongkan/hapus baris jika barang tidak menggunakan S/N.</small>
+            
+            <div id="snContainer" class="mt-2" style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius:4px; max-width:500px">
+                @{
+                    var serials = (List<string>)ViewBag.Serials;
+                    if (serials.Any() && serials.Any(s => s != "-"))
+                    {
+                        foreach (var sn in serials.Where(s => s != "-"))
+                        {
+                            <div class="input-group mb-1 sn-row">
+                                <input type="text" name="snRows" class="form-control sn-val" value="@sn" />
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-danger btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-warning"><i class="fas fa-save"></i> Perbarui Data</button> 
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(function(){
+            // manual adjust override if really no SNs used: if no SN inputted, manual jumlah opens? Let's just keep Jumlah readonly unless they explicitly don't use SNs. Actually, they might need to input 100 boxes without SN.
+            // If the user wants to enter bulk quantity without SN, let's allow editing jumlahBaru ONLY IF there are no SN rows.
+            
+            function updateJumlahField() {
+                var snCount = $('.sn-val').filter(function(){ return $(this).val().trim() !== ''; }).length;
+                var snRowsExists = $('.sn-row').length > 0;
+                
+                if(snRowsExists) {
+                    $('#jumlahBaru').val(snCount);
+                    $('#jumlahBaru').prop('readonly', true);
+                } else {
+                    $('#jumlahBaru').prop('readonly', false);
+                    if($('#jumlahBaru').val() == 0) $('#jumlahBaru').val(1);
+                }
+            }
+            
+            $('#btnAddSn').click(function(){
+                var row = '<div class="input-group mb-1 sn-row">'
+                        + '<input type="text" name="snRows" class="form-control sn-val" placeholder="Input S/N..." />'
+                        + '<div class="input-group-append"><button type="button" class="btn btn-danger btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button></div>'
+                        + '</div>';
+                $('#snContainer').append(row);
+                updateJumlahField();
+            });
+            
+            $(document).on('click', '.btn-remove-sn', function(){
+                $(this).closest('.sn-row').remove();
+                updateJumlahField();
+            });
+            
+            $(document).on('input', '.sn-val', function(){
+                updateJumlahField();
+            });
+            
+            // init
+            var hasSnList = $('.sn-row').length > 0;
+            if(!hasSnList) {
+                $('#jumlahBaru').prop('readonly', false);
+            }
+        });
+    </script>
+}

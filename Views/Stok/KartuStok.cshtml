@@ -7,9 +7,12 @@
     <div class="card-body">
         <div class="row mb-3">
             <div class="col-md-3"><strong>Kode:</strong> @barang.KodeBarang</div>
+            <div class="col-md-3"><strong>Merk & Type:</strong> @barang.Merk @barang.Type</div>
             <div class="col-md-3"><strong>Kategori:</strong> @barang.Kategori?.NamaKategori</div>
             <div class="col-md-3"><strong>Satuan:</strong> @barang.Satuan</div>
-            <div class="col-md-3"><strong>Stok Saat Ini:</strong> <span class="badge @(barang.Stok == 0 ? "badge-stok-habis" : barang.Stok <= 5 ? "badge-stok-rendah" : "badge-stok-aman") p-2">@barang.Stok</span></div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12"><strong>Stok Saat Ini:</strong> <span class="badge @(barang.Stok == 0 ? "badge-stok-habis" : barang.Stok <= 5 ? "badge-stok-rendah" : "badge-stok-aman") p-2">@barang.Stok</span></div>
         </div>
         <table class="table table-bordered table-sm">
             <thead class="thead-light">

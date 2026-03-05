@@ -91,11 +91,14 @@
                                     <i class="far fa-circle nav-icon"></i><p>Data Barang</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="@Url.Action("Index","BarangMasuk")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")">
-                                    <i class="far fa-circle nav-icon text-success"></i><p>Barang Masuk</p>
-                                </a>
-                            </li>
+                            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                            {
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Index","BarangMasuk")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")">
+                                        <i class="far fa-circle nav-icon text-success"></i><p>Barang Masuk</p>
+                                    </a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <a href="@Url.Action("Index","BarangKeluar")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")">
                                     <i class="far fa-circle nav-icon text-danger"></i><p>Barang Keluar</p>
@@ -105,69 +108,72 @@
                                 <a href="@Url.Action("Index","BarangKembali")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKembali" ? "active" : "")">
                                     <i class="far fa-circle nav-icon text-info"></i><p>Barang Kembali</p>
                                 </a>
-                            </li>
+                            }
                         </ul>
                     </li>
-                    <li class="nav-item has-treeview @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
-                        <a href="#" class="nav-link @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
-                            <i class="nav-icon fas fa-cubes"></i>
-                            <p>Stok <i class="right fas fa-angle-left"></i></p>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="@Url.Action("Index","Stok")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stok" ? "active" : "")">
-                                    <i class="far fa-circle nav-icon"></i><p>Data Stok</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="@Url.Action("Index","StokOpname")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StokOpname" ? "active" : "")">
-                                    <i class="far fa-circle nav-icon text-warning"></i><p>Stock Opname</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a href="@Url.Action("Index","Peminjaman")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Peminjaman" ? "active" : "")">
-                            <i class="nav-icon fas fa-handshake" style="color:#6f42c1;"></i>
-                            <p>Peminjaman</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="@Url.Action("Index","Kategori")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Kategori" ? "active" : "")">
-                            <i class="nav-icon fas fa-tags"></i>
-                            <p>Kategori</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="@Url.Action("Index","Supplier")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Supplier" ? "active" : "")">
-                            <i class="nav-icon fas fa-truck"></i>
-                            <p>Supplier</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="@Url.Action("Index","Arsip")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Arsip" ? "active" : "")">
-                            <i class="nav-icon fas fa-archive"></i>
-                            <p>Arsip</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="@Url.Action("Index","Lokasi")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lokasi" ? "active" : "")">
-                            <i class="nav-icon fas fa-door-open" style="color:#17a2b8;"></i>
-                            <p>Ruangan</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="@Url.Action("Index","TransferBarang")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TransferBarang" ? "active" : "")">
-                            <i class="nav-icon fas fa-exchange-alt" style="color:#ffc107;"></i>
-                            <p>Transfer Antar Ruangan</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="@Url.Action("Index","Laporan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Laporan" ? "active" : "")">
-                            <i class="nav-icon fas fa-chart-pie" style="color:#6f42c1;"></i>
-                            <p>Laporan Rekap</p>
-                        </a>
-                    </li>
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                    {
+                        <li class="nav-item has-treeview @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
+                            <a href="#" class="nav-link @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
+                                <i class="nav-icon fas fa-cubes"></i>
+                                <p>Stok <i class="right fas fa-angle-left"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Index","Stok")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stok" ? "active" : "")">
+                                        <i class="far fa-circle nav-icon"></i><p>Data Stok</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Index","StokOpname")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StokOpname" ? "active" : "")">
+                                        <i class="far fa-circle nav-icon text-warning"></i><p>Stock Opname</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Peminjaman")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Peminjaman" ? "active" : "")">
+                                <i class="nav-icon fas fa-handshake" style="color:#6f42c1;"></i>
+                                <p>Peminjaman</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Kategori")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Kategori" ? "active" : "")">
+                                <i class="nav-icon fas fa-tags"></i>
+                                <p>Kategori</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Supplier")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Supplier" ? "active" : "")">
+                                <i class="nav-icon fas fa-truck"></i>
+                                <p>Supplier</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Arsip")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Arsip" ? "active" : "")">
+                                <i class="nav-icon fas fa-archive"></i>
+                                <p>Arsip</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Lokasi")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lokasi" ? "active" : "")">
+                                <i class="nav-icon fas fa-door-open" style="color:#17a2b8;"></i>
+                                <p>Ruangan</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","TransferBarang")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TransferBarang" ? "active" : "")">
+                                <i class="nav-icon fas fa-exchange-alt" style="color:#ffc107;"></i>
+                                <p>Transfer Antar Ruangan</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Laporan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Laporan" ? "active" : "")">
+                                <i class="nav-icon fas fa-chart-pie" style="color:#6f42c1;"></i>
+                                <p>Laporan Rekap</p>
+                            </a>
+                        </li>
+                    }
                     @if (User.IsInRole("SuperAdmin"))
                     {
                         var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup", "ActivityLog", "AppSetting" };
@@ -476,6 +482,23 @@
                     if(result.isConfirmed) form.submit();
                     else form.attr('onsubmit', "return confirm('Yakin hapus?')");
                 });
+            }
+        });
+    });
+</script>
+<script>
+    // Auto-mark required fields with red asterisk (skip readonly and jumlah fields)
+    $(function () {
+        $('input[required], select[required], textarea[required]').each(function () {
+            // Skip readonly and jumlah fields (auto-filled by SN)
+            var name = ($(this).attr('name') || '').toLowerCase();
+            var id   = ($(this).attr('id')   || '').toLowerCase();
+            if ($(this).prop('readonly') || name.includes('jumlah') || id.includes('jumlah')) return;
+
+            var lbl = $('label[for="' + ($(this).attr('id') || '') + '"]');
+            if (lbl.length === 0) lbl = $(this).closest('.form-group').find('label').first();
+            if (lbl.length > 0 && lbl.find('.required-star').length === 0) {
+                lbl.append(' <span class="required-star" style="color:#e74c3c;font-weight:bold;" title="Wajib diisi">*</span>');
             }
         });
     });

@@ -8,7 +8,7 @@ using ClosedXML.Excel;
 
 namespace itam.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,AdminGudang,User")]
     public class BarangKeluarController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -29,6 +29,7 @@ namespace itam.Controllers
             return View(data);
         }
 
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Create()
         {
             ViewBag.Barangs = new SelectList(await _context.Barangs.Where(b => b.Stok > 0).ToListAsync(), "Id", "NamaBarang");
@@ -38,6 +39,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Create(BarangKeluar barangKeluar)
         {
             if (ModelState.IsValid)
@@ -85,7 +87,8 @@ namespace itam.Controllers
                 var barangs = await _context.BarangLokasis
                     .Include(bl => bl.Barang)
                     .Where(bl => bl.LokasiId == lokasiId.Value && bl.Stok > 0)
-                    .Select(bl => new { value = bl.BarangId.ToString(), text = bl.Barang!.NamaBarang })
+                    .GroupBy(bl => new { bl.BarangId, bl.Barang!.NamaBarang })
+                    .Select(g => new { value = g.Key.BarangId.ToString(), text = g.Key.NamaBarang })
                     .OrderBy(b => b.text)
                     .ToListAsync();
                 return Json(barangs);
@@ -103,6 +106,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, int[] serialIds, DateTime tanggalKeluar,
             string penerima, string? noHpPenerima, string? alamat, string? keteranganGlobal, int? lokasiId, string? pic)
         {
@@ -114,7 +118,13 @@ namespace itam.Controllers
                 return View("Create");
             }
 
+            var suratSetting2 = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
             var baseCount = await _context.BarangKeluars.CountAsync();
+            
+            // Generate ONE shared Surat Jalan number for this transaction
+            baseCount++;
+            var sharedNoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting2, baseCount, "SJ");
+
             int count = 0;
 
             // Group serial IDs by barangId
@@ -140,8 +150,6 @@ namespace itam.Controllers
                 var barang = await _context.Barangs.FindAsync(kvp.Key);
                 if (barang == null) continue;
 
-                baseCount++;
-                var suratSetting2 = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 var bk = new BarangKeluar
                 {
                     BarangId = kvp.Key,
@@ -152,9 +160,9 @@ namespace itam.Controllers
                     Alamat = alamat,
                     Keterangan = keteranganGlobal,
                     Pic = pic,
-            NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting2, baseCount, "SJ"),
-            LokasiId = (lokasiId.HasValue && lokasiId.Value > 0) ? lokasiId : null,
-            CreatedAt = DateTime.Now
+                    NoSuratJalan = sharedNoSuratJalan,
+                    LokasiId = (lokasiId.HasValue && lokasiId.Value > 0) ? lokasiId : null,
+                    CreatedAt = DateTime.Now
                 };
                 _context.BarangKeluars.Add(bk);
                 await _context.SaveChangesAsync(); // Get bk.Id
@@ -170,10 +178,14 @@ namespace itam.Controllers
                 // Update BarangLokasi (kurangi stok ruangan)
                 if (lokasiId.HasValue && lokasiId.Value > 0)
                 {
-                    var bl = await _context.BarangLokasis
-                        .FirstOrDefaultAsync(x => x.BarangId == kvp.Key && x.LokasiId == lokasiId.Value);
-                    if (bl != null && bl.Stok >= kvp.Value.Count)
-                        bl.Stok -= kvp.Value.Count;
+                    var bls = await _context.BarangLokasis.Where(x => x.BarangId == kvp.Key && x.LokasiId == lokasiId.Value && x.Stok > 0).OrderBy(x => x.Id).ToListAsync();
+                    int sisa = kvp.Value.Count;
+                    foreach (var bld in bls) {
+                        if (sisa <= 0) break;
+                        int deduct = Math.Min(bld.Stok, sisa);
+                        bld.Stok -= deduct;
+                        sisa -= deduct;
+                    }
                 }
 
                 count++;
@@ -187,6 +199,7 @@ namespace itam.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -197,6 +210,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Edit(int id, string penerima, string? alamat, string? keterangan, string? noSuratJalan, string? noHpPenerima)
         {
             var bk = await _context.BarangKeluars.FindAsync(id);
@@ -216,6 +230,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Delete(int id)
         {
             var bk = await _context.BarangKeluars.FindAsync(id);
@@ -227,8 +242,9 @@ namespace itam.Controllers
 
                 if (bk.LokasiId.HasValue && bk.LokasiId.Value > 0)
                 {
-                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bk.BarangId && x.LokasiId == bk.LokasiId.Value);
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bk.BarangId && x.LokasiId == bk.LokasiId.Value && x.RakKompartemen == null);
                     if (bl != null) bl.Stok += bk.Jumlah;
+                    else _context.BarangLokasis.Add(new BarangLokasi { BarangId = bk.BarangId, LokasiId = bk.LokasiId.Value, Stok = bk.Jumlah, RakKompartemen = null });
                 }
 
                 // Restore serial statuses
@@ -255,6 +271,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> BulkDelete(int[] ids)
         {
             if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
@@ -266,8 +283,9 @@ namespace itam.Controllers
 
                 if (bk.LokasiId.HasValue && bk.LokasiId.Value > 0)
                 {
-                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bk.BarangId && x.LokasiId == bk.LokasiId.Value);
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bk.BarangId && x.LokasiId == bk.LokasiId.Value && x.RakKompartemen == null);
                     if (bl != null) bl.Stok += bk.Jumlah;
+                    else _context.BarangLokasis.Add(new BarangLokasi { BarangId = bk.BarangId, LokasiId = bk.LokasiId.Value, Stok = bk.Jumlah, RakKompartemen = null });
                 }
 
                 var serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == bk.Id).ToListAsync();
@@ -364,6 +382,7 @@ namespace itam.Controllers
             return View(bk);
         }
 
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> EditSuratJalan(int id)
         {
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
@@ -373,6 +392,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> EditSuratJalan(int id, string penerima, string? alamat, string? keterangan, string? noSuratJalan, string? noHpPenerima)
         {
             var bk = await _context.BarangKeluars.FindAsync(id);
@@ -387,6 +407,7 @@ namespace itam.Controllers
             return RedirectToAction("SuratJalan", new { id });
         }
 
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> EditSuratTerima(int id)
         {
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
@@ -396,6 +417,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> EditSuratTerima(int id, string penerima, string? alamat, string? keterangan, string? noHpPenerima)
         {
             var bk = await _context.BarangKeluars.FindAsync(id);
@@ -422,14 +444,16 @@ namespace itam.Controllers
             ws.Cell(1, 2).Value = "No. Surat Jalan";
             ws.Cell(1, 3).Value = "Tanggal Keluar";
             ws.Cell(1, 4).Value = "Nama Barang";
-            ws.Cell(1, 5).Value = "Serial Number";
-            ws.Cell(1, 6).Value = "Jumlah";
-            ws.Cell(1, 7).Value = "Penerima";
-            ws.Cell(1, 8).Value = "Alamat";
-            ws.Cell(1, 9).Value = "No HP";
-            ws.Cell(1, 10).Value = "Keterangan";
-            ws.Range("A1:J1").Style.Font.Bold = true;
-            ws.Range("A1:J1").Style.Fill.BackgroundColor = XLColor.LightCoral;
+            ws.Cell(1, 5).Value = "Merk";
+            ws.Cell(1, 6).Value = "Type";
+            ws.Cell(1, 7).Value = "Serial Number";
+            ws.Cell(1, 8).Value = "Jumlah";
+            ws.Cell(1, 9).Value = "Penerima";
+            ws.Cell(1, 10).Value = "Alamat";
+            ws.Cell(1, 11).Value = "No HP";
+            ws.Cell(1, 12).Value = "Keterangan";
+            ws.Range("A1:L1").Style.Font.Bold = true;
+            ws.Range("A1:L1").Style.Fill.BackgroundColor = XLColor.LightCoral;
 
             for (int i = 0; i < data.Count; i++)
             {
@@ -437,15 +461,17 @@ namespace itam.Controllers
                 ws.Cell(i + 2, 2).Value = data[i].NoSuratJalan;
                 ws.Cell(i + 2, 3).Value = data[i].TanggalKeluar.ToString("dd/MM/yyyy");
                 ws.Cell(i + 2, 4).Value = data[i].Barang?.NamaBarang;
+                ws.Cell(i + 2, 5).Value = data[i].Barang?.Merk;
+                ws.Cell(i + 2, 6).Value = data[i].Barang?.Type;
                 
                 var snList = data[i].BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
-                ws.Cell(i + 2, 5).Value = snList.Any() ? string.Join(", ", snList) : "-";
+                ws.Cell(i + 2, 7).Value = snList.Any() ? string.Join(", ", snList) : "-";
                 
-                ws.Cell(i + 2, 6).Value = data[i].Jumlah;
-                ws.Cell(i + 2, 7).Value = data[i].Penerima;
-                ws.Cell(i + 2, 8).Value = data[i].Alamat;
-                ws.Cell(i + 2, 9).Value = data[i].NoHpPenerima;
-                ws.Cell(i + 2, 10).Value = data[i].Keterangan;
+                ws.Cell(i + 2, 8).Value = data[i].Jumlah;
+                ws.Cell(i + 2, 9).Value = data[i].Penerima;
+                ws.Cell(i + 2, 10).Value = data[i].Alamat;
+                ws.Cell(i + 2, 11).Value = data[i].NoHpPenerima;
+                ws.Cell(i + 2, 12).Value = data[i].Keterangan;
             }
             ws.Columns().AdjustToContents();
 

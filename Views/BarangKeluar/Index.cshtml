@@ -6,7 +6,10 @@
     </div>
     <div class="card-body">
         <div class="mb-3">
-            <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+            {
+                <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
+            }
             <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
             <div class="btn-group d-none ml-2" id="btnBulkPrintGroup">
                 <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -21,7 +24,10 @@
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="30">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th width="250">Barang</th><th>S/N</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th></tr>
+                <tr>
+                    <th width="40"><input type="checkbox" id="checkAll"></th>
+                    <th width="30">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th width="250">Barang</th><th>Merk & Type</th><th>S/N</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th>
+                </tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
@@ -29,7 +35,7 @@
                 {
                     <tr>
                         <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
-                        <td>@(no++)</td><td><span class="badge bg-secondary">@item.NoSuratJalan</span></td><td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td>
+                        <td>@(no++)</td><td><span class="badge bg-secondary">@item.NoSuratJalan</span></td><td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td><td>@item.Barang?.Merk @item.Barang?.Type</td>
                         <td>
                             @{
                                 var snList = item.BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
@@ -49,10 +55,12 @@
                         <td>
                             <a href="@Url.Action("SuratJalan", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat Jalan"><i class="fas fa-file-alt"></i> SJ</a>
                             <a href="@Url.Action("SuratTerimaBarang", new { id = item.Id })" class="btn btn-secondary btn-xs" title="Berita Acara Serah Terima"><i class="fas fa-receipt"></i> BAST</a>
-                            <a href="@Url.Action("Create", "BarangKembali", new { barangKeluarId = item.Id })" class="btn btn-success btn-xs" title="Kembalikan Barang"><i class="fas fa-undo"></i></a>
-
-                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
-                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                            {
+                                <a href="@Url.Action("Create", "BarangKembali", new { barangKeluarId = item.Id })" class="btn btn-success btn-xs" title="Kembalikan Barang"><i class="fas fa-undo"></i></a>
+                                <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                            }
                         </td>
                     </tr>
                 }

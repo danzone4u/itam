@@ -13,7 +13,7 @@
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="30">No</th><th>Tanggal</th><th width="250">Nama Barang</th><th>Jumlah</th><th>Ruangan</th><th>Keterangan</th><th width="85">Aksi</th></tr>
+                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="30">No</th><th>Tanggal</th><th width="250">Nama Barang</th><th>Merk & Type</th><th>Jumlah</th><th>Ruangan</th><th>Keterangan</th><th width="85">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
@@ -21,10 +21,16 @@
                 {
                     <tr>
                         <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
-                        <td>@(no++)</td><td>@item.TanggalMasuk.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td><td><span class="badge bg-success">+@item.Jumlah</span></td>
+                        <td>@(no++)</td><td>@item.TanggalMasuk.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td><td>@item.Barang?.Merk @item.Barang?.Type</td><td><span class="badge bg-success">+@item.Jumlah</span></td>
                         <td>@(item.Lokasi?.NamaLokasi ?? "-")</td>
                         <td>@item.Keterangan</td>
-                        <td><form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus? Stok akan dikurangi kembali.')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form></td>
+                        <td>
+                            @if (User.IsInRole("SuperAdmin"))
+                            {
+                                <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit Data"><i class="fas fa-edit"></i></a>
+                            }
+                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus? Stok akan dikurangi kembali.')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs" title="Hapus Data"><i class="fas fa-trash"></i></button></form>
+                        </td>
                     </tr>
                 }
             </tbody>

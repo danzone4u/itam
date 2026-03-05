@@ -7,7 +7,7 @@ using itam.Models;
 
 namespace itam.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,AdminGudang")]
     public class PeminjamanController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -135,12 +135,13 @@ namespace itam.Controllers
             ws.Cell(3, 1).Value = "No";
             ws.Cell(3, 2).Value = "Kode Barang";
             ws.Cell(3, 3).Value = "Nama Barang";
-            ws.Cell(3, 4).Value = "Stok Sistem";
-            ws.Cell(3, 5).Value = "Stok Fisik";
-            ws.Cell(3, 6).Value = "Selisih";
-            ws.Cell(3, 7).Value = "Keterangan";
-            ws.Range("A3:G3").Style.Font.Bold = true;
-            ws.Range("A3:G3").Style.Fill.BackgroundColor = XLColor.LightYellow;
+            ws.Cell(3, 4).Value = "Merk & Type";
+            ws.Cell(3, 5).Value = "Stok Sistem";
+            ws.Cell(3, 6).Value = "Stok Fisik";
+            ws.Cell(3, 7).Value = "Selisih";
+            ws.Cell(3, 8).Value = "Keterangan";
+            ws.Range("A3:H3").Style.Font.Bold = true;
+            ws.Range("A3:H3").Style.Fill.BackgroundColor = XLColor.LightYellow;
 
             int row = 4;
             int no = 1;
@@ -149,12 +150,13 @@ namespace itam.Controllers
                 ws.Cell(row, 1).Value = no++;
                 ws.Cell(row, 2).Value = d.Barang?.KodeBarang;
                 ws.Cell(row, 3).Value = d.Barang?.NamaBarang;
-                ws.Cell(row, 4).Value = d.StokSistem;
-                ws.Cell(row, 5).Value = d.StokFisik;
-                ws.Cell(row, 6).Value = d.Selisih;
-                ws.Cell(row, 7).Value = d.Keterangan;
+                ws.Cell(row, 4).Value = $"{d.Barang?.Merk} {d.Barang?.Type}";
+                ws.Cell(row, 5).Value = d.StokSistem;
+                ws.Cell(row, 6).Value = d.StokFisik;
+                ws.Cell(row, 7).Value = d.Selisih;
+                ws.Cell(row, 8).Value = d.Keterangan;
                 if (d.Selisih != 0)
-                    ws.Range($"A{row}:G{row}").Style.Fill.BackgroundColor = d.Selisih < 0 ? XLColor.LightPink : XLColor.LightGreen;
+                    ws.Range($"A{row}:H{row}").Style.Fill.BackgroundColor = d.Selisih < 0 ? XLColor.LightPink : XLColor.LightGreen;
                 row++;
             }
             ws.Columns().AdjustToContents();

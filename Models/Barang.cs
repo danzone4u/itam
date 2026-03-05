@@ -17,6 +17,14 @@ namespace itam.Models
         [StringLength(200)]
         public string NamaBarang { get; set; } = string.Empty;
 
+        [Display(Name = "Merk")]
+        [StringLength(100)]
+        public string? Merk { get; set; }
+
+        [Display(Name = "Type/Model")]
+        [StringLength(100)]
+        public string? Type { get; set; }
+
         [Required(ErrorMessage = "Kategori wajib dipilih")]
         [Display(Name = "Kategori")]
         public int KategoriId { get; set; }

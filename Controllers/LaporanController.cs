@@ -6,7 +6,7 @@ using ClosedXML.Excel;
 
 namespace itam.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,AdminGudang")]
     public class LaporanController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -150,7 +150,7 @@ namespace itam.Controllers
                 .ToListAsync();
             var lokasiPerBarang = lokasiData
                 .GroupBy(bl => bl.BarangId)
-                .ToDictionary(g => g.Key, g => g.Select(bl => bl.Lokasi!.NamaLokasi).ToList());
+                .ToDictionary(g => g.Key, g => g.Select(bl => bl.Lokasi!.NamaLokasi + (string.IsNullOrEmpty(bl.RakKompartemen) ? "" : " - " + bl.RakKompartemen)).ToList());
 
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Stok Barang");

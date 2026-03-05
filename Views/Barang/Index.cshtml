@@ -5,19 +5,43 @@
         <h3 class="card-title"><i class="fas fa-boxes"></i> Data Barang</h3>
     </div>
     <div class="card-body">
-        <div class="mb-3">
-            <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div>
+                <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
+                @if (User.IsInRole("SuperAdmin"))
+                {
+                    <button type="submit" form="bulkDeleteForm" class="btn btn-danger btn-sm ml-2" id="btnBulkDelete" style="display:none;">
+                        <i class="fas fa-trash"></i> Hapus Terpilih
+                    </button>
+                }
+            </div>
         </div>
+        <form id="bulkDeleteForm" action="@Url.Action("BulkDelete")" method="post" style="display:none;">
+            @Html.AntiForgeryToken()
+        </form>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="30">No</th><th>Kode</th><th width="250">Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="85">Aksi</th></tr>
+                <tr>
+                    @if (User.IsInRole("SuperAdmin"))
+                    {
+                        <th width="40"><input type="checkbox" id="checkAll"></th>
+                    }
+                    <th width="30">No</th><th>Kode</th><th width="250">Nama Barang</th><th>Merk</th><th>Type</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="110">Aksi</th>
+                </tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
                 @foreach (var item in Model)
                 {
                     <tr>
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <td class="text-center">
+                                <input type="checkbox" name="ids" value="@item.Id" class="checkItem">
+                            </td>
+                        }
                         <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td>
+                        <td>@item.Merk</td><td>@item.Type</td>
                         <td>@item.Kategori?.NamaKategori</td>
                         <td>@item.Satuan</td>
                         <td>
@@ -46,12 +70,102 @@
                             @if (User.IsInRole("SuperAdmin"))
                             {
                                 <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit Data Barang"><i class="fas fa-edit"></i></a>
+                                <form action="@Url.Action("Delete", new { id = item.Id })" method="post" class="d-inline delete-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger btn-xs" title="Hapus"><i class="fas fa-trash"></i></button>
+                                </form>
                             }
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
+        </table>
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var datatable = $('.data-table').DataTable();
+
+            // Handle "select all" checkbox
+            $('#checkAll').on('click', function() {
+                // Get all rows with search applied
+                var rows = datatable.rows({ 'search': 'applied' }).nodes();
+                $('input[type="checkbox"].checkItem', rows).prop('checked', this.checked);
+                toggleBulkDeleteBtn();
+            });
+
+            // Handle individual checkbox clicks
+            $('.data-table tbody').on('change', 'input[type="checkbox"].checkItem', function() {
+                var el = $('#checkAll').get(0);
+                if (!this.checked && el && el.checked) {
+                    el.checked = false;
+                }
+                toggleBulkDeleteBtn();
+            });
+
+            // Toggle duplicate button state
+            function toggleBulkDeleteBtn() {
+                var rows = datatable.rows({ 'search': 'applied' }).nodes();
+                var checkedCount = $('input[type="checkbox"].checkItem:checked', rows).length;
+                if (checkedCount > 0) {
+                    $('#btnBulkDelete').show();
+                } else {
+                    $('#btnBulkDelete').hide();
+                }
+            }
+            // Handle bulk delete submission
+            $('#bulkDeleteForm').on('submit', function(e) {
+                var form = this;
+                var rows = datatable.rows({ 'search': 'applied' }).nodes();
+                var $checked = $('input[type="checkbox"].checkItem:checked', rows);
+                
+                if ($checked.length === 0) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // Append hidden inputs for all selected checkboxes across all pages
+                $checked.each(function() {
+                    $(form).append(
+                        $('<input>')
+                            .attr('type', 'hidden')
+                            .attr('name', 'ids')
+                            .val(this.value)
+                    );
+                });
+                
+                // Let the normal form submission proceed (SweetAlert usually intercepts via class 'delete-form' if applied, 
+                // but since we want to handle the specific confirmation for bulk delete, we might just let normal submit happen,
+                // or if there's a global handler, it will trigger).
+                // Assuming SweetAlert handles .delete-form, we added it to the form tag above.
+            });
+
+            // If there's a custom sweetalert handler, we can trigger it directly:
+            $('#btnBulkDelete').on('click', function(e) {
+                e.preventDefault();
+                var rows = datatable.rows({ 'search': 'applied' }).nodes();
+                var $checked = $('input[type="checkbox"].checkItem:checked', rows);
+                
+                if ($checked.length === 0) return;
+
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: $checked.length + " data barang akan dihapus permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#bulkDeleteForm').submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

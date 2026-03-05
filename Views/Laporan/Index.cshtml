@@ -51,27 +51,27 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card card-outline card-info">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-handshake text-info"></i> Lap Peminjaman</h3></div>
             <div class="card-body">
                 <form method="get" action="@Url.Action("ExportPeminjaman")">
-                    <div class="form-group"><label>Dari</label><input type="date" name="from" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-01")"></div>
-                    <div class="form-group"><label>Sampai</label><input type="date" name="to" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")"></div>
-                    <button type="submit" class="btn btn-info btn-block"><i class="fas fa-download"></i> Excel</button>
+                    <div class="form-group"><label>Dari Tanggal</label><input type="date" name="from" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-01")"></div>
+                    <div class="form-group"><label>Sampai Tanggal</label><input type="date" name="to" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")"></div>
+                    <button type="submit" class="btn btn-info btn-block"><i class="fas fa-download"></i> Download Excel</button>
                 </form>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card card-outline card-success">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-undo text-success"></i> Lap Pengembalian</h3></div>
             <div class="card-body">
                 <form method="get" action="@Url.Action("ExportBarangKembali")">
-                    <div class="form-group"><label>Dari</label><input type="date" name="from" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-01")"></div>
-                    <div class="form-group"><label>Sampai</label><input type="date" name="to" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")"></div>
-                    <button type="submit" class="btn btn-success btn-block"><i class="fas fa-download"></i> Excel</button>
+                    <div class="form-group"><label>Dari Tanggal</label><input type="date" name="from" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-01")"></div>
+                    <div class="form-group"><label>Sampai Tanggal</label><input type="date" name="to" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")"></div>
+                    <button type="submit" class="btn btn-success btn-block"><i class="fas fa-download"></i> Download Excel</button>
                 </form>
             </div>
         </div>
@@ -79,14 +79,14 @@
     
 
 
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card card-outline card-warning">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-exchange-alt text-warning"></i> Lap Transfer</h3></div>
             <div class="card-body">
                 <form method="get" action="@Url.Action("ExportTransferBarang")">
-                    <div class="form-group"><label>Dari</label><input type="date" name="from" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-01")"></div>
-                    <div class="form-group"><label>Sampai</label><input type="date" name="to" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")"></div>
-                    <button type="submit" class="btn btn-warning btn-block"><i class="fas fa-download"></i> Excel</button>
+                    <div class="form-group"><label>Dari Tanggal</label><input type="date" name="from" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-01")"></div>
+                    <div class="form-group"><label>Sampai Tanggal</label><input type="date" name="to" class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-dd")"></div>
+                    <button type="submit" class="btn btn-warning btn-block"><i class="fas fa-download"></i> Download Excel</button>
                 </form>
             </div>
         </div>

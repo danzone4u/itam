@@ -74,8 +74,8 @@
                 <tr>
                     <th width="50">No</th>
                     <th>Nama Barang</th>
-                    <th>Penerima / PIC</th>
-                    <th width="80">Jumlah</th>
+                    <th>Merk & Type</th>
+                    <th width="50">Jumlah</th>
                     <th>S/N</th>
                     <th>Keterangan</th>
                 </tr>
@@ -85,13 +85,10 @@
                 @foreach (var item in group)
                 {
                     <tr>
-                        <td>@(no++)</td>
+                        <td class="text-center">@(no++)</td>
                         <td>@item.Barang?.NamaBarang</td>
-                        <td>
-                            @item.Penerima <br>
-                            <small class="text-muted">PIC: @(item.Pic ?? "-")</small>
-                        </td>
-                        <td>@item.Jumlah</td>
+                        <td>@item.Barang?.Merk @item.Barang?.Type</td>
+                        <td class="text-center">@item.Jumlah</td>
                         <td>
                             @{ var ser = item.BarangSerials?.Select(s => s.SerialNumber).Where(s => s != "-").ToList() ?? new List<string>(); }
                             @(ser.Any() ? string.Join(", ", ser) : "-")

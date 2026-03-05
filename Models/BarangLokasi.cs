@@ -22,5 +22,9 @@ namespace itam.Models
         [Required]
         [Display(Name = "Stok")]
         public int Stok { get; set; } = 0;
+
+        [Display(Name = "Rak / Kompartemen")]
+        [StringLength(100)]
+        public string? RakKompartemen { get; set; }
     }
 }

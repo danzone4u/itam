@@ -16,7 +16,7 @@
         <h5><i class="fas fa-boxes"></i> Stok Barang di Ruangan Ini</h5>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Satuan</th><th>Stok</th></tr>
+                <tr><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Merk & Type</th><th>Rak / Kompartemen</th><th>Satuan</th><th>Stok</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
@@ -26,6 +26,8 @@
                         <td>@(no++)</td>
                         <td>@item.Barang?.KodeBarang</td>
                         <td>@item.Barang?.NamaBarang</td>
+                        <td>@item.Barang?.Merk @item.Barang?.Type</td>
+                        <td>@(item.RakKompartemen ?? "-")</td>
                         <td>@item.Barang?.Satuan</td>
                         <td><span class="badge bg-success">@item.Stok</span></td>
                     </tr>

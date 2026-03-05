@@ -7,7 +7,7 @@ using itam.Models;
 
 namespace itam.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,AdminGudang")]
     public class TransferBarangController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -39,9 +39,9 @@ namespace itam.Controllers
         [HttpGet]
         public async Task<IActionResult> GetStokLokasi(int barangId, int lokasiId)
         {
-            var bl = await _context.BarangLokasis
-                .FirstOrDefaultAsync(b => b.BarangId == barangId && b.LokasiId == lokasiId);
-            return Json(new { stok = bl?.Stok ?? 0 });
+            var bls = await _context.BarangLokasis
+                .Where(b => b.BarangId == barangId && b.LokasiId == lokasiId).ToListAsync();
+            return Json(new { stok = bls.Sum(b => b.Stok) });
         }
 
         [HttpGet]
@@ -68,21 +68,28 @@ namespace itam.Controllers
             }
 
             // Cek stok di lokasi asal
-            var stokAsal = await _context.BarangLokasis
-                .FirstOrDefaultAsync(bl => bl.BarangId == model.BarangId && bl.LokasiId == model.DariLokasiId);
+            var stokAsalList = await _context.BarangLokasis
+                .Where(bl => bl.BarangId == model.BarangId && bl.LokasiId == model.DariLokasiId).ToListAsync();
+            var totalStokAsal = stokAsalList.Sum(bl => bl.Stok);
 
-            if (stokAsal == null || stokAsal.Stok < model.Jumlah)
+            if (totalStokAsal < model.Jumlah)
             {
-                TempData["Error"] = $"Stok di lokasi asal tidak mencukupi! (Tersedia: {stokAsal?.Stok ?? 0})";
+                TempData["Error"] = $"Stok di lokasi asal tidak mencukupi! (Tersedia: {totalStokAsal})";
                 return RedirectToAction(nameof(Create));
             }
 
             // Kurangi stok asal
-            stokAsal.Stok -= model.Jumlah;
+            int sisa = model.Jumlah;
+            foreach(var bld in stokAsalList.Where(x => x.Stok > 0).OrderBy(x => x.Id)) {
+                if(sisa <= 0) break;
+                int deduct = Math.Min(bld.Stok, sisa);
+                bld.Stok -= deduct;
+                sisa -= deduct;
+            }
 
             // Tambah stok tujuan
             var stokTujuan = await _context.BarangLokasis
-                .FirstOrDefaultAsync(bl => bl.BarangId == model.BarangId && bl.LokasiId == model.KeLokasiId);
+                .FirstOrDefaultAsync(bl => bl.BarangId == model.BarangId && bl.LokasiId == model.KeLokasiId && bl.RakKompartemen == null);
 
             if (stokTujuan == null)
             {
@@ -90,7 +97,8 @@ namespace itam.Controllers
                 {
                     BarangId = model.BarangId,
                     LokasiId = model.KeLokasiId,
-                    Stok = model.Jumlah
+                    Stok = model.Jumlah,
+                    RakKompartemen = null
                 };
                 _context.BarangLokasis.Add(stokTujuan);
             }
@@ -134,12 +142,20 @@ namespace itam.Controllers
             {
                 // Reverse: kembalikan stok asal, kurangi tujuan
                 var stokAsal = await _context.BarangLokasis
-                    .FirstOrDefaultAsync(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.DariLokasiId);
-                var stokTujuan = await _context.BarangLokasis
-                    .FirstOrDefaultAsync(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.KeLokasiId);
-
+                    .FirstOrDefaultAsync(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.DariLokasiId && bl.RakKompartemen == null);
                 if (stokAsal != null) stokAsal.Stok += item.Jumlah;
-                if (stokTujuan != null) stokTujuan.Stok -= item.Jumlah;
+                else _context.BarangLokasis.Add(new BarangLokasi { BarangId = item.BarangId, LokasiId = item.DariLokasiId, Stok = item.Jumlah, RakKompartemen = null });
+
+                var blsTujuan = await _context.BarangLokasis
+                    .Where(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.KeLokasiId && bl.Stok > 0)
+                    .OrderBy(x => x.Id).ToListAsync();
+                int sisa = item.Jumlah;
+                foreach(var bld in blsTujuan) {
+                    if(sisa <= 0) break;
+                    int deduct = Math.Min(bld.Stok, sisa);
+                    bld.Stok -= deduct;
+                    sisa -= deduct;
+                }
 
                 _context.TransferBarangs.Remove(item);
                 await _context.SaveChangesAsync();
@@ -157,11 +173,20 @@ namespace itam.Controllers
             foreach (var item in items)
             {
                 var stokAsal = await _context.BarangLokasis
-                    .FirstOrDefaultAsync(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.DariLokasiId);
-                var stokTujuan = await _context.BarangLokasis
-                    .FirstOrDefaultAsync(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.KeLokasiId);
+                    .FirstOrDefaultAsync(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.DariLokasiId && bl.RakKompartemen == null);
                 if (stokAsal != null) stokAsal.Stok += item.Jumlah;
-                if (stokTujuan != null) stokTujuan.Stok -= item.Jumlah;
+                else _context.BarangLokasis.Add(new BarangLokasi { BarangId = item.BarangId, LokasiId = item.DariLokasiId, Stok = item.Jumlah, RakKompartemen = null });
+
+                var blsTujuan = await _context.BarangLokasis
+                    .Where(bl => bl.BarangId == item.BarangId && bl.LokasiId == item.KeLokasiId && bl.Stok > 0)
+                    .OrderBy(x => x.Id).ToListAsync();
+                int sisa = item.Jumlah;
+                foreach(var bld in blsTujuan) {
+                    if(sisa <= 0) break;
+                    int deduct = Math.Min(bld.Stok, sisa);
+                    bld.Stok -= deduct;
+                    sisa -= deduct;
+                }
             }
             _context.TransferBarangs.RemoveRange(items);
             await _context.SaveChangesAsync();
