@@ -283,53 +283,7 @@ namespace MyGudang.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PrintSuratJalan(int[] ids)
-        {
-            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
 
-            var data = await _context.BarangMasuks
-                .Include(b => b.Barang)
-                .Include(b => b.Supplier)
-                .Include(b => b.BarangSerials)
-                .Where(b => ids.Contains(b.Id))
-                .ToListAsync();
-
-            if (!data.Any()) return RedirectToAction(nameof(Index));
-
-            var count = await _context.BarangMasuks.CountAsync(); // Using total count for pseudo-numbering or logic
-            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            
-            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
-            ViewBag.NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SJ");
-            
-            return View(data);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PrintBAST(int[] ids)
-        {
-            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
-
-            var data = await _context.BarangMasuks
-                .Include(b => b.Barang)
-                .Include(b => b.Supplier)
-                .Include(b => b.BarangSerials)
-                .Where(b => ids.Contains(b.Id))
-                .ToListAsync();
-
-            if (!data.Any()) return RedirectToAction(nameof(Index));
-
-            var count = await _context.BarangMasuks.CountAsync(); 
-            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            
-            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
-            ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "STB");
-            
-            return View(data);
-        }
 
         public async Task<IActionResult> ExportExcel()
         {
