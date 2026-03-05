@@ -1,0 +1,118 @@
+@model MyGudang.Models.AppSetting
+
+@{
+    ViewData["Title"] = "Setting Aplikasi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card card-outline card-primary shadow">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-cogs mr-1"></i>
+                    Konfigurasi Profil Aplikasi
+                </h3>
+            </div>
+            <!-- /.card-header -->
+            <!-- form start -->
+            <form asp-action="Save" method="post" enctype="multipart/form-data">
+                <div class="card-body">
+                    <input type="hidden" asp-for="Id" />
+                    
+                    <div class="form-group row">
+                        <label asp-for="AppName" class="col-sm-3 col-form-label">Nama Aplikasi <span class="text-danger">*</span></label>
+                        <div class="col-sm-9">
+                            <input asp-for="AppName" class="form-control" placeholder="Masukkan Nama Aplikasi" required />
+                            <span asp-validation-for="AppName" class="text-danger text-sm"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Logo Aplikasi</label>
+                        <div class="col-sm-9">
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="LogoFile" name="LogoFile" accept="image/*" onchange="previewImage('LogoFile', 'logoPreview')">
+                                    <label class="custom-file-label" for="LogoFile">Pilih file logo...</label>
+                                </div>
+                            </div>
+                            <small class="text-muted">Format yang disarankan: PNG transparan. Rasio: 1:1 atau memanjang.</small>
+                            <div class="mt-2">
+                                @if (!string.IsNullOrEmpty(Model?.LogoPath))
+                                {
+                                    <img id="logoPreview" src="@Model.LogoPath" alt="Logo Preview" class="img-thumbnail" style="max-height: 100px; display: block;" />
+                                }
+                                else
+                                {
+                                    <img id="logoPreview" src="#" alt="Logo Preview" class="img-thumbnail" style="max-height: 100px; display: none;" />
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Favicon</label>
+                        <div class="col-sm-9">
+                            <div class="input-group">
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="FaviconFile" name="FaviconFile" accept="image/x-icon,image/png,image/jpeg" onchange="previewImage('FaviconFile', 'faviconPreview')">
+                                    <label class="custom-file-label" for="FaviconFile">Pilih file favicon...</label>
+                                </div>
+                            </div>
+                            <small class="text-muted">Ikon kecil di tab browser. Format: .ico atau .png, Ukuran: 32x32 pixel.</small>
+                            <div class="mt-2">
+                                @if (!string.IsNullOrEmpty(Model?.FaviconPath))
+                                {
+                                    <img id="faviconPreview" src="@Model.FaviconPath" alt="Favicon Preview" class="img-thumbnail" style="max-height: 50px; display: block;" />
+                                }
+                                else
+                                {
+                                    <img id="faviconPreview" src="#" alt="Favicon Preview" class="img-thumbnail" style="max-height: 50px; display: none;" />
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.card-body -->
+
+                <div class="card-footer text-right">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i> Simpan Pengaturan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <!-- bs-custom-file-input -->
+    <script src="https://adminlte.io/themes/v3/plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
+    <script>
+        $(function () {
+            bsCustomFileInput.init();
+        });
+
+        function previewImage(inputId, previewId) {
+            var input = document.getElementById(inputId);
+            var preview = document.getElementById(previewId);
+            
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = '#';
+                preview.style.display = 'none';
+            }
+        }
+    </script>
+}

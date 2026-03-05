@@ -27,6 +27,6 @@ namespace MyGudang.Models
         [Display(Name = "Tanggal Dibuat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        public ICollection<Barang>? Barangs { get; set; }
+        public ICollection<BarangMasuk>? BarangMasuks { get; set; }
     }
 }

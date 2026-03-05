@@ -65,6 +65,25 @@
 $(function(){
     $('.select2').select2({ theme:'bootstrap4', placeholder:'-- Pilih --', allowClear:true });
 
+    // Load Barang when Lokasi changes
+    $('select[name="lokasiId"]').on('change', function(){
+        var lokasiId = $(this).val();
+        // Clear SN Container to prevent matching wrong items
+        $('#snContainer').hide();
+        $('#snList').html('');
+        $('#selectedCount').text('0');
+
+        $.getJSON('@Url.Action("GetBarangsByLokasi","BarangKeluar")', { lokasiId: lokasiId }, function(data){
+            var $select = $('#selectBarang');
+            $select.empty();
+            $select.append('<option value="">-- Pilih Barang --</option>');
+            $.each(data, function(i, item){
+                $select.append('<option value="' + item.value + '">' + item.text + '</option>');
+            });
+            $select.trigger('change'); // Ensure select2 updates visually and triggers subsequent logic if needed
+        });
+    });
+
     // Load SNs when barang selected
     $('#selectBarang').on('change', function(){
         var barangId = $(this).val();

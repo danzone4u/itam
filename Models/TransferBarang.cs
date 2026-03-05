@@ -44,5 +44,7 @@ namespace MyGudang.Models
         public string? NoTransfer { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        public ICollection<TransferBarangSerial>? TransferBarangSerials { get; set; }
     }
 }

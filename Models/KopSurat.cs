@@ -40,5 +40,8 @@ namespace MyGudang.Models
 
         [Display(Name = "Tampilkan Logo")]
         public bool TampilkanLogo { get; set; } = true;
+
+        [StringLength(255)]
+        public string? LogoPath { get; set; }
     }
 }

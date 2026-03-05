@@ -23,6 +23,7 @@ namespace MyGudang.Controllers
                 .Include(t => t.Barang)
                 .Include(t => t.DariLokasi)
                 .Include(t => t.KeLokasi)
+                .Include(t => t.TransferBarangSerials!).ThenInclude(ts => ts.BarangSerial)
                 .OrderByDescending(t => t.TanggalTransfer)
                 .ToListAsync();
             return View(data);
@@ -43,9 +44,22 @@ namespace MyGudang.Controllers
             return Json(new { stok = bl?.Stok ?? 0 });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableSerials(int barangId)
+        {
+            var serials = await _context.BarangSerials
+                .Where(s => s.BarangId == barangId && s.Status == "Tersedia")
+                .Select(s => new {
+                    id = s.Id,
+                    serialNumber = s.SerialNumber
+                })
+                .ToListAsync();
+            return Json(serials);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(TransferBarang model)
+        public async Task<IActionResult> Create(TransferBarang model, int[] serialIds)
         {
             if (model.DariLokasiId == model.KeLokasiId)
             {
@@ -92,6 +106,21 @@ namespace MyGudang.Controllers
             _context.TransferBarangs.Add(model);
 
             await _context.SaveChangesAsync();
+
+            // Save selected serials if any
+            if (serialIds != null && serialIds.Length > 0)
+            {
+                foreach (var sId in serialIds)
+                {
+                    _context.TransferBarangSerials.Add(new TransferBarangSerial
+                    {
+                        TransferBarangId = model.Id,
+                        BarangSerialId = sId
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
             TempData["Success"] = "Transfer barang berhasil!";
             return RedirectToAction(nameof(Index));
         }

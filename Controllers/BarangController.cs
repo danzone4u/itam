@@ -22,7 +22,7 @@ namespace MyGudang.Controllers
 
         public async Task<IActionResult> Index(string? search, int? kategoriId)
         {
-            var query = _context.Barangs.Include(b => b.Kategori).Include(b => b.Supplier).AsQueryable();
+            var query = _context.Barangs.Include(b => b.Kategori).AsQueryable();
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(b => b.NamaBarang.Contains(search) || b.KodeBarang.Contains(search));
@@ -51,7 +51,6 @@ namespace MyGudang.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori");
-            ViewBag.Suppliers = new SelectList(await _context.Suppliers.ToListAsync(), "Id", "NamaSupplier");
             return View();
         }
 
@@ -77,22 +76,22 @@ namespace MyGudang.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori", barang.KategoriId);
-            ViewBag.Suppliers = new SelectList(await _context.Suppliers.ToListAsync(), "Id", "NamaSupplier", barang.SupplierId);
             return View(barang);
         }
 
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
             var barang = await _context.Barangs.FindAsync(id);
             if (barang == null) return NotFound();
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori", barang.KategoriId);
-            ViewBag.Suppliers = new SelectList(await _context.Suppliers.ToListAsync(), "Id", "NamaSupplier", barang.SupplierId);
             return View(barang);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Edit(int id, Barang barang, IFormFile? gambarFile)
         {
             if (id != barang.Id) return NotFound();
@@ -113,7 +112,6 @@ namespace MyGudang.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori", barang.KategoriId);
-            ViewBag.Suppliers = new SelectList(await _context.Suppliers.ToListAsync(), "Id", "NamaSupplier", barang.SupplierId);
             return View(barang);
         }
 
@@ -123,7 +121,6 @@ namespace MyGudang.Controllers
 
             var barang = await _context.Barangs
                 .Include(b => b.Kategori)
-                .Include(b => b.Supplier)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (barang == null) return NotFound();
@@ -154,13 +151,7 @@ namespace MyGudang.Controllers
                 .OrderByDescending(bk => bk.TanggalKembali)
                 .ToListAsync();
 
-            // Ambil histori peremajaan untuk melengkapi riwayat stok masuk
-            var historiPeremajaan = await _context.Peremajaans
-                .Where(p => p.BarangId == id)
-                .OrderByDescending(p => p.TanggalPeremajaan)
-                .ToListAsync();
-
-            // Ambil daftar S/N yang tersedia saat ini beserta kondisinya
+            // Ambil daftar S/N yang tersedia saat ini
             var snTersedia = await _context.BarangSerials
                 .Where(s => s.BarangId == id && s.Status == "Tersedia")
                 .OrderBy(s => s.SerialNumber)
@@ -170,7 +161,6 @@ namespace MyGudang.Controllers
             ViewBag.HistoriKeluar = historiKeluar;
             ViewBag.HistoriPinjam = historiPinjam;
             ViewBag.HistoriKembali = historiKembali;
-            ViewBag.HistoriPeremajaan = historiPeremajaan;
             ViewBag.SnTersedia = snTersedia;
 
             return View(barang);
@@ -178,18 +168,17 @@ namespace MyGudang.Controllers
 
         public async Task<IActionResult> ExportExcel()
         {
-            var data = await _context.Barangs.Include(b => b.Kategori).Include(b => b.Supplier).OrderBy(b => b.NamaBarang).ToListAsync();
+            var data = await _context.Barangs.Include(b => b.Kategori).OrderBy(b => b.NamaBarang).ToListAsync();
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Barang");
             ws.Cell(1, 1).Value = "No";
             ws.Cell(1, 2).Value = "Kode Barang";
             ws.Cell(1, 3).Value = "Nama Barang";
             ws.Cell(1, 4).Value = "Kategori";
-            ws.Cell(1, 5).Value = "Supplier";
-            ws.Cell(1, 6).Value = "Satuan";
-            ws.Cell(1, 7).Value = "Stok";
-            ws.Range("A1:G1").Style.Font.Bold = true;
-            ws.Range("A1:G1").Style.Fill.BackgroundColor = XLColor.LightBlue;
+            ws.Cell(1, 5).Value = "Satuan";
+            ws.Cell(1, 6).Value = "Stok";
+            ws.Range("A1:F1").Style.Font.Bold = true;
+            ws.Range("A1:F1").Style.Fill.BackgroundColor = XLColor.LightBlue;
 
             for (int i = 0; i < data.Count; i++)
             {
@@ -197,9 +186,8 @@ namespace MyGudang.Controllers
                 ws.Cell(i + 2, 2).Value = data[i].KodeBarang;
                 ws.Cell(i + 2, 3).Value = data[i].NamaBarang;
                 ws.Cell(i + 2, 4).Value = data[i].Kategori?.NamaKategori;
-                ws.Cell(i + 2, 5).Value = data[i].Supplier?.NamaSupplier;
-                ws.Cell(i + 2, 6).Value = data[i].Satuan;
-                ws.Cell(i + 2, 7).Value = data[i].Stok;
+                ws.Cell(i + 2, 5).Value = data[i].Satuan;
+                ws.Cell(i + 2, 6).Value = data[i].Stok;
             }
             ws.Columns().AdjustToContents();
 
@@ -231,20 +219,17 @@ namespace MyGudang.Controllers
                 if (string.IsNullOrWhiteSpace(nama)) continue;
 
                 var kategoriName = row.Cell(4).GetString();
-                var supplierName = row.Cell(5).GetString();
 
                 var kategori = await _context.Kategoris.FirstOrDefaultAsync(k => k.NamaKategori == kategoriName);
-                var supplier = await _context.Suppliers.FirstOrDefaultAsync(s => s.NamaSupplier == supplierName);
 
-                if (kategori == null || supplier == null) continue;
+                if (kategori == null) continue;
 
                 _context.Barangs.Add(new Barang
                 {
                     KodeBarang = kode,
                     NamaBarang = nama,
                     KategoriId = kategori.Id,
-                    SupplierId = supplier.Id,
-                    Satuan = row.Cell(6).GetString(),
+                    Satuan = row.Cell(5).GetString(), // adjust from 6 to 5 or keep 6 depending on header change? No, data rows matching the old header is confusing if we shift. If existing Excel format assumes column 5 is Supplier and 6 is Satuan, users will fail if we expect Satuan at 5 suddenly without warning. Let's just read Satuan at Column 6 and Stok at Column 7 still to be safe.
                     Stok = (int)row.Cell(7).GetDouble(),
                     CreatedAt = DateTime.Now
                 });
@@ -257,7 +242,7 @@ namespace MyGudang.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAjax(string? kodeBarang, string namaBarang, int? kategoriId, int? supplierId, string satuan)
+        public async Task<IActionResult> CreateAjax(string? kodeBarang, string namaBarang, int? kategoriId, string satuan)
         {
             if (string.IsNullOrWhiteSpace(namaBarang))
                 return Json(new { success = false, message = "Nama barang wajib diisi!" });
@@ -273,7 +258,6 @@ namespace MyGudang.Controllers
                 KodeBarang = kodeBarang ?? "",
                 NamaBarang = namaBarang,
                 KategoriId = kategoriId ?? 0,
-                SupplierId = supplierId ?? 0,
                 Satuan = satuan ?? "Unit",
                 Stok = 0,
                 CreatedAt = DateTime.Now

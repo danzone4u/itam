@@ -9,7 +9,16 @@
             <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
             <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#importModal"><i class="fas fa-file-import"></i> Import</button>
             <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
-            <button class="btn btn-danger btn-sm d-none" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
+            <div class="btn-group d-none ml-2" id="btnBulkPrintGroup">
+                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-print"></i> Cetak Terpilih (<span id="bulkPrintCount">0</span>)
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item btn-bulk-print" type="button" data-url="@Url.Action("PrintSuratJalan")"><i class="fas fa-file-invoice"></i> Surat Jalan Penerimaan</button>
+                    <button class="dropdown-item btn-bulk-print" type="button" data-url="@Url.Action("PrintBAST")"><i class="fas fa-file-signature"></i> Berita Acara (BAST)</button>
+                </div>
+            </div>
+            <button class="btn btn-danger btn-sm d-none ml-2" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
@@ -62,3 +71,38 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(function(){
+            // Extend the bulk-check logic for printing
+            var originalBulkCheck = function() {
+                var cnt = $('.bulk-check:checked').length;
+                $('#bulkPrintCount').text(cnt);
+                if(cnt > 0) {
+                    $('#btnBulkPrintGroup').removeClass('d-none');
+                } else {
+                    $('#btnBulkPrintGroup').addClass('d-none');
+                }
+            };
+
+            $(document).on('change', '.bulk-check', originalBulkCheck);
+            $('#checkAll').on('change', originalBulkCheck);
+
+            // Handle print buttons
+            $('.btn-bulk-print').on('click', function(){
+                var ids = []; 
+                $('.bulk-check:checked').each(function(){ ids.push($(this).val()); });
+                if(ids.length === 0) return;
+                
+                var url = $(this).data('url');
+                var form = $('<form method="post" target="_blank" action="'+url+'"></form>');
+                form.append('@Html.AntiForgeryToken()');
+                ids.forEach(function(id){ form.append('<input type="hidden" name="ids" value="'+id+'">'); });
+                $('body').append(form);
+                form.submit();
+                form.remove(); // cleanup
+            });
+        });
+    </script>
+}

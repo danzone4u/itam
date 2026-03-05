@@ -46,8 +46,20 @@ namespace MyGudang.Services
                 }
 
                 // Do backup
-                var backupFolder = Path.Combine(_env.WebRootPath, "backups");
-                Directory.CreateDirectory(backupFolder);
+                var backupFolder = setting.BackupPath;
+                if (string.IsNullOrWhiteSpace(backupFolder))
+                    backupFolder = Path.Combine(_env.WebRootPath, "backups");
+
+                try
+                {
+                    Directory.CreateDirectory(backupFolder);
+                }
+                catch
+                {
+                    // Fallback if the user-provided path is invalid or inaccessible
+                    backupFolder = Path.Combine(_env.WebRootPath, "backups");
+                    Directory.CreateDirectory(backupFolder);
+                }
 
                 var timestamp = now.ToString("yyyyMMdd_HHmmss");
                 var fileName = $"MyGudangDB_Auto_{timestamp}.bak";

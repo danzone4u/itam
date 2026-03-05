@@ -40,5 +40,13 @@ namespace MyGudang.Models
 
         [ForeignKey("LokasiId")]
         public Lokasi? Lokasi { get; set; }
+
+        [Display(Name = "Supplier")]
+        public int? SupplierId { get; set; }
+
+        [ForeignKey("SupplierId")]
+        public Supplier? Supplier { get; set; }
+
+        public ICollection<BarangSerial>? BarangSerials { get; set; }
     }
 }

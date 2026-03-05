@@ -21,7 +21,7 @@
                     int no = 1;
                     foreach (var t in transactions)
                     {
-                        bool isMasuk = t.Tipe == "Masuk" || t.Tipe == "Retur" || t.Tipe == "Peremajaan";
+                        bool isMasuk = t.Tipe == "Masuk";
                         <tr class="@(isMasuk ? "table-success" : "table-danger")">
                             <td>@(no++)</td>
                             <td>@(((DateTime)t.Tanggal).ToString("dd/MM/yyyy"))</td>

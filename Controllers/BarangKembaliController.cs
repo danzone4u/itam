@@ -71,6 +71,16 @@ namespace MyGudang.Controllers
                     barang.Stok += model.Jumlah;
                 }
 
+                // Deduct from BarangKeluar record
+                if (model.BarangKeluarId.HasValue)
+                {
+                    var bk = await _context.BarangKeluars.FindAsync(model.BarangKeluarId);
+                    if (bk != null && bk.Jumlah >= model.Jumlah)
+                    {
+                        bk.Jumlah -= model.Jumlah;
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 if (serialIds != null && serialIds.Length > 0)
@@ -121,6 +131,15 @@ namespace MyGudang.Controllers
                     if (barang.Stok < 0) barang.Stok = 0;
                 }
 
+                if (item.BarangKeluarId.HasValue)
+                {
+                    var bk = await _context.BarangKeluars.FindAsync(item.BarangKeluarId);
+                    if (bk != null)
+                    {
+                        bk.Jumlah += item.Jumlah;
+                    }
+                }
+
                 // Rollback SNs
                 foreach (var sn in item.BarangSerials)
                 {
@@ -146,6 +165,15 @@ namespace MyGudang.Controllers
             {
                 var barang = await _context.Barangs.FindAsync(item.BarangId);
                 if (barang != null) { barang.Stok -= item.Jumlah; if (barang.Stok < 0) barang.Stok = 0; }
+
+                if (item.BarangKeluarId.HasValue)
+                {
+                    var bk = await _context.BarangKeluars.FindAsync(item.BarangKeluarId);
+                    if (bk != null)
+                    {
+                        bk.Jumlah += item.Jumlah;
+                    }
+                }
             }
             _context.BarangKembalis.RemoveRange(items);
             await _context.SaveChangesAsync();
@@ -182,7 +210,7 @@ namespace MyGudang.Controllers
             if (bk == null) return NotFound();
 
             var serials = bk.BarangSerials
-                .Where(s => s.Status == "Keluar" && s.BarangKembaliId == null && s.PeremajaanId == null)
+                .Where(s => s.Status == "Keluar" && s.BarangKembaliId == null)
                 .Select(s => new { id = s.Id, sn = s.SerialNumber })
                 .ToList();
 

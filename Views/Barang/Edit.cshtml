@@ -3,19 +3,18 @@
 <div class="card card-outline card-warning">
     <div class="card-header"><h3 class="card-title"><i class="fas fa-edit"></i> Edit Barang</h3></div>
     <form asp-action="Edit" method="post" enctype="multipart/form-data">@Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="CreatedAt" /><input type="hidden" asp-for="Stok" /><input type="hidden" asp-for="Gambar" />
+        <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="CreatedAt" /><input type="hidden" asp-for="Gambar" />
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="KodeBarang"></label><input asp-for="KodeBarang" class="form-control" /><span asp-validation-for="KodeBarang" class="text-danger"></span></div></div>
                 <div class="col-md-6"><div class="form-group"><label asp-for="NamaBarang"></label><input asp-for="NamaBarang" class="form-control" /><span asp-validation-for="NamaBarang" class="text-danger"></span></div></div>
             </div>
             <div class="row">
-                <div class="col-md-4"><div class="form-group"><label asp-for="KategoriId"></label><select asp-for="KategoriId" asp-items="@ViewBag.Kategoris" class="form-control"><option value="">-- Pilih --</option></select></div></div>
-                <div class="col-md-4"><div class="form-group"><label asp-for="SupplierId"></label><select asp-for="SupplierId" asp-items="@ViewBag.Suppliers" class="form-control"><option value="">-- Pilih --</option></select></div></div>
-                <div class="col-md-4"><div class="form-group"><label asp-for="Satuan"></label><select asp-for="Satuan" class="form-control" required><option value="">-- Pilih Satuan --</option><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
-            </div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="KategoriId"></label><select asp-for="KategoriId" asp-items="@ViewBag.Kategoris" class="form-control"><option value="">-- Pilih --</option></select></div></div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="Satuan"></label><select asp-for="Satuan" class="form-control" required><option value="">-- Pilih Satuan --</option><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="StokMinimum"></label><input asp-for="StokMinimum" class="form-control" /><small class="text-muted">Alert ditampilkan di Dashboard jika stok <= nilai ini</small></div></div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="Stok"></label><input asp-for="Stok" class="form-control" type="number" min="0" /><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Peringatan: Override stok manual hanya untuk koreksi data.</small></div></div>
             </div>
             @if (!string.IsNullOrEmpty(Model.Gambar))
             {

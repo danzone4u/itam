@@ -21,10 +21,29 @@ namespace MyGudang.Controllers
             _env = env;
         }
 
-        private string GetBackupFolder()
+        private async Task<string> GetBackupFolderAsync()
         {
-            var path = Path.Combine(_env.WebRootPath, "backups");
-            Directory.CreateDirectory(path);
+            var setting = await _context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
+            var path = setting?.BackupPath;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = Path.Combine(_env.WebRootPath, "backups");
+            }
+
+            try
+            {
+                if (!Path.IsPathRooted(path) && !path.Contains("wwwroot"))
+                {
+                    // If relative, assume it's relative to web root or app root but best to use exact path
+                    path = Path.GetFullPath(path); 
+                }
+                Directory.CreateDirectory(path);
+            }
+            catch
+            {
+                path = Path.Combine(_env.WebRootPath, "backups");
+                Directory.CreateDirectory(path);
+            }
             return path;
         }
 
@@ -38,7 +57,7 @@ namespace MyGudang.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            var backupFolder = GetBackupFolder();
+            var backupFolder = await GetBackupFolderAsync();
             var files = Directory.GetFiles(backupFolder, "*.bak")
                 .Select(f => new FileInfo(f))
                 .OrderByDescending(f => f.CreationTime)
@@ -46,6 +65,7 @@ namespace MyGudang.Controllers
 
             ViewBag.Setting = setting;
             ViewBag.BackupFiles = files;
+            ViewBag.CurrentPath = backupFolder;
             return View();
         }
 
@@ -55,7 +75,7 @@ namespace MyGudang.Controllers
         {
             try
             {
-                var backupFolder = GetBackupFolder();
+                var backupFolder = await GetBackupFolderAsync();
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                 var fileName = $"MyGudangDB_Backup_{timestamp}.bak";
                 var filePath = Path.Combine(backupFolder, fileName);
@@ -99,7 +119,7 @@ namespace MyGudang.Controllers
 
             try
             {
-                var backupFolder = GetBackupFolder();
+                var backupFolder = await GetBackupFolderAsync();
                 var filePath = Path.Combine(backupFolder, fileName);
 
                 if (!System.IO.File.Exists(filePath))
@@ -156,11 +176,11 @@ namespace MyGudang.Controllers
         }
 
         [HttpGet]
-        public IActionResult Download(string fileName)
+        public async Task<IActionResult> Download(string fileName)
         {
             if (string.IsNullOrEmpty(fileName)) return NotFound();
 
-            var backupFolder = GetBackupFolder();
+            var backupFolder = await GetBackupFolderAsync();
             var filePath = Path.Combine(backupFolder, fileName);
 
             if (!System.IO.File.Exists(filePath)) return NotFound();
@@ -171,7 +191,7 @@ namespace MyGudang.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteBackup(string fileName)
+        public async Task<IActionResult> DeleteBackup(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))
             {
@@ -179,7 +199,7 @@ namespace MyGudang.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var backupFolder = GetBackupFolder();
+            var backupFolder = await GetBackupFolderAsync();
             var filePath = Path.Combine(backupFolder, fileName);
 
             if (System.IO.File.Exists(filePath))
@@ -224,6 +244,20 @@ namespace MyGudang.Controllers
                 setting.IntervalHours = hours;
                 await _context.SaveChangesAsync();
                 TempData["Success"] = $"Interval auto backup diperbarui menjadi {hours} jam.";
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdatePath(string backupPath)
+        {
+            var setting = await _context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
+            if (setting != null)
+            {
+                setting.BackupPath = string.IsNullOrWhiteSpace(backupPath) ? "wwwroot/backups" : backupPath;
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Lokasi backup berhasil diperbarui.";
             }
             return RedirectToAction(nameof(Index));
         }

@@ -8,11 +8,20 @@
         <div class="mb-3">
             <a href="@Url.Action("Create")" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Tambah</a>
             <a href="@Url.Action("ExportExcel")" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export</a>
-            <button class="btn btn-danger btn-sm d-none" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
+            <div class="btn-group d-none ml-2" id="btnBulkPrintGroup">
+                <button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-print"></i> Cetak Terpilih (<span id="bulkPrintCount">0</span>)
+                </button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item btn-bulk-print" type="button" data-url="@Url.Action("PrintSuratJalanBulk")"><i class="fas fa-file-invoice"></i> Surat Jalan</button>
+                    <button class="dropdown-item btn-bulk-print" type="button" data-url="@Url.Action("PrintBASTBulk")"><i class="fas fa-file-signature"></i> Berita Acara (BAST)</button>
+                </div>
+            </div>
+            <button class="btn btn-danger btn-sm d-none ml-2" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="30">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th width="250">Barang</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th></tr>
+                <tr><th width="40"><input type="checkbox" id="checkAll"></th><th width="30">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th width="250">Barang</th><th>S/N</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
@@ -21,6 +30,19 @@
                     <tr>
                         <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
                         <td>@(no++)</td><td><span class="badge bg-secondary">@item.NoSuratJalan</span></td><td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td>
+                        <td>
+                            @{
+                                var snList = item.BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
+                            }
+                            @if (snList.Any())
+                            {
+                                <small class="text-muted">@string.Join(", ", snList)</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
                         <td><span class="badge bg-danger">-@item.Jumlah</span></td>
                         <td>@(item.Lokasi?.NamaLokasi ?? "-")</td>
                         <td>@item.Penerima</td><td>@(item.Pic ?? "-")</td><td>@item.NoHpPenerima</td>
@@ -28,7 +50,7 @@
                             <a href="@Url.Action("SuratJalan", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat Jalan"><i class="fas fa-file-alt"></i> SJ</a>
                             <a href="@Url.Action("SuratTerimaBarang", new { id = item.Id })" class="btn btn-secondary btn-xs" title="Berita Acara Serah Terima"><i class="fas fa-receipt"></i> BAST</a>
                             <a href="@Url.Action("Create", "BarangKembali", new { barangKeluarId = item.Id })" class="btn btn-success btn-xs" title="Kembalikan Barang"><i class="fas fa-undo"></i></a>
-                            <a href="@Url.Action("Create", "Peremajaan", new { barangKeluarId = item.Id })" class="btn btn-xs" style="background:#6f42c1;color:#fff;" title="Peremajaan"><i class="fas fa-sync-alt"></i></a>
+
                             <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
                             <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
                         </td>
@@ -38,3 +60,38 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(function(){
+            // Extend the bulk-check logic for printing
+            var originalBulkCheck = function() {
+                var cnt = $('.bulk-check:checked').length;
+                $('#bulkPrintCount').text(cnt);
+                if(cnt > 0) {
+                    $('#btnBulkPrintGroup').removeClass('d-none');
+                } else {
+                    $('#btnBulkPrintGroup').addClass('d-none');
+                }
+            };
+
+            $(document).on('change', '.bulk-check', originalBulkCheck);
+            $('#checkAll').on('change', originalBulkCheck);
+
+            // Handle print buttons
+            $('.btn-bulk-print').on('click', function(){
+                var ids = []; 
+                $('.bulk-check:checked').each(function(){ ids.push($(this).val()); });
+                if(ids.length === 0) return;
+                
+                var url = $(this).data('url');
+                var form = $('<form method="post" target="_blank" action="'+url+'"></form>');
+                form.append('@Html.AntiForgeryToken()');
+                ids.forEach(function(id){ form.append('<input type="hidden" name="ids" value="'+id+'">'); });
+                $('body').append(form);
+                form.submit();
+                form.remove(); // cleanup
+            });
+        });
+    </script>
+}

@@ -45,6 +45,11 @@ namespace MyGudang.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (!barangMasuk.LokasiId.HasValue || barangMasuk.LokasiId <= 0)
+                {
+                    barangMasuk.LokasiId = await GetOrCreateLokasiAsync("Ruang IT");
+                }
+                
                 barangMasuk.CreatedAt = DateTime.Now;
                 _context.Add(barangMasuk);
 
@@ -53,6 +58,17 @@ namespace MyGudang.Controllers
                 if (barang != null)
                 {
                     barang.Stok += barangMasuk.Jumlah;
+                }
+                
+                // Update BarangLokasi (stok per ruangan)
+                if (barangMasuk.LokasiId.HasValue && barangMasuk.LokasiId.Value > 0)
+                {
+                    var bl = await _context.BarangLokasis
+                        .FirstOrDefaultAsync(x => x.BarangId == barangMasuk.BarangId && x.LokasiId == barangMasuk.LokasiId.Value);
+                    if (bl != null)
+                        bl.Stok += barangMasuk.Jumlah;
+                    else
+                        _context.BarangLokasis.Add(new BarangLokasi { BarangId = barangMasuk.BarangId, LokasiId = barangMasuk.LokasiId.Value, Stok = barangMasuk.Jumlah });
                 }
 
                 await _context.SaveChangesAsync();
@@ -63,19 +79,62 @@ namespace MyGudang.Controllers
             return View(barangMasuk);
         }
 
+        private async Task<int> GetOrCreateLokasiAsync(string lokasiNama)
+        {
+            if (string.IsNullOrWhiteSpace(lokasiNama))
+                lokasiNama = "Ruang IT";
+
+            var lok = await _context.Lokasis
+                .FirstOrDefaultAsync(l => l.NamaLokasi.ToLower() == lokasiNama.ToLower());
+
+            if (lok != null)
+            {
+                return lok.Id;
+            }
+
+            var newLokasi = new Lokasi 
+            { 
+                NamaLokasi = lokasiNama,
+                CreatedAt = DateTime.Now
+            };
+            
+            _context.Lokasis.Add(newLokasi);
+            await _context.SaveChangesAsync();
+            return newLokasi.Id;
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, string[] keterangans, string[] serialNumbers, DateTime tanggalMasuk, string? keteranganGlobal, int? lokasiId)
+        public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, string[] keterangans, DateTime tanggalMasuk, string? keteranganGlobal, int? lokasiId, int? supplierId)
         {
             if (barangIds == null || barangIds.Length == 0)
             {
                 TempData["Error"] = "Pilih minimal 1 barang!";
                 ViewBag.Barangs = new SelectList(await _context.Barangs.ToListAsync(), "Id", "NamaBarang");
                 ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi");
+                ViewBag.Suppliers = new SelectList(await _context.Suppliers.OrderBy(s => s.NamaSupplier).ToListAsync(), "Id", "NamaSupplier");
                 return View("Create");
             }
 
+            // Extract the dynamic snRows from Request.Form since jagged arrays are differently bound.
+            // Keys come in like "snRows[0]", "snRows[1]"
+            var snData = new Dictionary<int, List<string>>();
+            var formKeys = Request.Form.Keys.Where(k => k.StartsWith("snRows[")).ToList();
+            foreach (var key in formKeys)
+            {
+                var indexStr = key.Replace("snRows[", "").Replace("]", "");
+                if (int.TryParse(indexStr, out int idx))
+                {
+                    var vals = Request.Form[key].Where(v => !string.IsNullOrEmpty(v)).Select(v => v!).ToList();
+                    snData[idx] = vals; // this correlates to the row index
+                }
+            }
+
             int count = 0;
+            // Since javascript rowIndex sequence might skip numbers if rows are deleted, we will just align it sequentially with barangIds.
+            // A more robust way is getting all keys and sorting them or mapping them to the iterations.
+            var orderedSnKeys = snData.Keys.OrderBy(k => k).ToList();
+
             for (int i = 0; i < barangIds.Length; i++)
             {
                 if (barangIds[i] <= 0 || jumlahs[i] <= 0) continue;
@@ -83,14 +142,11 @@ namespace MyGudang.Controllers
                 var ket = (keterangans != null && i < keterangans.Length && !string.IsNullOrWhiteSpace(keterangans[i]))
                     ? keterangans[i] : keteranganGlobal;
 
-                var snInput = (serialNumbers != null && i < serialNumbers.Length) ? serialNumbers[i] : null;
                 var snList = new List<string>();
-                if (!string.IsNullOrWhiteSpace(snInput))
+                if (orderedSnKeys.Count > i)
                 {
-                    snList = snInput.Split(new[] { ',', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                                   .Select(s => s.Trim())
-                                   .Where(s => !string.IsNullOrEmpty(s))
-                                   .ToList();
+                    int keyIndex = orderedSnKeys[i];
+                    snList = snData[keyIndex].Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
                 }
 
                 int actualJumlah = snList.Count > 0 ? snList.Count : jumlahs[i];
@@ -101,7 +157,8 @@ namespace MyGudang.Controllers
                     Jumlah = actualJumlah,
                     TanggalMasuk = tanggalMasuk,
                     Keterangan = ket,
-                    LokasiId = (lokasiId.HasValue && lokasiId.Value > 0) ? lokasiId : null,
+                    LokasiId = (lokasiId.HasValue && lokasiId.Value > 0) ? lokasiId : await GetOrCreateLokasiAsync("Ruang IT"),
+                    SupplierId = (supplierId.HasValue && supplierId.Value > 0) ? supplierId : null,
                     CreatedAt = DateTime.Now
                 };
                 _context.BarangMasuks.Add(bm);
@@ -111,10 +168,11 @@ namespace MyGudang.Controllers
                 {
                     foreach (var sn in snList)
                     {
+                        var finalSn = string.IsNullOrWhiteSpace(sn) || sn == "-" ? "-" : sn.Trim();
                         _context.BarangSerials.Add(new BarangSerial
                         {
                             BarangId = barangIds[i],
-                            SerialNumber = sn,
+                            SerialNumber = finalSn,
                             Status = "Tersedia",
                             BarangMasukId = bm.Id,
                             CreatedAt = DateTime.Now
@@ -140,15 +198,13 @@ namespace MyGudang.Controllers
                 if (barang != null) barang.Stok += actualJumlah;
 
                 // Update BarangLokasi (stok per ruangan)
-                if (lokasiId.HasValue && lokasiId.Value > 0)
-                {
-                    var bl = await _context.BarangLokasis
-                        .FirstOrDefaultAsync(x => x.BarangId == barangIds[i] && x.LokasiId == lokasiId.Value);
-                    if (bl != null)
-                        bl.Stok += actualJumlah;
-                    else
-                        _context.BarangLokasis.Add(new BarangLokasi { BarangId = barangIds[i], LokasiId = lokasiId.Value, Stok = actualJumlah });
-                }
+                int finalLokasiId = bm.LokasiId.Value;
+                var bl = await _context.BarangLokasis
+                    .FirstOrDefaultAsync(x => x.BarangId == barangIds[i] && x.LokasiId == finalLokasiId);
+                if (bl != null)
+                    bl.Stok += actualJumlah;
+                else
+                    _context.BarangLokasis.Add(new BarangLokasi { BarangId = barangIds[i], LokasiId = finalLokasiId, Stok = actualJumlah });
 
                 count++;
             }
@@ -225,6 +281,54 @@ namespace MyGudang.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PrintSuratJalan(int[] ids)
+        {
+            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
+
+            var data = await _context.BarangMasuks
+                .Include(b => b.Barang)
+                .Include(b => b.Supplier)
+                .Include(b => b.BarangSerials)
+                .Where(b => ids.Contains(b.Id))
+                .ToListAsync();
+
+            if (!data.Any()) return RedirectToAction(nameof(Index));
+
+            var count = await _context.BarangMasuks.CountAsync(); // Using total count for pseudo-numbering or logic
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
+            
+            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
+            ViewBag.NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SJ");
+            
+            return View(data);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PrintBAST(int[] ids)
+        {
+            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
+
+            var data = await _context.BarangMasuks
+                .Include(b => b.Barang)
+                .Include(b => b.Supplier)
+                .Include(b => b.BarangSerials)
+                .Where(b => ids.Contains(b.Id))
+                .ToListAsync();
+
+            if (!data.Any()) return RedirectToAction(nameof(Index));
+
+            var count = await _context.BarangMasuks.CountAsync(); 
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
+            
+            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
+            ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "STB");
+            
+            return View(data);
         }
 
         public async Task<IActionResult> ExportExcel()
@@ -364,29 +468,15 @@ namespace MyGudang.Controllers
                         }
                     }
 
-                    int supplierId = 0;
-                    if (!string.IsNullOrEmpty(supplierNama))
-                    {
-                        var sup = suppliers.FirstOrDefault(s => s.NamaSupplier.Equals(supplierNama, StringComparison.OrdinalIgnoreCase));
-                        if (sup != null) supplierId = sup.Id;
-                        else
-                        {
-                            var newSup = new Supplier { NamaSupplier = supplierNama };
-                            _context.Suppliers.Add(newSup);
-                            await _context.SaveChangesAsync();
-                            suppliers.Add(newSup);
-                            supplierId = newSup.Id;
-                        }
-                    }
 
-                    if (kategoriId > 0 && supplierId > 0)
+
+                    if (kategoriId > 0)
                     {
                         barang = new Barang
                         {
                             KodeBarang = kodeBarang,
                             NamaBarang = namaBarang,
                             KategoriId = kategoriId,
-                            SupplierId = supplierId,
                             Satuan = !string.IsNullOrEmpty(satuan) ? satuan : "Unit",
                             Stok = 0,
                             CreatedAt = DateTime.Now,
@@ -411,19 +501,14 @@ namespace MyGudang.Controllers
                     }
                 }
 
-                int? lokasiId = null;
-                if (!string.IsNullOrEmpty(lokasiNama))
+                int? finalLokasiId = null;
+                if (!string.IsNullOrWhiteSpace(lokasiNama))
                 {
-                    if (int.TryParse(lokasiNama, out int lId))
-                    {
-                        var lok = lokasis.FirstOrDefault(l => l.Id == lId);
-                        if (lok != null) lokasiId = lok.Id;
-                    }
-                    else
-                    {
-                        var lok = lokasis.FirstOrDefault(l => l.NamaLokasi.Equals(lokasiNama, StringComparison.OrdinalIgnoreCase));
-                        if (lok != null) lokasiId = lok.Id;
-                    }
+                    finalLokasiId = await GetOrCreateLokasiAsync(lokasiNama);
+                }
+                else
+                {
+                    finalLokasiId = await GetOrCreateLokasiAsync("Ruang IT");
                 }
 
                 var snList = new List<string>();
@@ -437,13 +522,29 @@ namespace MyGudang.Controllers
 
                 int actualJumlah = snList.Count > 0 ? snList.Count : jumlah;
 
+                int? bmSupplierId = null;
+                if (!string.IsNullOrEmpty(supplierNama))
+                {
+                    var sup = suppliers.FirstOrDefault(s => s.NamaSupplier.Equals(supplierNama, StringComparison.OrdinalIgnoreCase));
+                    if (sup != null) bmSupplierId = sup.Id;
+                    else
+                    {
+                        var newSup = new Supplier { NamaSupplier = supplierNama };
+                        _context.Suppliers.Add(newSup);
+                        await _context.SaveChangesAsync();
+                        suppliers.Add(newSup);
+                        bmSupplierId = newSup.Id;
+                    }
+                }
+
                 var bm = new BarangMasuk
                 {
                     BarangId = barang.Id,
                     Jumlah = actualJumlah,
                     TanggalMasuk = tanggalMasuk,
                     Keterangan = ket,
-                    LokasiId = lokasiId,
+                    LokasiId = finalLokasiId,
+                    SupplierId = bmSupplierId,
                     CreatedAt = DateTime.Now
                 };
 
@@ -480,11 +581,11 @@ namespace MyGudang.Controllers
 
                 barang.Stok += actualJumlah;
                 
-                if (lokasiId.HasValue && lokasiId.Value > 0)
+                if (finalLokasiId.HasValue && finalLokasiId.Value > 0)
                 {
-                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == barang.Id && x.LokasiId == lokasiId.Value);
+                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == barang.Id && x.LokasiId == finalLokasiId.Value);
                     if (bl != null) bl.Stok += actualJumlah;
-                    else _context.BarangLokasis.Add(new BarangLokasi { BarangId = barang.Id, LokasiId = lokasiId.Value, Stok = actualJumlah });
+                    else _context.BarangLokasis.Add(new BarangLokasi { BarangId = barang.Id, LokasiId = finalLokasiId.Value, Stok = actualJumlah });
                 }
 
                 successCount++;

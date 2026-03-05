@@ -10,7 +10,7 @@
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="30">No</th><th>Kode</th><th width="250">Nama Barang</th><th>Kategori</th><th width="180">Supplier</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="85">Aksi</th></tr>
+                <tr><th width="30">No</th><th>Kode</th><th width="250">Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="85">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
@@ -18,7 +18,7 @@
                 {
                     <tr>
                         <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td>
-                        <td>@item.Kategori?.NamaKategori</td><td>@item.Supplier?.NamaSupplier</td>
+                        <td>@item.Kategori?.NamaKategori</td>
                         <td>@item.Satuan</td>
                         <td>
                             <span class="badge @(item.Stok == 0 ? "badge-stok-habis" : item.Stok <= 5 ? "badge-stok-rendah" : "badge-stok-aman")">@item.Stok</span>
@@ -43,7 +43,10 @@
                         <td><small class="text-muted">@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</small></td>
                         <td>
                             <a href="@Url.Action("Detail", new { id = item.Id })" class="btn btn-info btn-xs" title="Lihat Histori Barang"><i class="fas fa-info-circle"></i></a>
-                            <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit Data Barang"><i class="fas fa-edit"></i></a>
+                            @if (User.IsInRole("SuperAdmin"))
+                            {
+                                <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit Data Barang"><i class="fas fa-edit"></i></a>
+                            }
                         </td>
                     </tr>
                 }

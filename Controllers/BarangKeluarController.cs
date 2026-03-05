@@ -23,6 +23,7 @@ namespace MyGudang.Controllers
             var data = await _context.BarangKeluars
                 .Include(b => b.Barang)
                 .Include(b => b.Lokasi)
+                .Include(b => b.BarangSerials)
                 .OrderByDescending(b => b.TanggalKeluar)
                 .ToListAsync();
             return View(data);
@@ -74,6 +75,30 @@ namespace MyGudang.Controllers
                 .Select(s => new { s.Id, s.SerialNumber })
                 .ToListAsync();
             return Json(serials);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetBarangsByLokasi(int? lokasiId)
+        {
+            if (lokasiId.HasValue && lokasiId.Value > 0)
+            {
+                var barangs = await _context.BarangLokasis
+                    .Include(bl => bl.Barang)
+                    .Where(bl => bl.LokasiId == lokasiId.Value && bl.Stok > 0)
+                    .Select(bl => new { value = bl.BarangId.ToString(), text = bl.Barang!.NamaBarang })
+                    .OrderBy(b => b.text)
+                    .ToListAsync();
+                return Json(barangs);
+            }
+            else
+            {
+                var barangs = await _context.Barangs
+                    .Where(b => b.Stok > 0)
+                    .Select(b => new { value = b.Id.ToString(), text = b.NamaBarang })
+                    .OrderBy(b => b.text)
+                    .ToListAsync();
+                return Json(barangs);
+            }
         }
 
         [HttpPost]
@@ -263,6 +288,52 @@ namespace MyGudang.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PrintSuratJalanBulk(int[] ids)
+        {
+            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
+
+            var data = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.BarangSerials)
+                .Where(b => ids.Contains(b.Id))
+                .ToListAsync();
+
+            if (!data.Any()) return RedirectToAction(nameof(Index));
+
+            var count = await _context.BarangKeluars.CountAsync(); // Using total count for generation
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
+
+            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
+            ViewBag.NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SJ");
+
+            return View(data);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PrintBASTBulk(int[] ids)
+        {
+            if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
+
+            var data = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.BarangSerials)
+                .Where(b => ids.Contains(b.Id))
+                .ToListAsync();
+
+            if (!data.Any()) return RedirectToAction(nameof(Index));
+
+            var count = await _context.BarangKeluars.CountAsync(); 
+            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
+
+            ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
+            ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "STB");
+
+            return View(data);
+        }
+
         public async Task<IActionResult> SuratJalan(int id)
         {
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
@@ -340,20 +411,25 @@ namespace MyGudang.Controllers
 
         public async Task<IActionResult> ExportExcel()
         {
-            var data = await _context.BarangKeluars.Include(b => b.Barang).OrderByDescending(b => b.TanggalKeluar).ToListAsync();
+            var data = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.BarangSerials)
+                .OrderByDescending(b => b.TanggalKeluar)
+                .ToListAsync();
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Barang Keluar");
             ws.Cell(1, 1).Value = "No";
             ws.Cell(1, 2).Value = "No. Surat Jalan";
             ws.Cell(1, 3).Value = "Tanggal Keluar";
             ws.Cell(1, 4).Value = "Nama Barang";
-            ws.Cell(1, 5).Value = "Jumlah";
-            ws.Cell(1, 6).Value = "Penerima";
-            ws.Cell(1, 7).Value = "Alamat";
-            ws.Cell(1, 8).Value = "No HP";
-            ws.Cell(1, 9).Value = "Keterangan";
-            ws.Range("A1:I1").Style.Font.Bold = true;
-            ws.Range("A1:I1").Style.Fill.BackgroundColor = XLColor.LightCoral;
+            ws.Cell(1, 5).Value = "Serial Number";
+            ws.Cell(1, 6).Value = "Jumlah";
+            ws.Cell(1, 7).Value = "Penerima";
+            ws.Cell(1, 8).Value = "Alamat";
+            ws.Cell(1, 9).Value = "No HP";
+            ws.Cell(1, 10).Value = "Keterangan";
+            ws.Range("A1:J1").Style.Font.Bold = true;
+            ws.Range("A1:J1").Style.Fill.BackgroundColor = XLColor.LightCoral;
 
             for (int i = 0; i < data.Count; i++)
             {
@@ -361,11 +437,15 @@ namespace MyGudang.Controllers
                 ws.Cell(i + 2, 2).Value = data[i].NoSuratJalan;
                 ws.Cell(i + 2, 3).Value = data[i].TanggalKeluar.ToString("dd/MM/yyyy");
                 ws.Cell(i + 2, 4).Value = data[i].Barang?.NamaBarang;
-                ws.Cell(i + 2, 5).Value = data[i].Jumlah;
-                ws.Cell(i + 2, 6).Value = data[i].Penerima;
-                ws.Cell(i + 2, 7).Value = data[i].Alamat;
-                ws.Cell(i + 2, 8).Value = data[i].NoHpPenerima;
-                ws.Cell(i + 2, 9).Value = data[i].Keterangan;
+                
+                var snList = data[i].BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
+                ws.Cell(i + 2, 5).Value = snList.Any() ? string.Join(", ", snList) : "-";
+                
+                ws.Cell(i + 2, 6).Value = data[i].Jumlah;
+                ws.Cell(i + 2, 7).Value = data[i].Penerima;
+                ws.Cell(i + 2, 8).Value = data[i].Alamat;
+                ws.Cell(i + 2, 9).Value = data[i].NoHpPenerima;
+                ws.Cell(i + 2, 10).Value = data[i].Keterangan;
             }
             ws.Columns().AdjustToContents();
 

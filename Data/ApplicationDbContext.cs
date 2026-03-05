@@ -28,9 +28,10 @@ namespace MyGudang.Data
         public DbSet<Lokasi> Lokasis { get; set; }
         public DbSet<BarangLokasi> BarangLokasis { get; set; }
         public DbSet<TransferBarang> TransferBarangs { get; set; }
+        public DbSet<TransferBarangSerial> TransferBarangSerials { get; set; }
         public DbSet<BackupSetting> BackupSettings { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
-        public DbSet<Peremajaan> Peremajaans { get; set; }
+        public DbSet<AppSetting> AppSettings { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -55,11 +56,11 @@ namespace MyGudang.Data
                 .HasForeignKey(b => b.KategoriId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<Barang>()
-                .HasOne(b => b.Supplier)
-                .WithMany(s => s.Barangs)
-                .HasForeignKey(b => b.SupplierId)
-                .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<BarangMasuk>()
+            .HasOne(bm => bm.Supplier)
+            .WithMany(s => s.BarangMasuks)
+            .HasForeignKey(bm => bm.SupplierId)
+            .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<BarangMasuk>()
                 .HasOne(bm => bm.Barang)
@@ -105,7 +106,7 @@ namespace MyGudang.Data
 
             builder.Entity<BarangSerial>()
                 .HasOne(bs => bs.BarangMasuk)
-                .WithMany()
+                .WithMany(bm => bm.BarangSerials)
                 .HasForeignKey(bs => bs.BarangMasukId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -149,6 +150,18 @@ namespace MyGudang.Data
                 .HasOne(t => t.KeLokasi)
                 .WithMany()
                 .HasForeignKey(t => t.KeLokasiId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TransferBarangSerial>()
+                .HasOne(t => t.TransferBarang)
+                .WithMany(tb => tb.TransferBarangSerials)
+                .HasForeignKey(t => t.TransferBarangId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<TransferBarangSerial>()
+                .HasOne(t => t.BarangSerial)
+                .WithMany()
+                .HasForeignKey(t => t.BarangSerialId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<BarangMasuk>()

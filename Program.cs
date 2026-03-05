@@ -75,25 +75,43 @@ using (var scope = app.Services.CreateScope())
     }
 
     // Seed dummy data
-    if (!context.Kategoris.Any())
+    if (!context.Barangs.Any(b => b.NamaBarang == "PC Server Rack mount A1"))
     {
+        // Delete all old data from deepest to shallowest to avoid FK conflicts and stale model errors
+        await context.Database.ExecuteSqlRawAsync(@"
+            DELETE FROM BarangKembalis;
+            DELETE FROM TransferBarangSerials;
+            DELETE FROM TransferBarangs;
+            DELETE FROM StokOpnameDetails;
+            DELETE FROM StokOpnames;
+            DELETE FROM BarangLokasis;
+            DELETE FROM BarangSerials;
+            DELETE FROM BarangKeluars;
+            DELETE FROM BarangMasuks;
+            DELETE FROM Peminjamans;
+            DELETE FROM Barangs;
+            DELETE FROM Kategoris;
+            DELETE FROM Suppliers;
+            DELETE FROM Arsips;
+        ");
+
         var kategoris = new List<Kategori>
         {
             new() { NamaKategori = "Komputer & Laptop", Deskripsi = "Perangkat komputasi end-user" },
-            new() { NamaKategori = "Server & Storage", Deskripsi = "Server fisik, NAS, dan perangkat penyimpanan" },
-            new() { NamaKategori = "Jaringan", Deskripsi = "Switch, Router, Access Point, Kabel" },
-            new() { NamaKategori = "Peripheral", Deskripsi = "Monitor, Printer, Scanner" },
-            new() { NamaKategori = "Aksesoris IT", Deskripsi = "Keyboard, Mouse, Headset, UPS" }
+            new() { NamaKategori = "Server & Data Center", Deskripsi = "Server fisik, NAS, dan komputasi intensif" },
+            new() { NamaKategori = "Jaringan & Keamanan", Deskripsi = "Switch, Router, Firewall, Access Point, Kamera CCTV" },
+            new() { NamaKategori = "Perangkat Pendukung", Deskripsi = "Monitor, Printer, Scanner, Proyektor" },
+            new() { NamaKategori = "Aksesoris IT & Suku Cadang", Deskripsi = "Keyboard, Mouse, Headset, UPS, Kabel, RAM, SSD" }
         };
         context.Kategoris.AddRange(kategoris);
         await context.SaveChangesAsync();
 
         var suppliers = new List<Supplier>
         {
-            new() { NamaSupplier = "PT Integra Teknologi", Alamat = "Jl. Sudirman 10, Jakarta", Telepon = "021-5551000", Email = "sales@integra.co.id" },
-            new() { NamaSupplier = "CV Network Solusindo", Alamat = "Jl. Pemuda 45, Surabaya", Telepon = "031-4442000", Email = "info@netsolindo.com" },
-            new() { NamaSupplier = "Bhinneka Enterprise", Alamat = "Jl. Gunung Sahari, Jakarta", Telepon = "021-3333000", Email = "b2b@bhinneka.com" },
-            new() { NamaSupplier = "PT Surya Server", Alamat = "Jl. Gatot Subroto 56, Bandung", Telepon = "022-6664000", Email = "contact@suryaserver.id" }
+            new() { NamaSupplier = "PT Integra Teknologi Global", Alamat = "Gd. Cyber Lt. 5, Jl. Kuningan Barat No. 8, Jakarta Selatan", Telepon = "021-5551000", Email = "sales@integra.co.id" },
+            new() { NamaSupplier = "CV Network Solusindo Utama", Alamat = "Jl. Raya Jemursari No. 120, Surabaya", Telepon = "031-4442000", Email = "info@netsolindo.com" },
+            new() { NamaSupplier = "Bhinneka Enterprise Solutions", Alamat = "Jl. Gunung Sahari Raya No. 73C, Jakarta Pusat", Telepon = "021-3333000", Email = "b2b@bhinneka.com" },
+            new() { NamaSupplier = "PT Surya Server Indonesia", Alamat = "Kawasan Industri Tekno, Gedebage, Bandung", Telepon = "022-6664000", Email = "contact@suryaserver.id" }
         };
         context.Suppliers.AddRange(suppliers);
         await context.SaveChangesAsync();
@@ -103,23 +121,51 @@ using (var scope = app.Services.CreateScope())
 
         var barangs = new List<Barang>
         {
-            new() { KodeBarang = "PC-001", NamaBarang = "Lenovo ThinkPad T14 Gen 3", KategoriId = k[0].Id, SupplierId = s[0].Id, Satuan = "Unit", Stok = 25 },
-            new() { KodeBarang = "PC-002", NamaBarang = "Dell OptiPlex 7000 SFF", KategoriId = k[0].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 15 },
-            new() { KodeBarang = "PC-003", NamaBarang = "MacBook Pro 14 M2", KategoriId = k[0].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 5 },
-            new() { KodeBarang = "SRV-001", NamaBarang = "Dell PowerEdge R750", KategoriId = k[1].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 2 },
-            new() { KodeBarang = "SRV-002", NamaBarang = "Synology NAS RackStation RS1221+", KategoriId = k[1].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 3 },
-            new() { KodeBarang = "SRV-003", NamaBarang = "HDD WD Red Pro 10TB", KategoriId = k[1].Id, SupplierId = s[3].Id, Satuan = "Pcs", Stok = 10 },
-            new() { KodeBarang = "NET-001", NamaBarang = "Switch Cisco Catalyst 9200L 48-port", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 4 },
-            new() { KodeBarang = "NET-002", NamaBarang = "MikroTik Cloud Core Router CCR2004", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 3 },
-            new() { KodeBarang = "NET-003", NamaBarang = "Access Point Ubiquiti U6-Pro", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Unit", Stok = 12 },
-            new() { KodeBarang = "NET-004", NamaBarang = "Kabel UTP Belden Cat6 305m", KategoriId = k[2].Id, SupplierId = s[1].Id, Satuan = "Roll", Stok = 8 },
-            new() { KodeBarang = "PRP-001", NamaBarang = "Monitor Dell UltraSharp 27 U2722D", KategoriId = k[3].Id, SupplierId = s[0].Id, Satuan = "Unit", Stok = 20 },
-            new() { KodeBarang = "PRP-002", NamaBarang = "Printer HP Color LaserJet Pro M454dn", KategoriId = k[3].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 6 },
-            new() { KodeBarang = "PRP-003", NamaBarang = "Scanner Epson WorkForce DS-530 II", KategoriId = k[3].Id, SupplierId = s[2].Id, Satuan = "Unit", Stok = 4 },
-            new() { KodeBarang = "AKS-001", NamaBarang = "Keyboard Logitech MX Keys", KategoriId = k[4].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 15 },
-            new() { KodeBarang = "AKS-002", NamaBarang = "Mouse Logitech MX Master 3S", KategoriId = k[4].Id, SupplierId = s[0].Id, Satuan = "Pcs", Stok = 15 },
-            new() { KodeBarang = "AKS-003", NamaBarang = "Headset Jabra Evolve2 65", KategoriId = k[4].Id, SupplierId = s[2].Id, Satuan = "Pcs", Stok = 10 },
-            new() { KodeBarang = "AKS-004", NamaBarang = "UPS APC Smart-UPS 1500VA", KategoriId = k[4].Id, SupplierId = s[3].Id, Satuan = "Unit", Stok = 8 }
+            // Komputer & Laptop
+            new() { KodeBarang = "PC-LP-01", NamaBarang = "Lenovo ThinkPad T14 Gen 4 (Core i7, 16GB, 512GB SSD)", KategoriId = k[0].Id, Satuan = "Unit", Stok = 20 },
+            new() { KodeBarang = "PC-LP-02", NamaBarang = "Dell Latitude 7440 (Core i5, 16GB, 512GB SSD)", KategoriId = k[0].Id, Satuan = "Unit", Stok = 15 },
+            new() { KodeBarang = "PC-LP-03", NamaBarang = "MacBook Pro 14 M3 Pro (18GB, 512GB SSD)", KategoriId = k[0].Id, Satuan = "Unit", Stok = 5 },
+            new() { KodeBarang = "PC-DT-01", NamaBarang = "Dell OptiPlex 7010 Micro (Core i5, 8GB, 256GB SSD)", KategoriId = k[0].Id, Satuan = "Unit", Stok = 30 },
+            new() { KodeBarang = "PC-DT-02", NamaBarang = "HP Pro Mini 400 G9 (Core i7, 16GB, 512GB SSD)", KategoriId = k[0].Id, Satuan = "Unit", Stok = 10 },
+            new() { KodeBarang = "PC-DT-WS", NamaBarang = "Lenovo ThinkStation P360 Tower (Xeon, 32GB, RTX 4000)", KategoriId = k[0].Id, Satuan = "Unit", Stok = 2 },
+            
+            // Server & Data Center
+            new() { KodeBarang = "SRV-RK-01", NamaBarang = "Dell PowerEdge R750 (2x Intel Xeon Gold, 128GB RAM)", KategoriId = k[1].Id, Satuan = "Unit", Stok = 3 },
+            new() { KodeBarang = "SRV-RK-02", NamaBarang = "HPE ProLiant DL380 Gen11 (2x Intel Xeon Silver, 64GB RAM)", KategoriId = k[1].Id, Satuan = "Unit", Stok = 2 },
+            new() { KodeBarang = "SRV-NS-01", NamaBarang = "Synology RackStation RS1221+ (8-bay, 4GB RAM)", KategoriId = k[1].Id, Satuan = "Unit", Stok = 1 },
+            new() { KodeBarang = "SRV-NS-02", NamaBarang = "QNAP TS-464 (4-bay Desktop NAS)", KategoriId = k[1].Id, Satuan = "Unit", Stok = 2 },
+            new() { KodeBarang = "SRV-HD-01", NamaBarang = "HDD Enterprise WD Gold 12TB", KategoriId = k[1].Id, Satuan = "Pcs", Stok = 16 },
+            new() { KodeBarang = "SRV-HD-02", NamaBarang = "SSD Enterprise Samsung PM893 1.92TB", KategoriId = k[1].Id, Satuan = "Pcs", Stok = 8 },
+            
+            // Jaringan & Keamanan
+            new() { KodeBarang = "NET-SW-01", NamaBarang = "Cisco Catalyst 9200L 48-port PoE+", KategoriId = k[2].Id, Satuan = "Unit", Stok = 4 },
+            new() { KodeBarang = "NET-SW-02", NamaBarang = "Aruba Instant On 1930 24-port Gb Smart Switch", KategoriId = k[2].Id, Satuan = "Unit", Stok = 8 },
+            new() { KodeBarang = "NET-RT-01", NamaBarang = "MikroTik Cloud Core Router CCR2004-16G-2S+", KategoriId = k[2].Id, Satuan = "Unit", Stok = 2 },
+            new() { KodeBarang = "NET-FW-01", NamaBarang = "Fortinet FortiGate 60F", KategoriId = k[2].Id, Satuan = "Unit", Stok = 3 },
+            new() { KodeBarang = "NET-AP-01", NamaBarang = "Ubiquiti UniFi6 Pro (U6-Pro)", KategoriId = k[2].Id, Satuan = "Unit", Stok = 15 },
+            new() { KodeBarang = "NET-AP-02", NamaBarang = "Ruckus R350 Indoor Access Point", KategoriId = k[2].Id, Satuan = "Unit", Stok = 5 },
+            new() { KodeBarang = "NET-CBL-01", NamaBarang = "Kabel UTP Belden Cat6 305m (Indoor)", KategoriId = k[2].Id, Satuan = "Roll", Stok = 10 },
+            new() { KodeBarang = "SEC-CAM-01", NamaBarang = "Hikvision IP Camera Dome 4MP", KategoriId = k[2].Id, Satuan = "Unit", Stok = 12 },
+            
+            // Perangkat Pendukung
+            new() { KodeBarang = "PRP-MN-01", NamaBarang = "Monitor Dell UltraSharp 27\" U2722D", KategoriId = k[3].Id, Satuan = "Unit", Stok = 25 },
+            new() { KodeBarang = "PRP-MN-02", NamaBarang = "Monitor Lenovo ThinkVision 24\" T24i-30", KategoriId = k[3].Id, Satuan = "Unit", Stok = 40 },
+            new() { KodeBarang = "PRP-PR-01", NamaBarang = "Printer HP Color LaserJet Pro M454dn", KategoriId = k[3].Id, Satuan = "Unit", Stok = 5 },
+            new() { KodeBarang = "PRP-PR-02", NamaBarang = "Printer Brother HL-L2365DW (Monochrome)", KategoriId = k[3].Id, Satuan = "Unit", Stok = 8 },
+            new() { KodeBarang = "PRP-SC-01", NamaBarang = "Scanner Epson WorkForce DS-530 II", KategoriId = k[3].Id, Satuan = "Unit", Stok = 3 },
+            new() { KodeBarang = "PRP-PJ-01", NamaBarang = "Proyektor Epson EB-X51 XGA", KategoriId = k[3].Id, Satuan = "Unit", Stok = 4 },
+            
+            // Aksesoris IT & Suku Cadang
+            new() { KodeBarang = "AKS-KB-01", NamaBarang = "Keyboard Wireless Logitech MX Keys", KategoriId = k[4].Id, Satuan = "Pcs", Stok = 15 },
+            new() { KodeBarang = "AKS-MS-01", NamaBarang = "Mouse Wireless Logitech MX Master 3S", KategoriId = k[4].Id, Satuan = "Pcs", Stok = 15 },
+            new() { KodeBarang = "AKS-CBO-01", NamaBarang = "Combo Keyboard Mouse Logitech MK240", KategoriId = k[4].Id, Satuan = "Set", Stok = 30 },
+            new() { KodeBarang = "AKS-HS-01", NamaBarang = "Headset Jabra Evolve2 65", KategoriId = k[4].Id, Satuan = "Pcs", Stok = 10 },
+            new() { KodeBarang = "AKS-HS-02", NamaBarang = "Headset Plantronics Blackwire 3220", KategoriId = k[4].Id, Satuan = "Pcs", Stok = 20 },
+            new() { KodeBarang = "AKS-UP-01", NamaBarang = "UPS APC Smart-UPS 1500VA LCD", KategoriId = k[4].Id, Satuan = "Unit", Stok = 5 },
+            new() { KodeBarang = "AKS-UP-02", NamaBarang = "UPS Prolink PRO700SFC 650VA", KategoriId = k[4].Id, Satuan = "Unit", Stok = 15 },
+            new() { KodeBarang = "AKS-RAM-01", NamaBarang = "RAM DDR4 Kingston FURY 16GB 3200MHz", KategoriId = k[4].Id, Satuan = "Pcs", Stok = 20 },
+            new() { KodeBarang = "AKS-SSD-01", NamaBarang = "SSD Samsung 980 PRO NVMe M.2 1TB", KategoriId = k[4].Id, Satuan = "Pcs", Stok = 15 },
+            new() { KodeBarang = "AKS-FD-01", NamaBarang = "Flashdisk SanDisk Ultra Dual Drive Luxe 64GB", KategoriId = k[4].Id, Satuan = "Pcs", Stok = 50 }
         };
         context.Barangs.AddRange(barangs);
         await context.SaveChangesAsync();
@@ -132,10 +178,14 @@ using (var scope = app.Services.CreateScope())
             context.BarangMasuks.Add(new BarangMasuk
             {
                 BarangId = b.Id,
+                SupplierId = s[rng.Next(s.Count)].Id,
                 Jumlah = b.Stok,
-                TanggalMasuk = DateTime.Now.AddDays(-rng.Next(7, 60)),
-                Keterangan = "Pengadaan awal perangkat IT",
-                HargaSatuan = rng.Next(5, 150) * 100000 // Random price between 500k and 15M
+                TanggalMasuk = DateTime.Now.AddDays(-rng.Next(7, 30)),
+                Keterangan = "Pengadaan Inventaris IT Q1 2026",
+                HargaSatuan = b.KodeBarang.Contains("LP") ? 20000000 : 
+                              b.KodeBarang.Contains("SRV-RK") ? 80000000 :
+                              b.KodeBarang.Contains("NET-SW-01") ? 45000000 :
+                              rng.Next(5, 50) * 100000
             });
         }
         await context.SaveChangesAsync();

@@ -24,7 +24,8 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="Jumlah"></label>
-                        <input asp-for="Jumlah" class="form-control" min="1" value="1" required />
+                        <input asp-for="Jumlah" id="jumlahInput" class="form-control" min="1" value="1" readonly />
+                        <small class="text-muted">Terhitung dari SN yang dipilih</small>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -61,6 +62,29 @@
                 </div>
             </div>
         </div>
+        
+        <!-- SN SELECTION SECTION -->
+        <div class="card-body border-top" id="snContainer" style="display:none; background-color: #fdfdfd;">
+            <h5><i class="fas fa-barcode"></i> Pilih Serial Number untuk Transfer</h5>
+            <div class="card card-outline card-info">
+                <div class="card-header py-2">
+                    <h3 class="card-title"><i class="fas fa-list"></i> Serial Number Tersedia <small class="text-muted">(Pilih SN yang akan dipindahkan)</small></h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-xs btn-info" id="btnCheckAll"><i class="fas fa-check-double"></i> Pilih Semua</button>
+                        <button type="button" class="btn btn-xs btn-secondary" id="btnUncheckAll"><i class="fas fa-times"></i> Batal Semua</button>
+                    </div>
+                </div>
+                <div class="card-body" id="snList" style="max-height:300px; overflow-y:auto;">
+                    <!-- SN checkboxes loaded via AJAX -->
+                </div>
+                <div class="card-footer py-2">
+                    <span>Terpilih: <strong id="selectedCount">0</strong> unit</span>
+                </div>
+            </div>
+            <div id="selectedSnHiddenInputs"></div>
+        </div>
+        <!-- END SN SELECTION SECTION -->
+
         <div class="card-footer">
             <button type="submit" class="btn btn-warning"><i class="fas fa-exchange-alt"></i> Transfer</button>
             <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
@@ -81,6 +105,11 @@ $(function(){
         if (matched) {
             $('#selectedBarangId').val(matched.data('id'));
             checkStok();
+            loadSNs(matched.data('id'));
+        } else {
+            $('#snContainer').hide();
+            $('#selectedSnHiddenInputs').empty();
+            $('#jumlahInput').val(0);
         }
     });
 
@@ -91,9 +120,50 @@ $(function(){
         var lokasiId = $('#dariLokasi').val();
         if (barangId && lokasiId) {
             $.getJSON('@Url.Action("GetStokLokasi")?barangId=' + barangId + '&lokasiId=' + lokasiId, function(data){
-                $('#stokInfo').html('Stok tersedia: <strong>' + data.stok + '</strong>');
+                $('#stokInfo').html('Stok di ruangan ini: <strong>' + data.stok + '</strong>');
             });
+        } else {
+            $('#stokInfo').html('');
         }
+    }
+
+    function loadSNs(barangId) {
+        if (!barangId) { $('#snContainer').hide(); return; }
+        $.getJSON('@Url.Action("GetAvailableSerials","TransferBarang")' + '?barangId=' + barangId, function(data){
+            var html = '';
+            if (data.length === 0) {
+                html = '<p class="text-muted">Tidak ada serial number tersedia untuk barang ini.</p>';
+            } else {
+                var unitNo = 0;
+                data.forEach(function(sn){
+                    var label = sn.serialNumber === '-' ? 'Unit ' + (++unitNo) : sn.serialNumber;
+                    html += '<div class="custom-control custom-checkbox d-inline-block mr-3 mb-2">'
+                        + '<input type="checkbox" name="rawSnCheck" class="custom-control-input sn-check" id="sn_'+sn.id+'" value="'+sn.id+'">'
+                        + '<label class="custom-control-label" for="sn_'+sn.id+'">'+label+'</label></div>';
+                });
+            }
+            $('#snList').html(html);
+            $('#snContainer').show();
+            updateCount();
+        });
+    }
+
+    // Check/Uncheck all
+    $('#btnCheckAll').click(function(){ $('.sn-check').prop('checked', true); updateCount(); });
+    $('#btnUncheckAll').click(function(){ $('.sn-check').prop('checked', false); updateCount(); });
+    $(document).on('change', '.sn-check', function(){ updateCount(); });
+
+    function updateCount(){ 
+        var c = $('.sn-check:checked').length;
+        $('#selectedCount').text(c); 
+        $('#jumlahInput').val(c > 0 ? c : 1); // fallback to 1 if user doesn't use SN correctly but backend checks it
+
+        // Update hidden inputs for final submission
+        var hiddenHtml = '';
+        $('.sn-check:checked').each(function(){
+            hiddenHtml += '<input type="hidden" name="serialIds[]" value="'+$(this).val()+'" />';
+        });
+        $('#selectedSnHiddenInputs').html(hiddenHtml);
     }
 });
 </script>

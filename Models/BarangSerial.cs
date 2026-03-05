@@ -33,11 +33,6 @@ namespace MyGudang.Models
         [ForeignKey("BarangKeluarId")]
         public BarangKeluar? BarangKeluar { get; set; }
 
-        public int? PeremajaanId { get; set; }
-
-        [ForeignKey("PeremajaanId")]
-        public Peremajaan? Peremajaan { get; set; }
-
         [Display(Name = "Kondisi")]
         [StringLength(100)]
         public string Kondisi { get; set; } = "Baru";

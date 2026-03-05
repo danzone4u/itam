@@ -2,13 +2,9 @@
 @{
     ViewData["Title"] = "Detail Histori Barang";
     var historiMasuk = ViewBag.HistoriMasuk as IEnumerable<MyGudang.Models.BarangMasuk> ?? new List<MyGudang.Models.BarangMasuk>();
-    var historiKembali = ViewBag.HistoriKembali as IEnumerable<MyGudang.Models.BarangKembali> ?? new List<MyGudang.Models.BarangKembali>();
     var historiKeluar = ViewBag.HistoriKeluar as IEnumerable<MyGudang.Models.BarangKeluar> ?? new List<MyGudang.Models.BarangKeluar>();
-    var historiPeremajaan = ViewBag.HistoriPeremajaan as IEnumerable<MyGudang.Models.Peremajaan> ?? new List<MyGudang.Models.Peremajaan>();
 
     var combinedMasuk = historiMasuk.Select(m => new { Tanggal = m.TanggalMasuk, Jumlah = m.Jumlah, Lokasi = m.Lokasi?.NamaLokasi, Keterangan = m.Keterangan, Jenis = "Baru" })
-        .Concat(historiKembali.Select(k => new { Tanggal = k.TanggalKembali, Jumlah = k.Jumlah, Lokasi = (string?)"Gudang Utama", Keterangan = (string?)(k.Keterangan ?? "Pengembalian"), Jenis = "Retur" }))
-        .Concat(historiPeremajaan.Where(p => p.TindakLanjut == "Masuk Inventaris").Select(p => new { Tanggal = p.TanggalPeremajaan, Jumlah = p.Jumlah, Lokasi = (string?)"Gudang Utama", Keterangan = (string?)(p.Keterangan ?? "Eks Peremajaan"), Jenis = "Peremajaan" }))
         .OrderByDescending(x => x.Tanggal).ToList();
 }
 
@@ -31,9 +27,6 @@
                 <ul class="list-group list-group-unbordered mb-3">
                     <li class="list-group-item">
                         <b>Kategori</b> <a class="float-right">@(Model.Kategori?.NamaKategori ?? "-")</a>
-                    </li>
-                    <li class="list-group-item">
-                        <b>Supplier</b> <a class="float-right">@(Model.Supplier?.NamaSupplier ?? "-")</a>
                     </li>
                     <li class="list-group-item">
                         <b>Satuan</b> <a class="float-right">@Model.Satuan</a>
@@ -109,10 +102,9 @@
                             {
                                 foreach (var item in combinedMasuk.Take(10))
                                 {
-                                    var badgeClass = item.Jenis switch { "Baru" => "bg-primary", "Retur" => "bg-info", "Peremajaan" => "bg-success", _ => "bg-secondary" };
                                     <tr>
                                         <td>@item.Tanggal.ToString("dd MMM yyyy")</td>
-                                        <td><span class="badge @badgeClass">@item.Jenis</span></td>
+                                        <td><span class="badge bg-primary">Barang Masuk</span></td>
                                         <td><span class="badge bg-success">+@item.Jumlah</span></td>
                                         <td>@(item.Lokasi ?? "Gudang Utama")</td>
                                         <td>@item.Keterangan</td>

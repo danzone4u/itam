@@ -4,12 +4,20 @@
     <div class="col-md-7">
         <div class="card card-outline card-primary">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-file-alt"></i> Setting Kop Surat</h3></div>
-            <form asp-action="Index" method="post">@Html.AntiForgeryToken()
+            <form asp-action="Index" method="post" enctype="multipart/form-data">@Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Id" />
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-8"><div class="form-group"><label asp-for="NamaPerusahaan"></label><input asp-for="NamaPerusahaan" class="form-control" /></div></div>
                         <div class="col-md-4"><div class="form-group"><label asp-for="TampilkanLogo"></label><br/><input asp-for="TampilkanLogo" type="checkbox" data-toggle="toggle" data-on="Ya" data-off="Tidak" /></div></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Logo Kop Surat</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="LogoFile" name="LogoFile" accept="image/*" onchange="previewImage('LogoFile', 'logoPreview')">
+                            <label class="custom-file-label" for="LogoFile">Pilih file logo...</label>
+                        </div>
+                        <small class="text-muted">Abaikan jika tidak ingin mengubah logo.</small>
                     </div>
                     <div class="form-group"><label asp-for="SubJudul"></label><input asp-for="SubJudul" class="form-control" /></div>
                     <div class="form-group"><label asp-for="Alamat"></label><textarea asp-for="Alamat" class="form-control" rows="2"></textarea></div>
@@ -58,7 +66,8 @@
                         </div>
                         @if (Model.TampilkanLogo)
                         {
-                            <img src="/images/logo-ppn.png" alt="Logo" style="height:70px;">
+                            var imgPath = !string.IsNullOrEmpty(Model.LogoPath) ? Model.LogoPath : "/images/logo-ppn.png";
+                            <img id="logoPreview" src="@imgPath" alt="Logo" style="height:70px;">
                         }
                     </div>
                     <hr style="border-top:3px solid #333; margin:8px 0;" />
@@ -67,3 +76,27 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://adminlte.io/themes/v3/plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
+    <script>
+        $(function () {
+            bsCustomFileInput.init();
+        });
+
+        function previewImage(inputId, previewId) {
+            var input = document.getElementById(inputId);
+            var preview = document.getElementById(previewId);
+            
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

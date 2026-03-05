@@ -22,14 +22,23 @@
             </datalist>
             <table class="table table-bordered mt-2" id="tableMasuk">
                 <thead class="thead-light">
-                    <tr><th width="50">No</th><th>Barang</th><th width="140">Jumlah</th><th width="180">S/N</th><th width="200">Keterangan</th><th width="50"></th></tr>
+                    <tr><th width="50">No</th><th>Barang</th><th width="100">Jumlah</th><th width="300">Serial Number(s)</th><th width="200">Keterangan</th><th width="50"></th></tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td class="row-num">1</td>
                         <td><input type="text" class="form-control search-barang" list="listBarangMasuk" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>
-                        <td><input type="number" name="jumlahs" class="form-control" min="1" value="1" required /></td>
-                        <td><input type="text" name="serialNumbers" class="form-control" value="-" /></td>
+                        <td><input type="number" name="jumlahs" class="form-control row-jumlah" min="1" value="1" readonly title="Jumlah otomatis terisi berdasarkan input SN" /></td>
+                        <td>
+                            <div class="sn-container" data-row-index="0">
+                                <div class="input-group mb-1 sn-input-row">
+                                    <input type="text" name="snRows[0]" class="form-control form-control-sm sn-input" placeholder="SN (Opsional, ketik - jika tidak ada)" />
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                         <td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>
                         <td><button type="button" class="btn btn-danger btn-xs remove-row" title="Hapus"><i class="fas fa-times"></i></button></td>
                     </tr>
@@ -42,17 +51,48 @@
 
 @section Scripts {
 <script>
+var rowIndex = 1; // used to namespace sn arrays uniquely
 $('#addRowMasuk').click(function(){
     var n = $('#tableMasuk tbody tr').length + 1;
     var row = '<tr><td class="row-num">'+n+'</td>'
         +'<td><input type="text" class="form-control search-barang" list="listBarangMasuk" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>'
-        +'<td><input type="number" name="jumlahs" class="form-control" min="1" value="1" required /></td>'
-        +'<td><input type="text" name="serialNumbers" class="form-control" value="-" /></td>'
+        +'<td><input type="number" name="jumlahs" class="form-control row-jumlah" min="1" value="1" readonly title="Jumlah otomatis terisi berdasarkan input SN" /></td>'
+        +'<td><div class="sn-container" data-row-index="'+rowIndex+'">'
+        +'<div class="input-group mb-1 sn-input-row">'
+        +'<input type="text" name="snRows['+rowIndex+']" class="form-control form-control-sm sn-input" placeholder="SN (Opsional, ketik - jika tidak ada)" />'
+        +'<div class="input-group-append"><button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button></div>'
+        +'</div></div></td>'
         +'<td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>'
         +'<td><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fas fa-times"></i></button></td></tr>';
     $('#tableMasuk tbody').append(row);
     renumberMasuk();
+    rowIndex++;
 });
+
+// Add multiple SNs inside the same Item row
+$(document).on('click', '.btn-add-sn', function() {
+    var $container = $(this).closest('.sn-container');
+    var index = $container.data('row-index');
+    var newSnRow = '<div class="input-group mb-1 sn-input-row">'
+        +'<input type="text" name="snRows['+index+']" class="form-control form-control-sm sn-input" placeholder="SN Baru" />'
+        +'<div class="input-group-append"><button type="button" class="btn btn-danger btn-sm btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button></div>'
+        +'</div>';
+    $container.append(newSnRow);
+    updateRowJumlah($container.closest('tr'));
+});
+
+// Remove individual SN row
+$(document).on('click', '.btn-remove-sn', function() {
+    var $tr = $(this).closest('tr');
+    $(this).closest('.sn-input-row').remove();
+    updateRowJumlah($tr);
+});
+
+// Calculate and fix readonly jumlah
+function updateRowJumlah($tr) {
+    var count = $tr.find('.sn-input-row').length;
+    $tr.find('.row-jumlah').val(count);
+}
 
 $(document).on('input', '.search-barang', function(){
     var typed = $(this).val();
@@ -77,7 +117,6 @@ $('#btnSaveBarangBaru').click(function(){
         kodeBarang: $('#newKode').val(),
         namaBarang: $('#newNama').val(),
         kategoriId: $('#newKategori').val() || null,
-        supplierId: $('#newSupplier').val() || null,
         satuan: $('#newSatuan').val()
     };
     if (!data.namaBarang) { alert('Nama barang wajib diisi!'); return; }
@@ -116,9 +155,8 @@ $('#newKategori').on('change', function(){
             <div class="col-md-6"><div class="form-group"><label>Nama Barang <span class="text-danger">*</span></label><input type="text" id="newNama" class="form-control" required /></div></div>
         </div>
         <div class="row">
-            <div class="col-md-4"><div class="form-group"><label>Kategori</label><select id="newKategori" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Kategoris){<option value="@item.Value">@item.Text</option>}</select></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Supplier</label><select id="newSupplier" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Suppliers){<option value="@item.Value">@item.Text</option>}</select></div></div>
-            <div class="col-md-4"><div class="form-group"><label>Satuan</label><select id="newSatuan" class="form-control"><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
+            <div class="col-md-6"><div class="form-group"><label>Kategori</label><select id="newKategori" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Kategoris){<option value="@item.Value">@item.Text</option>}</select></div></div>
+            <div class="col-md-6"><div class="form-group"><label>Satuan</label><select id="newSatuan" class="form-control"><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
         </div>
     </div>
     <div class="modal-footer"><button type="button" class="btn btn-info" id="btnSaveBarangBaru"><i class="fas fa-save"></i> Simpan Barang</button></div>

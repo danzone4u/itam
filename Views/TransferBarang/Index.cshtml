@@ -31,7 +31,13 @@
                         <td>@(no++)</td>
                         <td><span class="badge bg-warning text-dark">@item.NoTransfer</span></td>
                         <td>@item.TanggalTransfer.ToString("dd/MM/yyyy")</td>
-                        <td>@item.Barang?.NamaBarang</td>
+                        <td>
+                            @item.Barang?.NamaBarang
+                            @if (item.TransferBarangSerials != null && item.TransferBarangSerials.Any())
+                            {
+                                <br/><small class="text-muted">SN: @string.Join(", ", item.TransferBarangSerials.Select(s => s.BarangSerial?.SerialNumber ?? "-"))</small>
+                            }
+                        </td>
                         <td><span class="badge bg-primary">@item.Jumlah</span></td>
                         <td>@item.DariLokasi?.NamaLokasi</td>
                         <td>@item.KeLokasi?.NamaLokasi</td>

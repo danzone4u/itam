@@ -19,7 +19,7 @@ namespace MyGudang.Controllers
 
         public async Task<IActionResult> Index(string? search, int? kategoriId)
         {
-            var query = _context.Barangs.Include(b => b.Kategori).Include(b => b.Supplier).AsQueryable();
+            var query = _context.Barangs.Include(b => b.Kategori).AsQueryable();
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(b => b.NamaBarang.Contains(search) || b.KodeBarang.Contains(search));
@@ -49,15 +49,6 @@ namespace MyGudang.Controllers
                 .OrderBy(b => b.TanggalKeluar)
                 .ToListAsync();
 
-            var kembali = await _context.BarangKembalis
-                .Where(b => b.BarangId == id)
-                .OrderBy(b => b.TanggalKembali)
-                .ToListAsync();
-
-            var peremajaan = await _context.Peremajaans
-                .Where(b => b.BarangId == id && b.TindakLanjut == "Masuk Inventaris")
-                .OrderBy(b => b.TanggalPeremajaan)
-                .ToListAsync();
 
             ViewBag.Barang = barang;
             ViewBag.BarangMasuk = masuk;
@@ -73,14 +64,7 @@ namespace MyGudang.Controllers
             {
                 transactions.Add(new { Tanggal = k.TanggalKeluar, Tipe = "Keluar", Jumlah = k.Jumlah, Keterangan = k.Penerima });
             }
-            foreach (var ret in kembali)
-            {
-                transactions.Add(new { Tanggal = ret.TanggalKembali, Tipe = "Retur", Jumlah = ret.Jumlah, Keterangan = ret.Keterangan ?? "Barang Kembali" });
-            }
-            foreach (var p in peremajaan)
-            {
-                transactions.Add(new { Tanggal = p.TanggalPeremajaan, Tipe = "Peremajaan", Jumlah = p.Jumlah, Keterangan = p.Keterangan ?? "Eks Peremajaan" });
-            }
+
             ViewBag.Transactions = transactions.OrderBy(t => t.Tanggal).ToList();
 
             return View();

@@ -1,9 +1,21 @@
-﻿<!DOCTYPE html>
+﻿@using MyGudang.Data
+@inject ApplicationDbContext _context
+@{
+    var appSetting = _context.AppSettings.FirstOrDefault();
+    var appName = appSetting?.AppName ?? "IT Asset Management";
+    var logoPath = appSetting?.LogoPath ?? "";
+    var faviconPath = appSetting?.FaviconPath ?? "";
+}
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>IT Asset Management - @ViewData["Title"]</title>
+    <title>@appName - @ViewData["Title"]</title>
+    @if (!string.IsNullOrEmpty(faviconPath))
+    {
+        <link rel="icon" type="image/x-icon" href="@faviconPath">
+    }
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
@@ -49,8 +61,15 @@
     <!-- Sidebar -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <a href="/" class="brand-link text-center" style="padding:12px 8px;">
-            <i class="fas fa-warehouse" style="font-size:22px; color:#ffc107;"></i>
-            <span class="brand-text font-weight-bold" style="font-size:15px; letter-spacing:0.5px;"> IT Asset Management</span>
+            @if (!string.IsNullOrEmpty(logoPath))
+            {
+                <img src="@logoPath" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8; max-height: 33px; margin-left: auto; margin-right: auto; margin-top: -3px; float: none;">
+            }
+            else
+            {
+                <i class="fas fa-warehouse" style="font-size:22px; color:#ffc107;"></i>
+            }
+            <span class="brand-text font-weight-bold" style="font-size:15px; letter-spacing:0.5px;"> @appName</span>
         </a>
         <div class="sidebar">
             <nav class="mt-2">
@@ -132,12 +151,6 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="@Url.Action("Index","Peremajaan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Peremajaan" ? "active" : "")">
-                            <i class="nav-icon fas fa-sync-alt" style="color:#6f42c1;"></i>
-                            <p>Peremajaan Barang</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a href="@Url.Action("Index","Lokasi")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Lokasi" ? "active" : "")">
                             <i class="nav-icon fas fa-door-open" style="color:#17a2b8;"></i>
                             <p>Ruangan</p>
@@ -157,7 +170,7 @@
                     </li>
                     @if (User.IsInRole("SuperAdmin"))
                     {
-                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup", "ActivityLog" };
+                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup", "ActivityLog", "AppSetting" };
                         var isSettingActive = settingControllers.Contains(ViewContext.RouteData.Values["controller"]?.ToString());
                     <li class="nav-item has-treeview @(isSettingActive ? "menu-open" : "")">
                         <a href="#" class="nav-link @(isSettingActive ? "active" : "")">
@@ -165,6 +178,11 @@
                             <p>Pengaturan <i class="right fas fa-angle-left"></i></p>
                         </a>
                         <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","AppSetting")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AppSetting" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon"></i><p>Setting Aplikasi</p>
+                                </a>
+                            </li>
                             <li class="nav-item">
                                 <a href="@Url.Action("Index","ChartSetting")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ChartSetting" ? "active" : "")">
                                     <i class="far fa-circle nav-icon"></i><p>Setting Chart</p>

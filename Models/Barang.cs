@@ -24,13 +24,6 @@ namespace MyGudang.Models
         [ForeignKey("KategoriId")]
         public Kategori? Kategori { get; set; }
 
-        [Required(ErrorMessage = "Supplier wajib dipilih")]
-        [Display(Name = "Supplier")]
-        public int SupplierId { get; set; }
-
-        [ForeignKey("SupplierId")]
-        public Supplier? Supplier { get; set; }
-
         [Required(ErrorMessage = "Satuan wajib diisi")]
         [Display(Name = "Satuan")]
         [StringLength(50)]

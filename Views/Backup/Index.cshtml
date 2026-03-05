@@ -37,6 +37,22 @@
                     </div>
                 </form>
 
+                <form asp-action="UpdatePath" method="post" class="mb-3">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group mb-2">
+                        <label><i class="fas fa-folder-open"></i> Lokasi Backup</label>
+                        <div class="input-group">
+                            <input type="text" name="backupPath" class="form-control" value="@setting?.BackupPath" placeholder="C:\BackupMyGudang atau wwwroot/backups">
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+                            </div>
+                        </div>
+                        <small class="text-muted">Aktual saat ini: <code>@ViewBag.CurrentPath</code></small>
+                    </div>
+                </form>
+
+                <hr/>
+
                 <div class="text-muted small mb-3">
                     <i class="fas fa-info-circle"></i> Backup otomatis maksimal menyimpan 10 file terakhir.
                 </div>
