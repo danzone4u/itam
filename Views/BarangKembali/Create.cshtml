@@ -51,7 +51,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="Kondisi"></label>
-                        <select asp-for="Kondisi" class="form-control">
+                        <select asp-for="Kondisi" id="Kondisi" class="form-control">
                             <option value="Baik">Baik</option>
                             <option value="Rusak Ringan">Rusak Ringan</option>
                             <option value="Rusak Berat">Rusak Berat</option>
@@ -59,6 +59,17 @@
                     </div>
                 </div>
                 <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="TindakLanjut"></label>
+                        <select asp-for="TindakLanjut" id="TindakLanjut" class="form-control">
+                            <option value="Dikembalikan ke Stok">Dikembalikan ke Stok</option>
+                            <option value="Di Disposal">Di Disposal</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label asp-for="DikembalikanOleh"></label>
                         <input asp-for="DikembalikanOleh" id="DikembalikanOleh" class="form-control" value="@(ViewBag.PrefilledPenerima ?? "")" />
@@ -87,7 +98,7 @@
                 $('#BarangId').val(data.barangId).trigger('change');
                 $('#DikembalikanOleh').val(data.penerima);
                 
-                // Show SN checkboxes
+                        // Show SN checkboxes
                 $('#snList').empty();
                 if (data.serials && data.serials.length > 0) {
                     var html = '';
@@ -96,8 +107,8 @@
                                 '<input class="custom-control-input sn-check" type="checkbox" name="serialIds" value="' + s.id + '" id="sn_' + s.id + '">' +
                                 '<label for="sn_' + s.id + '" class="custom-control-label mr-3" style="min-width: 150px;">' + s.sn + '</label>' +
                                 '<select name="snConditions_' + s.id + '" id="cond_' + s.id + '" class="form-control form-control-sm" style="display:none; width: auto;">' +
-                                '<option value="Pernah Dipakai / Layak Pakai">Dilabeli: Pernah Dipakai</option>' +
-                                '<option value="Baru">Dilabeli: Belum Dipakai (Baru)</option>' +
+                                '<option value="Layak Pakai">Layak Pakai</option>' +
+                                '<option value="Rusak / Tidak Layak Pakai">Rusak / Tidak Layak Pakai</option>' +
                                 '</select>' +
                                 '</div>';
                     });

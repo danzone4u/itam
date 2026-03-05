@@ -64,9 +64,9 @@ namespace MyGudang.Controllers
                 model.CreatedAt = DateTime.Now;
                 _context.Add(model);
 
-                // Update stok barang (tambah kembali)
+                // Update stok barang HANYA jika tindak lanjut = Dikembalikan ke Stok
                 var barang = await _context.Barangs.FindAsync(model.BarangId);
-                if (barang != null)
+                if (barang != null && model.TindakLanjut == "Dikembalikan ke Stok")
                 {
                     barang.Stok += model.Jumlah;
                 }
@@ -89,16 +89,25 @@ namespace MyGudang.Controllers
                     foreach (var sn in serialsToUpdate)
                     {
                         sn.BarangKembaliId = model.Id;
-                        sn.Status = "Tersedia";
+                        sn.Status = model.TindakLanjut == "Di Disposal" ? "Disposal" : "Tersedia";
                         
                         // Ambil kondisi S/N dari form
                         var condVal = Request.Form[$"snConditions_{sn.Id}"].ToString();
-                        sn.Kondisi = string.IsNullOrEmpty(condVal) ? "Pernah Dipakai / Layak Pakai" : condVal;
+                        
+                        // Set kondisi berdasarkan inputan form atau general Kondisi barang
+                        if (string.IsNullOrEmpty(condVal))
+                        {
+                            sn.Kondisi = model.Kondisi == "Baik" ? "Layak Pakai" : "Rusak / Tidak Layak Pakai";
+                        }
+                        else
+                        {
+                            sn.Kondisi = condVal;
+                        }
                     }
                     await _context.SaveChangesAsync();
                 }
 
-                TempData["Success"] = "Pengembalian barang berhasil dicatat! Stok telah diperbarui.";
+                TempData["Success"] = "Pengembalian barang berhasil dicatat! " + (model.TindakLanjut == "Dikembalikan ke Stok" ? "Stok diperbarui." : "Barang di-disposal.");
                 return RedirectToAction(nameof(Index));
             }
 
@@ -123,12 +132,15 @@ namespace MyGudang.Controllers
             var item = await _context.BarangKembalis.Include(bk => bk.BarangSerials).FirstOrDefaultAsync(bk => bk.Id == id);
             if (item != null)
             {
-                // Kembalikan stok (kurangi lagi)
-                var barang = await _context.Barangs.FindAsync(item.BarangId);
-                if (barang != null)
+                // Kembalikan stok (kurangi lagi) JIKA sebelumnya dimasukkan ke stok
+                if (item.TindakLanjut == "Dikembalikan ke Stok")
                 {
-                    barang.Stok -= item.Jumlah;
-                    if (barang.Stok < 0) barang.Stok = 0;
+                    var barang = await _context.Barangs.FindAsync(item.BarangId);
+                    if (barang != null)
+                    {
+                        barang.Stok -= item.Jumlah;
+                        if (barang.Stok < 0) barang.Stok = 0;
+                    }
                 }
 
                 if (item.BarangKeluarId.HasValue)
@@ -163,8 +175,11 @@ namespace MyGudang.Controllers
             var items = await _context.BarangKembalis.Where(b => ids.Contains(b.Id)).ToListAsync();
             foreach (var item in items)
             {
-                var barang = await _context.Barangs.FindAsync(item.BarangId);
-                if (barang != null) { barang.Stok -= item.Jumlah; if (barang.Stok < 0) barang.Stok = 0; }
+                if (item.TindakLanjut == "Dikembalikan ke Stok")
+                {
+                    var barang = await _context.Barangs.FindAsync(item.BarangId);
+                    if (barang != null) { barang.Stok -= item.Jumlah; if (barang.Stok < 0) barang.Stok = 0; }
+                }
 
                 if (item.BarangKeluarId.HasValue)
                 {

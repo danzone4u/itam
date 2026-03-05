@@ -44,6 +44,11 @@ namespace MyGudang.Models
         [StringLength(500)]
         public string? Keterangan { get; set; }
 
+        [Required(ErrorMessage = "Tindak lanjut wajib dipilih")]
+        [Display(Name = "Tindak Lanjut")]
+        [StringLength(50)]
+        public string TindakLanjut { get; set; } = "Dikembalikan ke Stok";
+
         public ICollection<BarangSerial> BarangSerials { get; set; } = new List<BarangSerial>();
 
         [Display(Name = "Tanggal Dibuat")]
