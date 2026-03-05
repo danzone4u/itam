@@ -1,5 +1,5 @@
-@model IEnumerable<MyGudang.Models.BarangLokasi>
-@{ ViewData["Title"] = "Detail Ruangan"; var lokasi = ViewBag.Lokasi as MyGudang.Models.Lokasi; }
+@model IEnumerable<itam.Models.BarangLokasi>
+@{ ViewData["Title"] = "Detail Ruangan"; var lokasi = ViewBag.Lokasi as itam.Models.Lokasi; }
 <div class="card card-outline card-info">
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-warehouse"></i> @lokasi?.NamaLokasi <span class="badge bg-info">@lokasi?.Kode</span></h3>

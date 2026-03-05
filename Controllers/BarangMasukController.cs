@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Data;
-using MyGudang.Models;
+using itam.Data;
+using itam.Models;
 using ClosedXML.Excel;
 using OfficeOpenXml;
 using System.IO;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     [Authorize]
     public class BarangMasukController : Controller

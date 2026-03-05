@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Models;
+using itam.Models;
 
-namespace MyGudang.Data
+namespace itam.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {

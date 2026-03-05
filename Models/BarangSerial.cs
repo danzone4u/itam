@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MyGudang.Models
+namespace itam.Models
 {
     public class BarangSerial
     {

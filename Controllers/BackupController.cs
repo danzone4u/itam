@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Data;
-using MyGudang.Models;
+using itam.Data;
+using itam.Models;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     [Authorize(Roles = "SuperAdmin")]
     public class BackupController : Controller
@@ -77,14 +77,14 @@ namespace MyGudang.Controllers
             {
                 var backupFolder = await GetBackupFolderAsync();
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var fileName = $"MyGudangDB_Backup_{timestamp}.bak";
+                var fileName = $"itamDB_Backup_{timestamp}.bak";
                 var filePath = Path.Combine(backupFolder, fileName);
 
                 var connString = _config.GetConnectionString("DefaultConnection");
                 using var conn = new SqlConnection(connString);
                 await conn.OpenAsync();
 
-                var sql = $"BACKUP DATABASE [MyGudangDB] TO DISK = N'{filePath}' WITH FORMAT, INIT, NAME = N'MyGudangDB-Full-{timestamp}'";
+                var sql = $"BACKUP DATABASE [itamDB] TO DISK = N'{filePath}' WITH FORMAT, INIT, NAME = N'itamDB-Full-{timestamp}'";
                 using var cmd = new SqlCommand(sql, conn);
                 cmd.CommandTimeout = 120;
                 await cmd.ExecuteNonQueryAsync();
@@ -133,14 +133,14 @@ namespace MyGudang.Controllers
                 await conn.OpenAsync();
 
                 // Set database to single user mode to disconnect all other users
-                using (var cmd1 = new SqlCommand("ALTER DATABASE [MyGudangDB] SET SINGLE_USER WITH ROLLBACK IMMEDIATE", conn))
+                using (var cmd1 = new SqlCommand("ALTER DATABASE [itamDB] SET SINGLE_USER WITH ROLLBACK IMMEDIATE", conn))
                 {
                     cmd1.CommandTimeout = 30;
                     await cmd1.ExecuteNonQueryAsync();
                 }
 
                 // Restore
-                var sql = $"RESTORE DATABASE [MyGudangDB] FROM DISK = N'{filePath}' WITH REPLACE";
+                var sql = $"RESTORE DATABASE [itamDB] FROM DISK = N'{filePath}' WITH REPLACE";
                 using (var cmd2 = new SqlCommand(sql, conn))
                 {
                     cmd2.CommandTimeout = 120;
@@ -148,7 +148,7 @@ namespace MyGudang.Controllers
                 }
 
                 // Set back to multi user
-                using (var cmd3 = new SqlCommand("ALTER DATABASE [MyGudangDB] SET MULTI_USER", conn))
+                using (var cmd3 = new SqlCommand("ALTER DATABASE [itamDB] SET MULTI_USER", conn))
                 {
                     cmd3.CommandTimeout = 30;
                     await cmd3.ExecuteNonQueryAsync();
@@ -164,7 +164,7 @@ namespace MyGudang.Controllers
                     var connString = _config.GetConnectionString("DefaultConnection");
                     using var conn = new SqlConnection(connString);
                     await conn.OpenAsync();
-                    using var cmd = new SqlCommand("ALTER DATABASE [MyGudangDB] SET MULTI_USER", conn);
+                    using var cmd = new SqlCommand("ALTER DATABASE [itamDB] SET MULTI_USER", conn);
                     await cmd.ExecuteNonQueryAsync();
                 }
                 catch { }

@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Data;
-using MyGudang.Models;
+using itam.Data;
+using itam.Models;
 using ClosedXML.Excel;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     [Authorize]
     public class StokOpnameController : Controller

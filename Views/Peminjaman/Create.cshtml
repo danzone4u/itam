@@ -1,4 +1,4 @@
-@model MyGudang.Models.Peminjaman
+@model itam.Models.Peminjaman
 @{ ViewData["Title"] = "Tambah Peminjaman"; }
 <div class="card card-outline card-purple">
     <div class="card-header"><h3 class="card-title"><i class="fas fa-plus"></i> Tambah Peminjaman</h3></div>
@@ -61,7 +61,7 @@
                     <datalist id="listBarang">
                         @if (ViewBag.Barangs != null)
                         {
-                            foreach (var b in (IEnumerable<MyGudang.Models.Barang>)ViewBag.Barangs)
+                            foreach (var b in (IEnumerable<itam.Models.Barang>)ViewBag.Barangs)
                             {
                                 <option value="@b.NamaBarang (Stok: @b.Stok)" data-id="@b.Id" data-nama="@b.NamaBarang" data-stok="@b.Stok" data-satuan="@b.Satuan"></option>
                             }

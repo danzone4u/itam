@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using MyGudang.Data;
-using MyGudang.Services;
+using itam.Data;
+using itam.Services;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     public class AccountController : Controller
     {

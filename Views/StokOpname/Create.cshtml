@@ -1,4 +1,4 @@
-@{ ViewData["Title"] = "Buat Stock Opname"; var barangs = (List<MyGudang.Models.Barang>)ViewBag.Barangs; }
+@{ ViewData["Title"] = "Buat Stock Opname"; var barangs = (List<itam.Models.Barang>)ViewBag.Barangs; }
 <div class="card card-outline card-warning">
     <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check"></i> Buat Stock Opname Baru</h3></div>
     <form asp-action="Create" method="post" id="formOpname">@Html.AntiForgeryToken()

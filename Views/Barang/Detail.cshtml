@@ -1,8 +1,8 @@
-@model MyGudang.Models.Barang
+@model itam.Models.Barang
 @{
     ViewData["Title"] = "Detail Histori Barang";
-    var historiMasuk = ViewBag.HistoriMasuk as IEnumerable<MyGudang.Models.BarangMasuk> ?? new List<MyGudang.Models.BarangMasuk>();
-    var historiKeluar = ViewBag.HistoriKeluar as IEnumerable<MyGudang.Models.BarangKeluar> ?? new List<MyGudang.Models.BarangKeluar>();
+    var historiMasuk = ViewBag.HistoriMasuk as IEnumerable<itam.Models.BarangMasuk> ?? new List<itam.Models.BarangMasuk>();
+    var historiKeluar = ViewBag.HistoriKeluar as IEnumerable<itam.Models.BarangKeluar> ?? new List<itam.Models.BarangKeluar>();
 
     var combinedMasuk = historiMasuk.Select(m => new { Tanggal = m.TanggalMasuk, Jumlah = m.Jumlah, Lokasi = m.Lokasi?.NamaLokasi, Keterangan = m.Keterangan, Jenis = "Baru" })
         .OrderByDescending(x => x.Tanggal).ToList();
@@ -47,7 +47,7 @@
                 </div>
                 <div class="card-body p-0">
                     @{
-                        var snList = ViewBag.SnTersedia as IEnumerable<MyGudang.Models.BarangSerial>;
+                        var snList = ViewBag.SnTersedia as IEnumerable<itam.Models.BarangSerial>;
                         if (snList != null && snList.Any())
                         {
                             <table class="table table-sm table-striped">

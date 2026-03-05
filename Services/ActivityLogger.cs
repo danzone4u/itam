@@ -1,7 +1,7 @@
-using MyGudang.Data;
-using MyGudang.Models;
+using itam.Data;
+using itam.Models;
 
-namespace MyGudang.Services
+namespace itam.Services
 {
     public static class ActivityLogger
     {

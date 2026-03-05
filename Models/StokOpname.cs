@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MyGudang.Models
+namespace itam.Models
 {
     public class StokOpname
     {

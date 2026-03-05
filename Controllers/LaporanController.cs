@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Data;
+using itam.Data;
 using ClosedXML.Excel;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     [Authorize]
     public class LaporanController : Controller

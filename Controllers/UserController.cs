@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     [Authorize(Roles = "SuperAdmin")]
     public class UserController : Controller

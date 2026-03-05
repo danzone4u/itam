@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using MyGudang.Models;
+using itam.Models;
 
-namespace MyGudang.Controllers;
+namespace itam.Controllers;
 
 public class HomeController : Controller
 {

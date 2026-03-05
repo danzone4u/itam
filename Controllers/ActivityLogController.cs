@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Data;
+using itam.Data;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     [Authorize(Roles = "SuperAdmin")]
     public class ActivityLogController : Controller

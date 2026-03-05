@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using MyGudang.Data;
-using MyGudang.Models;
+using itam.Data;
+using itam.Models;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MyGudang.Controllers
+namespace itam.Controllers
 {
     [Authorize(Roles = "SuperAdmin")]
     public class AppSettingController : Controller

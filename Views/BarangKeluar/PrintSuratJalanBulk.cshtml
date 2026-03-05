@@ -1,8 +1,8 @@
-@model IEnumerable<MyGudang.Models.BarangKeluar>
+@model IEnumerable<itam.Models.BarangKeluar>
 @{ 
     ViewData["Title"] = "Surat Jalan Barang Keluar"; 
     Layout = "~/Views/Shared/_Layout.cshtml"; 
-    var kop = (MyGudang.Models.KopSurat)ViewBag.Kop; 
+    var kop = (itam.Models.KopSurat)ViewBag.Kop; 
     var groupedData = Model.OrderBy(x => x.TanggalKeluar).GroupBy(x => x.NoSuratJalan).ToList();
 }
 

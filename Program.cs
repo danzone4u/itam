@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Data;
-using MyGudang.Models;
-using MyGudang.Services;
+using itam.Data;
+using itam.Models;
+using itam.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

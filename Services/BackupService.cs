@@ -1,8 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using MyGudang.Data;
+using itam.Data;
 
-namespace MyGudang.Services
+namespace itam.Services
 {
     public class BackupService : IHostedService, IDisposable
     {
@@ -62,14 +62,14 @@ namespace MyGudang.Services
                 }
 
                 var timestamp = now.ToString("yyyyMMdd_HHmmss");
-                var fileName = $"MyGudangDB_Auto_{timestamp}.bak";
+                var fileName = $"itamDB_Auto_{timestamp}.bak";
                 var filePath = Path.Combine(backupFolder, fileName);
 
                 var connString = _config.GetConnectionString("DefaultConnection");
                 using var conn = new SqlConnection(connString);
                 await conn.OpenAsync();
 
-                var sql = $"BACKUP DATABASE [MyGudangDB] TO DISK = N'{filePath}' WITH FORMAT, INIT, NAME = N'MyGudangDB-Auto-{timestamp}'";
+                var sql = $"BACKUP DATABASE [itamDB] TO DISK = N'{filePath}' WITH FORMAT, INIT, NAME = N'itamDB-Auto-{timestamp}'";
                 using var cmd = new SqlCommand(sql, conn);
                 cmd.CommandTimeout = 120;
                 await cmd.ExecuteNonQueryAsync();
@@ -80,7 +80,7 @@ namespace MyGudang.Services
                 _logger.LogInformation($"Auto backup created: {fileName}");
 
                 // Cleanup: keep only last 10 auto backups
-                var autoFiles = Directory.GetFiles(backupFolder, "MyGudangDB_Auto_*.bak")
+                var autoFiles = Directory.GetFiles(backupFolder, "itamDB_Auto_*.bak")
                     .OrderByDescending(f => f)
                     .Skip(10)
                     .ToList();
