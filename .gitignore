@@ -4,5 +4,11 @@ obj/
 *.suo
 .vs/
 wwwroot/uploads/
+wwwroot/backups/
 appsettings.Development.json
 Migrations/
+publish/
+publish.zip
+script.sql
+*.bak
+MyGudang.db
