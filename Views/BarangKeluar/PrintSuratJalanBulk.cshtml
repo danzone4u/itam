@@ -54,7 +54,7 @@
                 <tr>
                     <th width="50">No</th>
                     <th>Nama Barang</th>
-                    <th>Merk & Type</th>
+                    <th>Nama Barang</th>
                     <th width="50">Jumlah</th>
                     <th>S/N</th>
                     <th>Keterangan</th>
@@ -67,7 +67,7 @@
                     <tr>
                         <td class="text-center">@(no++)</td>
                         <td>@item.Barang?.NamaBarang</td>
-                        <td>@item.Barang?.Merk @item.Barang?.Type</td>
+                        <td>@item.Barang?.NamaBarang</td>
                         <td class="text-center">@item.Jumlah</td>
                         <td>
                             @{ var ser = item.BarangSerials?.Select(s => s.SerialNumber).Where(s => s != "-").ToList() ?? new List<string>(); }

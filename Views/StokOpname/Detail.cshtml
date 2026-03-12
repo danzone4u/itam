@@ -19,14 +19,14 @@
     <div class="card-body p-0">
         <table class="table table-bordered table-hover mb-0">
             <thead class="thead-light">
-                <tr><th>No</th><th>Kode</th><th>Nama Barang</th><th>Merk & Type</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Selisih</th><th>Keterangan</th></tr>
+                <tr><th>No</th><th>Kode</th><th>Nama Barang</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Selisih</th><th>Keterangan</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
                 @foreach (var d in Model.Details!)
                 {
                     <tr class="@(d.Selisih < 0 ? "table-danger" : d.Selisih > 0 ? "table-success" : "")">
-                        <td>@(no++)</td><td>@d.Barang?.KodeBarang</td><td>@d.Barang?.NamaBarang</td><td>@d.Barang?.Merk @d.Barang?.Type</td>
+                        <td>@(no++)</td><td>@d.Barang?.KodeBarang</td><td>@d.Barang?.NamaBarang</td>
                         <td>@d.StokSistem</td><td><strong>@d.StokFisik</strong></td>
                         <td>
                             @if (d.Selisih > 0) { <span class="text-success"><strong>+@d.Selisih</strong></span> }

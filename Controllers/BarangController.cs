@@ -52,8 +52,6 @@ namespace itam.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori");
-            ViewBag.Merks = await _context.Barangs.Where(b => !string.IsNullOrEmpty(b.Merk)).Select(b => b.Merk).Distinct().OrderBy(m => m).ToListAsync();
-            ViewBag.Types = await _context.Barangs.Where(b => !string.IsNullOrEmpty(b.Type)).Select(b => b.Type).Distinct().OrderBy(t => t).ToListAsync();
             return View();
         }
 
@@ -90,8 +88,6 @@ namespace itam.Controllers
             var barang = await _context.Barangs.FindAsync(id);
             if (barang == null) return NotFound();
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori", barang.KategoriId);
-            ViewBag.Merks = await _context.Barangs.Where(b => !string.IsNullOrEmpty(b.Merk)).Select(b => b.Merk).Distinct().OrderBy(m => m).ToListAsync();
-            ViewBag.Types = await _context.Barangs.Where(b => !string.IsNullOrEmpty(b.Type)).Select(b => b.Type).Distinct().OrderBy(t => t).ToListAsync();
             return View(barang);
         }
 
@@ -263,24 +259,20 @@ namespace itam.Controllers
             ws.Cell(1, 1).Value = "No";
             ws.Cell(1, 2).Value = "Kode Barang";
             ws.Cell(1, 3).Value = "Nama Barang";
-            ws.Cell(1, 4).Value = "Merk";
-            ws.Cell(1, 5).Value = "Type";
-            ws.Cell(1, 6).Value = "Kategori";
-            ws.Cell(1, 7).Value = "Satuan";
-            ws.Cell(1, 8).Value = "Stok";
-            ws.Range("A1:H1").Style.Font.Bold = true;
-            ws.Range("A1:H1").Style.Fill.BackgroundColor = XLColor.LightBlue;
+            ws.Cell(1, 4).Value = "Kategori";
+            ws.Cell(1, 5).Value = "Satuan";
+            ws.Cell(1, 6).Value = "Stok";
+            ws.Range("A1:F1").Style.Font.Bold = true;
+            ws.Range("A1:F1").Style.Fill.BackgroundColor = XLColor.LightBlue;
 
             for (int i = 0; i < data.Count; i++)
             {
                 ws.Cell(i + 2, 1).Value = i + 1;
                 ws.Cell(i + 2, 2).Value = data[i].KodeBarang;
                 ws.Cell(i + 2, 3).Value = data[i].NamaBarang;
-                ws.Cell(i + 2, 4).Value = data[i].Merk;
-                ws.Cell(i + 2, 5).Value = data[i].Type;
-                ws.Cell(i + 2, 6).Value = data[i].Kategori?.NamaKategori;
-                ws.Cell(i + 2, 7).Value = data[i].Satuan;
-                ws.Cell(i + 2, 8).Value = data[i].Stok;
+                ws.Cell(i + 2, 4).Value = data[i].Kategori?.NamaKategori;
+                ws.Cell(i + 2, 5).Value = data[i].Satuan;
+                ws.Cell(i + 2, 6).Value = data[i].Stok;
             }
             ws.Columns().AdjustToContents();
 
@@ -306,29 +298,52 @@ namespace itam.Controllers
             var rows = ws.RowsUsed().Skip(1);
             int count = 0;
 
+            var nextNumbers = new Dictionary<string, int>();
+
             foreach (var row in rows)
             {
                 var kode = row.Cell(2).GetString();
                 var nama = row.Cell(3).GetString();
                 if (string.IsNullOrWhiteSpace(nama)) continue;
 
-                var merk = row.Cell(4).GetString();
-                var type = row.Cell(5).GetString();
-                var kategoriName = row.Cell(6).GetString();
+                var kategoriName = row.Cell(4).GetString();
 
                 var kategori = await _context.Kategoris.FirstOrDefaultAsync(k => k.NamaKategori == kategoriName);
 
                 if (kategori == null) continue;
 
+                if (string.IsNullOrWhiteSpace(kode))
+                {
+                    var prefix = GetPrefixFromKategori(kategori);
+
+                    if (!nextNumbers.ContainsKey(prefix))
+                    {
+                        var lastBarang = await _context.Barangs
+                            .Where(b => b.KategoriId == kategori.Id && b.KodeBarang.StartsWith(prefix + "-"))
+                            .OrderByDescending(b => b.KodeBarang)
+                            .FirstOrDefaultAsync();
+
+                        int nextNum = 1;
+                        if (lastBarang != null)
+                        {
+                            var parts = lastBarang.KodeBarang.Split('-');
+                            if (parts.Length > 1 && int.TryParse(parts.Last(), out int num))
+                                nextNum = num + 1;
+                        }
+                        nextNumbers[prefix] = nextNum;
+                    }
+
+                    kode = $"{prefix}-{nextNumbers[prefix]:D3}";
+                    nextNumbers[prefix]++;
+                }
+
                 _context.Barangs.Add(new Barang
                 {
                     KodeBarang = kode,
                     NamaBarang = nama,
-                    Merk = string.IsNullOrWhiteSpace(merk) ? null : merk,
-                    Type = string.IsNullOrWhiteSpace(type) ? null : type,
                     KategoriId = kategori.Id,
-                    Satuan = row.Cell(7).GetString(),
-                    Stok = (int)row.Cell(8).GetDouble(),
+                    Satuan = row.Cell(5).GetString(),
+                    Stok = (int)row.Cell(6).GetDouble(),
                     CreatedAt = DateTime.Now
                 });
                 count++;
@@ -341,7 +356,7 @@ namespace itam.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin,AdminGudang")]
-        public async Task<IActionResult> CreateAjax(string? kodeBarang, string namaBarang, string? merk, string? type, int? kategoriId, string satuan)
+        public async Task<IActionResult> CreateAjax(string? kodeBarang, string namaBarang, int? kategoriId, string satuan)
         {
             if (string.IsNullOrWhiteSpace(namaBarang))
                 return Json(new { success = false, message = "Nama barang wajib diisi!" });
@@ -356,8 +371,6 @@ namespace itam.Controllers
             {
                 KodeBarang = kodeBarang ?? "",
                 NamaBarang = namaBarang,
-                Merk = string.IsNullOrWhiteSpace(merk) ? null : merk,
-                Type = string.IsNullOrWhiteSpace(type) ? null : type,
                 KategoriId = kategoriId ?? 0,
                 Satuan = satuan ?? "Unit",
                 Stok = 0,
@@ -375,16 +388,26 @@ namespace itam.Controllers
             return Json(new { kode });
         }
 
+        private static string GetPrefixFromKategori(Kategori kategori)
+        {
+            if (!string.IsNullOrWhiteSpace(kategori.KodePrefix))
+                return kategori.KodePrefix.ToUpper().Trim();
+
+            var words = kategori.NamaKategori.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length > 1)
+                return string.Concat(words.Select(w => w[0])).ToUpper();
+
+            return kategori.NamaKategori.Length >= 3
+                ? kategori.NamaKategori.Substring(0, 3).ToUpper()
+                : kategori.NamaKategori.ToUpper();
+        }
+
         private async Task<string> GenerateKodeBarang(int kategoriId)
         {
             var kategori = await _context.Kategoris.FindAsync(kategoriId);
             if (kategori == null) return "";
 
-            var prefix = !string.IsNullOrWhiteSpace(kategori.KodePrefix)
-                ? kategori.KodePrefix.ToUpper().Trim()
-                : kategori.NamaKategori.Length >= 3
-                    ? kategori.NamaKategori.Substring(0, 3).ToUpper()
-                    : kategori.NamaKategori.ToUpper();
+            var prefix = GetPrefixFromKategori(kategori);
 
             var lastBarang = await _context.Barangs
                 .Where(b => b.KategoriId == kategoriId && b.KodeBarang.StartsWith(prefix + "-"))

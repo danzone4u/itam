@@ -15,7 +15,7 @@
                     <th>No. Transfer</th>
                     <th>Tanggal</th>
                     <th width="250">Barang</th>
-                    <th>Merk & Type</th>
+                    <th>Nama Barang</th>
                     <th>Jumlah</th>
                     <th>Dari</th>
                     <th>Ke</th>
@@ -39,7 +39,7 @@
                                 <br/><small class="text-muted">SN: @string.Join(", ", item.TransferBarangSerials.Select(s => s.BarangSerial?.SerialNumber ?? "-"))</small>
                             }
                         </td>
-                        <td>@item.Barang?.Merk @item.Barang?.Type</td>
+                        <td>@item.Barang?.NamaBarang</td>
                         <td><span class="badge bg-primary">@item.Jumlah</span></td>
                         <td>@item.DariLokasi?.NamaLokasi</td>
                         <td>@item.KeLokasi?.NamaLokasi</td>

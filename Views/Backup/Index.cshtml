@@ -1,17 +1,19 @@
 @{
     ViewData["Title"] = "Backup & Restore";
-    var setting = ViewBag.Setting as itam.Models.BackupSetting;
-    var files = ViewBag.BackupFiles as List<System.IO.FileInfo> ?? new List<System.IO.FileInfo>();
+    var setting  = ViewBag.Setting  as itam.Models.BackupSetting;
+    var files    = ViewBag.BackupFiles as List<System.IO.FileInfo> ?? new List<System.IO.FileInfo>();
+    var dbName   = ViewBag.DbName as string ?? "DB";
+    var curPath  = ViewBag.CurrentPath as string ?? "";
 }
 
 <div class="row">
+    <!-- ── Left: Settings ── -->
     <div class="col-md-4">
-        <!-- Backup Settings Card -->
         <div class="card card-outline card-primary">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-cog"></i> Pengaturan Backup</h3>
-            </div>
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-cog"></i> Pengaturan Backup</h3></div>
             <div class="card-body">
+
+                <!-- Auto Backup Toggle -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span><i class="fas fa-clock"></i> Auto Backup</span>
                     <form asp-action="ToggleAutoBackup" method="post" style="display:inline">
@@ -23,12 +25,11 @@
                     </form>
                 </div>
 
+                <!-- Interval -->
                 <form asp-action="UpdateInterval" method="post">
                     @Html.AntiForgeryToken()
                     <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text"><i class="fas fa-hourglass-half"></i></span>
-                        </div>
+                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-hourglass-half"></i></span></div>
                         <input type="number" name="hours" class="form-control" value="@setting?.IntervalHours" min="1" max="168" placeholder="Interval jam">
                         <div class="input-group-append">
                             <span class="input-group-text">jam</span>
@@ -37,29 +38,41 @@
                     </div>
                 </form>
 
-                <form asp-action="UpdatePath" method="post" class="mb-3">
-                    @Html.AntiForgeryToken()
-                    <div class="form-group mb-2">
-                        <label><i class="fas fa-folder-open"></i> Lokasi Backup</label>
-                        <div class="input-group">
-                            <input type="text" name="backupPath" class="form-control" value="@setting?.BackupPath" placeholder="C:\Backupitam atau wwwroot/backups">
-                            <div class="input-group-append">
-                                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
-                            </div>
+                <hr/>
+
+                <!-- Folder Path + Picker -->
+                <div class="form-group mb-1">
+                    <label><i class="fas fa-folder-open"></i> Lokasi Backup</label>
+                    <div class="input-group">
+                        <input type="text" id="backupPathInput" class="form-control" value="@setting?.BackupPath" placeholder="Pilih folder...">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-secondary" onclick="openFolderPicker()" title="Browse folder server">
+                                <i class="fas fa-folder"></i>
+                            </button>
                         </div>
-                        <small class="text-muted">Aktual saat ini: <code>@ViewBag.CurrentPath</code></small>
                     </div>
-                </form>
+                    <small class="text-muted">Aktual SQL Server path: <code>@curPath</code></small>
+                </div>
+                <div class="mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-info" onclick="testPath()"><i class="fas fa-plug"></i> Tes Akses Path</button>
+                    <form asp-action="UpdatePath" method="post" style="display:inline" id="formUpdatePath">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="backupPath" id="hiddenBackupPath" value="@setting?.BackupPath">
+                        <button type="submit" class="btn btn-sm btn-primary" onclick="syncPath()"><i class="fas fa-save"></i> Simpan Path</button>
+                    </form>
+                </div>
+                <div id="testPathResult" class="mb-2"></div>
 
                 <hr/>
 
-                <div class="text-muted small mb-3">
-                    <i class="fas fa-info-circle"></i> Backup otomatis maksimal menyimpan 10 file terakhir.
+                <div class="text-muted small mb-2">
+                    <i class="fas fa-info-circle"></i> Backup otomatis menyimpan 10 file terakhir.<br>
+                    <i class="fas fa-database text-primary"></i> Database: <strong>@dbName</strong>
                 </div>
 
                 @if (setting?.LastBackupAt != null)
                 {
-                    <div class="callout callout-info p-2">
+                    <div class="callout callout-info p-2 mb-2">
                         <small><i class="fas fa-history"></i> Backup terakhir:<br>
                         <strong>@setting.LastBackupAt.Value.ToString("dd/MM/yyyy HH:mm:ss")</strong></small>
                     </div>
@@ -67,7 +80,7 @@
 
                 <form asp-action="CreateBackup" method="post">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-primary btn-block" onclick="return confirm('Buat backup database sekarang?')">
+                    <button type="submit" class="btn btn-primary btn-block" onclick="return confirm('Buat backup database @dbName sekarang?')">
                         <i class="fas fa-database"></i> Backup Sekarang
                     </button>
                 </form>
@@ -75,21 +88,14 @@
         </div>
     </div>
 
+    <!-- ── Right: File list ── -->
     <div class="col-md-8">
-        <!-- Backup Files Card -->
         <div class="card card-outline card-success">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-archive"></i> Daftar File Backup (@files.Count)</h3>
-            </div>
+            <div class="card-header"><h3 class="card-title"><i class="fas fa-archive"></i> Daftar File Backup (@files.Count)</h3></div>
             <div class="card-body p-0">
                 <table class="table table-striped table-hover m-0">
                     <thead>
-                        <tr>
-                            <th>Nama File</th>
-                            <th>Ukuran</th>
-                            <th>Tanggal</th>
-                            <th width="200">Aksi</th>
-                        </tr>
+                        <tr><th>Nama File</th><th>Ukuran</th><th>Tanggal</th><th width="170">Aksi</th></tr>
                     </thead>
                     <tbody>
                         @if (!files.Any())
@@ -104,12 +110,8 @@
                                 var isAuto = file.Name.Contains("_Auto_");
                                 <tr>
                                     <td>
-                                        <i class="fas fa-file-archive text-warning"></i>
-                                        @file.Name
-                                        @if (isAuto)
-                                        {
-                                            <span class="badge badge-info ml-1">Auto</span>
-                                        }
+                                        <i class="fas fa-file-archive text-warning"></i> @file.Name
+                                        @if (isAuto) { <span class="badge badge-info ml-1">Auto</span> }
                                     </td>
                                     <td>@sizeMB MB</td>
                                     <td><small>@file.CreationTime.ToString("dd/MM/yyyy HH:mm")</small></td>
@@ -117,19 +119,16 @@
                                         <a href="@Url.Action("Download", new { fileName = file.Name })" class="btn btn-success btn-xs" title="Download">
                                             <i class="fas fa-download"></i>
                                         </a>
-                                        <form asp-action="Restore" method="post" style="display:inline" onsubmit="return confirm('PERINGATAN! Restore akan menimpa seluruh database saat ini. Pastikan Anda sudah backup data terbaru. Lanjutkan?')">
+                                        <form asp-action="Restore" method="post" style="display:inline"
+                                              onsubmit="return confirm('⚠️ RESTORE akan menimpa seluruh data database @dbName saat ini!\nPastikan sudah backup terbaru.\nLanjutkan?')">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="fileName" value="@file.Name">
-                                            <button type="submit" class="btn btn-warning btn-xs" title="Restore">
-                                                <i class="fas fa-undo"></i> Restore
-                                            </button>
+                                            <button type="submit" class="btn btn-warning btn-xs" title="Restore"><i class="fas fa-undo"></i></button>
                                         </form>
                                         <form asp-action="DeleteBackup" method="post" style="display:inline" onsubmit="return confirm('Hapus file backup ini?')">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="fileName" value="@file.Name">
-                                            <button type="submit" class="btn btn-danger btn-xs" title="Hapus">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <button type="submit" class="btn btn-danger btn-xs" title="Hapus"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -139,5 +138,154 @@
                 </table>
             </div>
         </div>
+
+        <!-- Petunjuk izin SQL Server -->
+        <div class="alert alert-warning mt-3">
+            <i class="fas fa-exclamation-triangle"></i> <strong>Penting:</strong>
+            Folder backup harus dapat diakses oleh <strong>SQL Server Service Account</strong> (bukan web server).
+            Gunakan tombol <i class="fas fa-plug"></i> <b>Tes Akses</b> untuk memastikan SQL Server bisa menulis ke folder tersebut.
+            Jika gagal, gunakan folder default SQL Server (biasanya: <code>C:\Program Files\Microsoft SQL Server\MSSQL...\MSSQL\Backup</code>).
+        </div>
     </div>
 </div>
+
+<!-- ─────────── Modal Folder Picker ─────────── -->
+<div class="modal fade" id="modalFolderPicker" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title"><i class="fas fa-folder-open"></i> Pilih Folder Backup</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" style="min-height:360px">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" id="folderBreadcrumb" class="mb-2">
+                    <ol class="breadcrumb mb-0 py-1 px-2" id="breadcrumbList">
+                        <li class="breadcrumb-item"><a href="#" onclick="browseFolder('');return false;"><i class="fas fa-hdd"></i> Drive</a></li>
+                    </ol>
+                </nav>
+                <!-- Folder list -->
+                <div id="folderList" class="list-group" style="max-height:300px;overflow-y:auto">
+                    <div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin"></i> Memuat...</div>
+                </div>
+                <div id="folderMsg" class="text-danger mt-2" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <div class="mr-auto text-info small"><i class="fas fa-folder-open"></i> <span id="selectedFolderLabel">Belum dipilih</span></div>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="confirmFolderPicker()"><i class="fas fa-check"></i> Pilih Folder Ini</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+var _selectedFolder = '@Html.Raw(curPath.Replace("\\","\\\\"))';
+
+function openFolderPicker() {
+    _selectedFolder = $('#backupPathInput').val() || '';
+    browseFolder(_selectedFolder);
+    $('#modalFolderPicker').modal('show');
+}
+
+function browseFolder(path) {
+    $('#folderList').html('<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin"></i> Memuat...</div>');
+    $('#folderMsg').hide();
+    $.getJSON('@Url.Action("BrowseFolders","Backup")', { path: path }, function(res) {
+        if (!res.ok) {
+            // If path not found (e.g., typed a path that doesn't exist yet), go to root
+            if (path !== '') { browseFolder(''); return; }
+            $('#folderMsg').text(res.message).show();
+            $('#folderList').html('');
+            return;
+        }
+        _selectedFolder = res.current || '';
+        $('#selectedFolderLabel').text(_selectedFolder || 'Drive root');
+
+        // Build breadcrumb
+        var bc = '<li class="breadcrumb-item"><a href="#" onclick="browseFolder(\'\');return false;"><i class="fas fa-hdd"></i> Drive</a></li>';
+        if (res.breadcrumb && res.breadcrumb.length > 0) {
+            res.breadcrumb.forEach(function(p) {
+                bc += '<li class="breadcrumb-item"><a href="#" onclick="browseFolder(\'' + escJs(p.path) + '\');return false;">' + escHtml(p.name) + '</a></li>';
+            });
+        }
+        $('#breadcrumbList').html(bc);
+
+        // Build folder items
+        var html = '';
+        if (res.items.length === 0) {
+            html = '<div class="list-group-item text-muted"><i class="fas fa-folder-minus"></i> Tidak ada subfolder</div>';
+        } else {
+            res.items.forEach(function(d) {
+                html += '<a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center folder-item" data-path="' + escHtml(d.path) + '" onclick="selectFolder(\'' + escJs(d.path) + '\');return false;">'
+                      + '<span><i class="fas fa-folder text-warning mr-2"></i>' + escHtml(d.name) + '</span>'
+                      + (d.hasSubs ? '<small><i class="fas fa-chevron-right text-muted"></i></small>' : '')
+                      + '</a>';
+            });
+        }
+        // Also show "Select current folder" if not root
+        if (res.current) {
+            html = '<a href="#" class="list-group-item list-group-item-action list-group-item-success" onclick="confirmFolderPicker();return false;">'
+                 + '<i class="fas fa-check-circle text-success mr-2"></i><strong>Pilih folder ini: <code>' + escHtml(res.current) + '</code></strong></a>' 
+                 + html;
+        }
+        $('#folderList').html(html);
+    }).fail(function() {
+        $('#folderMsg').text('Gagal memuat folder.').show();
+        $('#folderList').html('');
+    });
+}
+
+function selectFolder(path) {
+    _selectedFolder = path;
+    $('#selectedFolderLabel').text(path);
+    // Highlight selected
+    $('.folder-item').removeClass('active');
+    $('.folder-item[data-path="' + path + '"]').addClass('active');
+    // Browse into it
+    browseFolder(path);
+}
+
+function confirmFolderPicker() {
+    if (!_selectedFolder) { alert('Pilih folder terlebih dahulu!'); return; }
+    $('#backupPathInput').val(_selectedFolder);
+    $('#modalFolderPicker').modal('hide');
+}
+
+function syncPath() {
+    $('#hiddenBackupPath').val($('#backupPathInput').val());
+}
+
+function testPath() {
+    var path = $('#backupPathInput').val();
+    if (!path) { alert('Isi path terlebih dahulu!'); return; }
+    $('#testPathResult').html('<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Menguji akses SQL Server...</span>');
+    $.ajax({
+        url: '@Url.Action("TestPath","Backup")',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ path: path }),
+        success: function(res) {
+            var cls = res.ok ? 'text-success' : 'text-danger';
+            $('#testPathResult').html('<span class="' + cls + '"><i class="fas ' + (res.ok ? 'fa-check-circle' : 'fa-times-circle') + '"></i> ' + res.message + '</span>');
+        },
+        error: function() {
+            $('#testPathResult').html('<span class="text-danger">Gagal menghubungi server.</span>');
+        }
+    });
+}
+
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escJs(str) {
+    return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+// Inisialisasi: load folder dari path aktif
+$(function(){
+    browseFolder('@Html.Raw(curPath.Replace("\\","\\\\").Replace("'","\\'"))');
+});
+</script>
+}

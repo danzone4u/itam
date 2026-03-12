@@ -36,8 +36,6 @@ namespace itam.Controllers
             ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi");
             ViewBag.Suppliers = new SelectList(await _context.Suppliers.OrderBy(s => s.NamaSupplier).ToListAsync(), "Id", "NamaSupplier");
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.OrderBy(k => k.NamaKategori).ToListAsync(), "Id", "NamaKategori");
-            ViewBag.Merks = await _context.Barangs.Where(b => !string.IsNullOrEmpty(b.Merk)).Select(b => b.Merk).Distinct().OrderBy(m => m).ToListAsync();
-            ViewBag.Types = await _context.Barangs.Where(b => !string.IsNullOrEmpty(b.Type)).Select(b => b.Type).Distinct().OrderBy(t => t).ToListAsync();
             return View();
         }
 
@@ -134,9 +132,47 @@ namespace itam.Controllers
             }
 
             int count = 0;
-            // Since javascript rowIndex sequence might skip numbers if rows are deleted, we will just align it sequentially with barangIds.
-            // A more robust way is getting all keys and sorting them or mapping them to the iterations.
             var orderedSnKeys = snData.Keys.OrderBy(k => k).ToList();
+
+            // ── Kumpulkan semua SN yang akan diinput (non-dash) ──
+            var allInputSNs = new List<string>();
+            for (int i = 0; i < barangIds.Length; i++)
+            {
+                if (orderedSnKeys.Count > i)
+                {
+                    int keyIndex = orderedSnKeys[i];
+                    allInputSNs.AddRange(snData[keyIndex].Where(s => !string.IsNullOrWhiteSpace(s) && s.Trim() != "-").Select(s => s.Trim()));
+                }
+            }
+
+            // ── Cek duplikat dalam batch input sendiri ──
+            var batchDuplicates = allInputSNs
+                .GroupBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            // ── Cek SN yang sudah ada di database ──
+            var existingSNs = new List<string>();
+            if (allInputSNs.Any())
+            {
+                var dbSNs = await _context.BarangSerials
+                    .Where(s => s.SerialNumber != "-" && allInputSNs.Contains(s.SerialNumber))
+                    .Select(s => s.SerialNumber)
+                    .ToListAsync();
+                existingSNs = dbSNs;
+            }
+
+            if (batchDuplicates.Any() || existingSNs.Any())
+            {
+                var msgs = new List<string>();
+                if (batchDuplicates.Any())
+                    msgs.Add($"SN duplikat dalam input: {string.Join(", ", batchDuplicates)}");
+                if (existingSNs.Any())
+                    msgs.Add($"SN sudah ada di database: {string.Join(", ", existingSNs)}");
+                TempData["Error"] = "❌ Gagal menyimpan. " + string.Join(" | ", msgs);
+                return RedirectToAction(nameof(Create));
+            }
 
             for (int i = 0; i < barangIds.Length; i++)
             {
@@ -450,22 +486,18 @@ namespace itam.Controllers
             ws.Cell(1, 1).Value = "No";
             ws.Cell(1, 2).Value = "Tanggal Masuk";
             ws.Cell(1, 3).Value = "Nama Barang";
-            ws.Cell(1, 4).Value = "Merk";
-            ws.Cell(1, 5).Value = "Type";
-            ws.Cell(1, 6).Value = "Jumlah";
-            ws.Cell(1, 7).Value = "Keterangan";
-            ws.Range("A1:G1").Style.Font.Bold = true;
-            ws.Range("A1:G1").Style.Fill.BackgroundColor = XLColor.LightGreen;
+            ws.Cell(1, 4).Value = "Jumlah";
+            ws.Cell(1, 5).Value = "Keterangan";
+            ws.Range("A1:E1").Style.Font.Bold = true;
+            ws.Range("A1:E1").Style.Fill.BackgroundColor = XLColor.LightGreen;
 
             for (int i = 0; i < data.Count; i++)
             {
                 ws.Cell(i + 2, 1).Value = i + 1;
                 ws.Cell(i + 2, 2).Value = data[i].TanggalMasuk.ToString("dd/MM/yyyy");
                 ws.Cell(i + 2, 3).Value = data[i].Barang?.NamaBarang;
-                ws.Cell(i + 2, 4).Value = data[i].Barang?.Merk;
-                ws.Cell(i + 2, 5).Value = data[i].Barang?.Type;
-                ws.Cell(i + 2, 6).Value = data[i].Jumlah;
-                ws.Cell(i + 2, 7).Value = data[i].Keterangan;
+                ws.Cell(i + 2, 4).Value = data[i].Jumlah;
+                ws.Cell(i + 2, 5).Value = data[i].Keterangan;
             }
             ws.Columns().AdjustToContents();
 
@@ -490,22 +522,20 @@ namespace itam.Controllers
 
             // === HEADER ROW (row 2) ===
             // Required columns
-            var requiredCols = new[] { 1, 2 };
+            var requiredCols = new[] { 2 };
             var headers = new Dictionary<int, string>
             {
-                {1,  "Kode Barang *"},
+                {1,  "Kode Barang (Otomatis jika kosong)"},
                 {2,  "Nama Barang *"},
-                {3,  "Merk"},
-                {4,  "Type"},
-                {5,  "Kategori"},
-                {6,  "Serial Number (Pisahkan dengan koma)"},
-                {7,  "Supplier"},
-                {8,  "Satuan"},
-                {9,  "Jumlah (Opsional, ikuti SN jika ada)"},
-                {10, "Tanggal Masuk (DD/MM/YYYY)"},
-                {11, "Keterangan"},
-                {12, "Lokasi Ruangan"},
-                {13, "Rak / Kompartemen"},
+                {3,  "Kategori"},
+                {4,  "Serial Number (Pisahkan dengan koma)"},
+                {5,  "Supplier"},
+                {6,  "Satuan"},
+                {7,  "Jumlah (Opsional, ikuti SN jika ada)"},
+                {8,  "Tanggal Masuk (DD/MM/YYYY)"},
+                {9,  "Keterangan"},
+                {10, "Lokasi Ruangan"},
+                {11, "Rak / Kompartemen"},
             };
 
             foreach (var h in headers)
@@ -538,20 +568,18 @@ namespace itam.Controllers
 
             worksheet.Cells[3, 1].Value  = "BRG-001";
             worksheet.Cells[3, 2].Value  = "Contoh Barang";
-            worksheet.Cells[3, 3].Value  = "Contoh Merk";
-            worksheet.Cells[3, 4].Value  = "Contoh Type";
-            worksheet.Cells[3, 5].Value  = kategoriContoh?.NamaKategori ?? "IT";
-            worksheet.Cells[3, 6].Value  = "SN-001, SN-002, SN-003";
-            worksheet.Cells[3, 7].Value  = supplierContoh?.NamaSupplier ?? "PT Contoh";
-            worksheet.Cells[3, 8].Value  = "Unit";
-            worksheet.Cells[3, 9].Value  = 3;
-            worksheet.Cells[3, 10].Value = DateTime.Now.ToString("dd/MM/yyyy");
-            worksheet.Cells[3, 11].Value = "Stok awal";
-            worksheet.Cells[3, 12].Value = lokasiContoh?.NamaLokasi ?? "";
-            worksheet.Cells[3, 13].Value = "Rak A / Lemari 1";
+            worksheet.Cells[3, 3].Value  = kategoriContoh?.NamaKategori ?? "IT";
+            worksheet.Cells[3, 4].Value  = "SN-001, SN-002, SN-003";
+            worksheet.Cells[3, 5].Value  = supplierContoh?.NamaSupplier ?? "PT Contoh";
+            worksheet.Cells[3, 6].Value  = "Unit";
+            worksheet.Cells[3, 7].Value  = 3;
+            worksheet.Cells[3, 8].Value  = DateTime.Now.ToString("dd/MM/yyyy");
+            worksheet.Cells[3, 9].Value  = "Stok awal";
+            worksheet.Cells[3, 10].Value = lokasiContoh?.NamaLokasi ?? "";
+            worksheet.Cells[3, 11].Value = "Rak A / Lemari 1";
 
             // style dummy row: light yellow bg
-            var dummyRange = worksheet.Cells[3, 1, 3, 13];
+            var dummyRange = worksheet.Cells[3, 1, 3, 11];
             dummyRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
             dummyRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(255, 255, 204));
             dummyRange.Style.Font.Italic = true;
@@ -598,7 +626,7 @@ namespace itam.Controllers
 
             // ── STEP 1: Read all rows into staging list ──────────────────────
             var staged = new List<(
-                string KodeBarang, string NamaBarang, string? Merk, string? Type,
+                string KodeBarang, string NamaBarang,
                 string? KategoriNama, List<string> SNs, string? SupplierNama, string? Satuan,
                 int Jumlah, DateTime Tanggal, string? Ket, string? LokasiNama, string? Rak
             )>();
@@ -606,20 +634,20 @@ namespace itam.Controllers
             for (int row = 3; row <= rowCount; row++)
             {
                 var kodeBarang = worksheet.Cells[row, 1].Value?.ToString()?.Trim();
-                if (string.IsNullOrEmpty(kodeBarang)) continue;
+                var namaBarang = worksheet.Cells[row, 2].Value?.ToString()?.Trim();
+                
+                if (string.IsNullOrEmpty(kodeBarang) && string.IsNullOrEmpty(namaBarang)) continue;
+                kodeBarang ??= "";
 
-                var namaBarang     = worksheet.Cells[row, 2].Value?.ToString()?.Trim();
-                var merk           = worksheet.Cells[row, 3].Value?.ToString()?.Trim();
-                var type           = worksheet.Cells[row, 4].Value?.ToString()?.Trim();
-                var kategoriNama   = worksheet.Cells[row, 5].Value?.ToString()?.Trim();
-                var serialNumberStr= worksheet.Cells[row, 6].Value?.ToString()?.Trim();
-                var supplierNama   = worksheet.Cells[row, 7].Value?.ToString()?.Trim();
-                var satuan         = worksheet.Cells[row, 8].Value?.ToString()?.Trim();
-                var jumlahStr      = worksheet.Cells[row, 9].Value?.ToString()?.Trim();
-                var tglStr         = worksheet.Cells[row, 10].Value?.ToString()?.Trim();
-                var ket            = worksheet.Cells[row, 11].Value?.ToString()?.Trim();
-                var lokasiNama     = worksheet.Cells[row, 12].Value?.ToString()?.Trim();
-                var rakKompartemen = worksheet.Cells[row, 13].Value?.ToString()?.Trim();
+                var kategoriNama   = worksheet.Cells[row, 3].Value?.ToString()?.Trim();
+                var serialNumberStr= worksheet.Cells[row, 4].Value?.ToString()?.Trim();
+                var supplierNama   = worksheet.Cells[row, 5].Value?.ToString()?.Trim();
+                var satuan         = worksheet.Cells[row, 6].Value?.ToString()?.Trim();
+                var jumlahStr      = worksheet.Cells[row, 7].Value?.ToString()?.Trim();
+                var tglStr         = worksheet.Cells[row, 8].Value?.ToString()?.Trim();
+                var ket            = worksheet.Cells[row, 9].Value?.ToString()?.Trim();
+                var lokasiNama     = worksheet.Cells[row, 10].Value?.ToString()?.Trim();
+                var rakKompartemen = worksheet.Cells[row, 11].Value?.ToString()?.Trim();
 
                 // Parse SNs from this row
                 var snList = new List<string>();
@@ -641,15 +669,17 @@ namespace itam.Controllers
                         DateTime.TryParse(tglStr, out tanggal);
                 }
 
-                staged.Add((kodeBarang, namaBarang ?? "", merk, type, kategoriNama,
+                staged.Add((kodeBarang, namaBarang ?? "", kategoriNama,
                             snList, supplierNama, satuan, resolvedJumlah, tanggal, ket,
                             lokasiNama, rakKompartemen));
             }
 
-            // ── STEP 2: Group rows by Kode Barang + Lokasi + Tanggal + Supplier ──
-            // Rows with the same combination are merged into one BarangMasuk
+            // ── STEP 2: Group rows by Kode Barang (or NamaBarang jika kode kosong) + Lokasi + Tanggal + Supplier ──
+            // Rows with the same combination are merged into one BarangMasuk.
             var groups = staged.GroupBy(r => new {
-                r.KodeBarang,
+                KodeGroup = string.IsNullOrEmpty(r.KodeBarang)
+                    ? $"NEW_{r.NamaBarang}"
+                    : r.KodeBarang,
                 Lokasi  = r.LokasiNama ?? "",
                 Tgl     = r.Tanggal.Date,
                 Supplier= r.SupplierNama ?? "",
@@ -657,50 +687,139 @@ namespace itam.Controllers
             }).ToList();
 
             int successCount = 0;
+            var nextNumbers = new Dictionary<string, int>();
+
+            // ── Cek duplikat SN sebelum proses simpan ──
+            var allImportSNs = staged
+                .SelectMany(r => r.SNs)
+                .Where(s => !string.IsNullOrWhiteSpace(s) && s.Trim() != "-")
+                .Select(s => s.Trim())
+                .ToList();
+
+            if (allImportSNs.Any())
+            {
+                // Duplikat dalam file Excel sendiri
+                var fileDupes = allImportSNs
+                    .GroupBy(s => s, StringComparer.OrdinalIgnoreCase)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                // SN yang sudah ada di database
+                var dbExisting = await _context.BarangSerials
+                    .Where(s => s.SerialNumber != "-" && allImportSNs.Contains(s.SerialNumber))
+                    .Select(s => s.SerialNumber)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (fileDupes.Any() || dbExisting.Any())
+                {
+                    var msgs = new List<string>();
+                    if (fileDupes.Any())    msgs.Add($"SN duplikat dalam file: {string.Join(", ", fileDupes)}");
+                    if (dbExisting.Any())   msgs.Add($"SN sudah ada di database: {string.Join(", ", dbExisting)}");
+                    TempData["Error"] = "❌ Import dibatalkan. " + string.Join(" | ", msgs);
+                    return RedirectToAction(nameof(Index));
+                }
+            }
 
             foreach (var grp in groups)
             {
                 var first = grp.First();
 
                 // ── Resolve / create Barang ──
-                var barang = barangs.FirstOrDefault(b =>
-                    b.KodeBarang.Equals(grp.Key.KodeBarang, StringComparison.OrdinalIgnoreCase));
+                Barang? barang = null;
+                if (!string.IsNullOrEmpty(first.KodeBarang))
+                {
+                    barang = barangs.FirstOrDefault(b => b.KodeBarang.Equals(first.KodeBarang, StringComparison.OrdinalIgnoreCase));
+                }
 
                 if (barang == null && !string.IsNullOrEmpty(first.NamaBarang))
                 {
-                    int kategoriId = 0;
-                    if (!string.IsNullOrEmpty(first.KategoriNama))
+                    // ── Try to find existing by NamaBarang first ──
+                    barang = barangs.FirstOrDefault(b =>
+                        b.NamaBarang.Equals(first.NamaBarang, StringComparison.OrdinalIgnoreCase));
+
+                    // Also check DB in case it's not in our in-memory list yet
+                    if (barang == null)
                     {
-                        var kat = kategoris.FirstOrDefault(k =>
-                            k.NamaKategori.Equals(first.KategoriNama, StringComparison.OrdinalIgnoreCase));
-                        if (kat != null) kategoriId = kat.Id;
-                        else
-                        {
-                            var newKat = new Kategori { NamaKategori = first.KategoriNama };
-                            _context.Kategoris.Add(newKat);
-                            await _context.SaveChangesAsync();
-                            kategoris.Add(newKat);
-                            kategoriId = newKat.Id;
-                        }
+                        barang = await _context.Barangs
+                            .FirstOrDefaultAsync(b => b.NamaBarang.ToLower() == first.NamaBarang.ToLower());
+                        if (barang != null) barangs.Add(barang);
                     }
 
-                    if (kategoriId > 0)
+                    // ── If still not found, create new Barang ──
+                    if (barang == null)
                     {
-                        barang = new Barang
+                        int kategoriId = 0;
+                        Kategori? targetKategori = null;
+                        if (!string.IsNullOrEmpty(first.KategoriNama))
                         {
-                            KodeBarang = grp.Key.KodeBarang,
-                            NamaBarang = first.NamaBarang,
-                            Merk       = string.IsNullOrWhiteSpace(first.Merk) ? null : first.Merk,
-                            Type       = string.IsNullOrWhiteSpace(first.Type) ? null : first.Type,
-                            KategoriId = kategoriId,
-                            Satuan     = !string.IsNullOrEmpty(first.Satuan) ? first.Satuan : "Unit",
-                            Stok       = 0,
-                            CreatedAt  = DateTime.Now,
-                            UpdatedAt  = DateTime.Now
-                        };
-                        _context.Barangs.Add(barang);
-                        await _context.SaveChangesAsync();
-                        barangs.Add(barang);
+                            var kat = kategoris.FirstOrDefault(k =>
+                                k.NamaKategori.Equals(first.KategoriNama, StringComparison.OrdinalIgnoreCase));
+                            if (kat != null) {
+                                kategoriId = kat.Id;
+                                targetKategori = kat;
+                            }
+                            else
+                            {
+                                var newKat = new Kategori { NamaKategori = first.KategoriNama };
+                                _context.Kategoris.Add(newKat);
+                                await _context.SaveChangesAsync();
+                                kategoris.Add(newKat);
+                                kategoriId = newKat.Id;
+                                targetKategori = newKat;
+                            }
+                        }
+
+                        if (kategoriId > 0 && targetKategori != null)
+                        {
+                            string finalKode = first.KodeBarang;
+                            if (string.IsNullOrEmpty(finalKode))
+                            {
+                                var words = targetKategori.NamaKategori.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                var prefix = !string.IsNullOrWhiteSpace(targetKategori.KodePrefix)
+                                    ? targetKategori.KodePrefix.ToUpper().Trim()
+                                    : words.Length > 1
+                                        ? string.Concat(words.Select(w => w[0])).ToUpper()
+                                        : targetKategori.NamaKategori.Length >= 3
+                                            ? targetKategori.NamaKategori.Substring(0, 3).ToUpper()
+                                            : targetKategori.NamaKategori.ToUpper();
+
+                                if (!nextNumbers.ContainsKey(prefix))
+                                {
+                                    var lastBarang = await _context.Barangs
+                                        .Where(b => b.KategoriId == kategoriId && b.KodeBarang.StartsWith(prefix + "-"))
+                                        .OrderByDescending(b => b.KodeBarang)
+                                        .FirstOrDefaultAsync();
+
+                                    int nextNum = 1;
+                                    if (lastBarang != null)
+                                    {
+                                        var parts = lastBarang.KodeBarang.Split('-');
+                                        if (parts.Length > 1 && int.TryParse(parts.Last(), out int num))
+                                            nextNum = num + 1;
+                                    }
+                                    nextNumbers[prefix] = nextNum;
+                                }
+
+                                finalKode = $"{prefix}-{nextNumbers[prefix]:D3}";
+                                nextNumbers[prefix]++;
+                            }
+
+                            barang = new Barang
+                            {
+                                KodeBarang = finalKode,
+                                NamaBarang = first.NamaBarang,
+                                KategoriId = kategoriId,
+                                Satuan     = !string.IsNullOrEmpty(first.Satuan) ? first.Satuan : "Unit",
+                                Stok       = 0,
+                                CreatedAt  = DateTime.Now,
+                                UpdatedAt  = DateTime.Now
+                            };
+                            _context.Barangs.Add(barang);
+                            await _context.SaveChangesAsync();
+                            barangs.Add(barang);
+                        }
                     }
                 }
 

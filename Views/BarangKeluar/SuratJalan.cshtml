@@ -52,12 +52,12 @@
     <p>Dengan ini kami kirimkan barang-barang sebagai berikut:</p>
 
     <table class="table table-bordered" style="margin-top:10px;">
-        <thead><tr><th>No</th><th>Nama Barang</th><th>Merk & Type</th><th width="50">Jumlah</th><th>S/N</th><th>Keterangan</th></tr></thead>
+        <thead><tr><th>No</th><th>Nama Barang</th><th>Jumlah</th><th>S/N</th><th>Keterangan</th></tr></thead>
         <tbody>
             <tr>
                 <td class="text-center">1</td>
                 <td>@Model.Barang?.NamaBarang</td>
-                <td>@Model.Barang?.Merk @Model.Barang?.Type</td>
+                <td>@Model.Barang?.NamaBarang</td>
                 <td class="text-center">@Model.Jumlah</td>
                 <td>@{ var serials = (List<string>)ViewBag.Serials; }@(serials.Any() && serials.Any(s => s != "-") ? string.Join(", ", serials.Where(s => s != "-")) : "-")</td>
                 <td>@Model.Keterangan</td>

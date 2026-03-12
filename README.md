@@ -9,33 +9,36 @@ Aplikasi ini dikembangkan oleh **IT Region Jatimbalinus - PT Pertamina Patra Nia
 ## 🌟 Fitur Utama (Features)
 
 1. **Dashboard Informatif**
-   Menampilkan ringkasan statistik (total barang, stok rendah/habis, mutasi bulan ini) beserta grafik interaktif pergerakan barang masuk/keluar.
+   Menampilkan ringkasan statistik (total barang, stok rendah/habis, mutasi bulan ini) beserta grafik interaktif pergerakan barang masuk/keluar yang dapat dikonfigurasi tampilannya.
 
 2. **Manajemen Master Data Lengkap**
-   - **Kategori & Supplier**: Mengelompokkan jenis barang dan mencatat daftar pemasok (vendor).
-   - **Lokasi & Ruangan**: Mengelola letak fisik/ruangan tempat barang disimpan.
-   - **Data Barang**: Pencatatan spesifikasi, satuan, dan penentuan batas "Stok Minimum" untuk peringatan _restock_.
-   
+   - **Kategori & Supplier**: Mengelompokkan jenis barang dan mencatat daftar pemasok (vendor) beserta kontak dan alamat.
+   - **Lokasi / Ruangan**: Mengelola letak fisik/ruangan tempat barang disimpan beserta kode lokasi unik.
+   - **Data Barang**: Pencatatan spesifikasi lengkap (kode, nama, satuan, gambar, deskripsi) dan penentuan batas *Stok Minimum* untuk peringatan _restock_.
+
 3. **Pencatatan Serial Number (S/N)**
-   Mendukung pelacakan barang bergaransi tinggi/aset menggunakan fitur *Serial Number* yang melekat pada setiap transaksi masuk, keluar, maupun transfer.
+   Mendukung pelacakan barang bergaransi tinggi/aset IT menggunakan fitur *Serial Number* yang melekat pada setiap transaksi masuk, keluar, kembali, maupun transfer barang.
 
 4. **Siklus Inventaris Terintegrasi**
-   - **Barang Masuk**: Penambahan stok dari Supplier (Mencetak Surat Jalan & BAST).
-   - **Barang Keluar**: Distribusi/pengeluaran barang kepada PIC tertentu (Mencetak Surat Jalan & BAST Bulk).
-   - **Peminjaman & Pengembalian**: Melacak pergerakan inventaris yang sifatnya dipinjam (non-habis pakai) berserta notifikasi tanggal jatuh tempo.
-   - **Transfer Ruangan**: Memindahkan stok dari satu lokasi/ruangan ke ruangan lain tanpa mengubah total keseluruhan stok.
+   - **Barang Masuk**: Penambahan stok dari Supplier beserta Harga Satuan (Mencetak Surat Jalan & BAST). Mendukung pencatatan S/N per item masuk.
+   - **Barang Keluar**: Distribusi barang kepada Penerima tertentu lengkap dengan data PIC, No. HP Penerima, dan Alamat (Mencetak Surat Jalan & BAST — termasuk mode *Bulk Print* per Nomor Surat Jalan). Mendukung pencatatan S/N per item keluar.
+   - **Peminjaman & Pengembalian**: Melacak pergerakan inventaris non-habis pakai yang sifatnya dipinjam, lengkap dengan NIP/NIK, Departemen, No. HP peminjam, serta notifikasi tanggal jatuh tempo. Status otomatis: Dipinjam / Dikembalikan / Terlambat.
+   - **Barang Kembali**: Mencatat pengembalian barang dari transaksi Barang Keluar sebelumnya. Dilengkapi fitur **Tindak Lanjut** (Dikembalikan ke Stok / Dibuang/Rusak) untuk menangani barang yang kondisinya tidak layak pakai.
+   - **Transfer Ruangan**: Memindahkan stok dari satu lokasi/ruangan ke ruangan lain tanpa mengubah total keseluruhan stok, mendukung transfer S/N.
 
 5. **Stok Opname (Audit Fisik)**
-   Modul pencatatan pencocokan stok fisik di lapangan dengan stok yang ada di sistem (menghitung selisih/penyesuaian stok).
+   Modul pencatatan pencocokan stok fisik di lapangan dengan stok yang ada di sistem. Mendukung status Draft dan Final, beserta catatan selisih (penyesuaian stok) per item.
 
 6. **Laporan & Export Excel Terotomatisasi**
-   Fasilitas export seluruh transaksi masuk, keluar, stok, peminjaman, dan transfer barang dengan sekali klik (format menyesuaikan master data).
+   Fasilitas export seluruh transaksi (Barang Masuk, Keluar, Stok, Peminjaman, Transfer Barang, Stok Opname) ke format Excel dengan sekali klik, dengan layout menyesuaikan master data terkini.
 
 7. **Fitur Pendukung Ekstra**
-   - **Auto-Backup Database**: Pencadangan database terjadwal di latar belakang (_Background Service_).
-   - **Setting Dokumen**: Manipulasi Kop Surat, Konter Penomoran Otomatis, dan Personalisasi Kop langsung dari UI.
-   - **Log Aktivitas**: Merekam jejak audit/aktivitas log (Siapa melakukan Apa dan Kapan).
-   - **Arsip**: Tempat penyimpanan soft-file atau dokumen PDF eksternal.
+   - **Auto-Backup Database**: Pencadangan database terjadwal secara otomatis di latar belakang (_Background Service_), dengan konfigurasi path, waktu, dan retensi (hari).
+   - **Setting Dokumen (Kop Surat)**: Personalisasi Kop Surat (Nama Perusahaan, Logo, Alamat) langsung dari UI untuk digunakan pada seluruh dokumen cetak.
+   - **Penomoran Otomatis**: Konter otomatis untuk Nomor Surat Jalan, BAST, dan Peminjaman, dengan opsi reset manual.
+   - **Log Aktivitas**: Merekam jejak audit lengkap — siapa melakukan apa dan kapan di seluruh modul.
+   - **Arsip Dokumen**: Penyimpanan dan pengelolaan soft-file (PDF/dokumen) eksternal, lengkap dengan Nomor dan Jenis Dokumen.
+   - **Manajemen User**: Pengelolaan akun pengguna termasuk pembuatan akun Admin baru oleh SuperAdmin.
 
 ---
 
@@ -43,36 +46,36 @@ Aplikasi ini dikembangkan oleh **IT Region Jatimbalinus - PT Pertamina Patra Nia
 
 Aplikasi memiliki alur pergudangan (*supply-chain*) standar yang mudah diikuti:
 
-1. **Setup Awal** 
-   SuperAdmin memasukkan Master Lokasi, Kategori, dan tabel Supplier terlebih dahulu.
-2. **Katalogisasi Barang** 
-   Menambahkan Data Barang baru, menentukan _Stok Minimum_ dan mendaftarkan kode awal.
-3. **Penerimaan (Inbound)** 
-   User masuk ke modul Barang Masuk &rarr; Memilih Barang + Ruangan penyimpan &rarr; Memilih Supplier &rarr; Menentukan Jumlah & Serial Number (opsional). Otomatis menambah stok.
-4. **Distribusi / Mutasi (Outbound / Move)** 
-   - *Keluar Tetap*: Masuk ke modul Barang Keluar (Stok berkurang permanen).
-   - *Keluar Sementara*: Masuk ke modul Peminjaman (Stok sistem masih menganggap aset tersebut *harus kembali*).
+1. **Setup Awal**
+   SuperAdmin memasukkan Master Lokasi, Kategori, Supplier, dan Kop Surat terlebih dahulu.
+2. **Katalogisasi Barang**
+   Menambahkan Data Barang baru, menentukan _Stok Minimum_, dan mendaftarkan kode awal.
+3. **Penerimaan (Inbound)**
+   User masuk ke modul Barang Masuk → Memilih Barang + Ruangan penyimpan → Memilih Supplier → Menentukan Jumlah, Harga Satuan & Serial Number (opsional). Otomatis menambah stok.
+4. **Distribusi / Mutasi (Outbound / Move)**
+   - *Keluar Tetap*: Modul Barang Keluar (Stok berkurang permanen, bisa cetak Surat Jalan & BAST bulk).
+   - *Keluar Sementara*: Modul Peminjaman (Stok masih tercatat harus kembali, ada notifikasi jatuh tempo).
    - *Perpindahan Fisik*: Modul Transfer Barang dari Ruang A ke Ruang B.
 5. **Pengembalian Barang**
-   Peminjam atau penerima barang (dari Barang Keluar sebelumnya) dapat mem-balikkan barang melalui modul Pengembalian (Stok bertambah kembali).
-6. **Validasi (Audit)** 
-   Setiap pertengahan atau akhir tahun, Supervisor melakukan Stok Opname mencatat apakah fisik = sistem.
+   - Dari peminjaman: Melalui fitur *Kembalikan* di modul Peminjaman.
+   - Dari barang keluar: Melalui modul Barang Kembali, dengan pilihan Tindak Lanjut (kembali ke stok / dibuang).
+6. **Validasi (Audit)**
+   Supervisor melakukan Stok Opname secara berkala untuk menyesuaikan stok fisik vs. sistem, kemudian finalisasi laporan.
 
 ---
 
 ## 🛠️ Teknologi yang Digunakan (Tech Stack)
 
-Aplikasi ini menggunakan teknologi yang sangat reliabel dari ekosistem .NET:
-
-| Kategori | Teknologi/Library | Kegunaan |
-|----------|-------------------|----------|
-| **Backend Framework** | ASP.NET Core MVC (v8.0) | Arsitektur utama aplikasi, logika server, & kontroler. |
-| **ORM & Database** | Entity Framework Core (v8.0)<br>Microsoft SQL Server | Manajemen manipulasi data (Code-First Migration). |
+| Kategori | Teknologi / Library | Kegunaan |
+|----------|---------------------|----------|
+| **Backend Framework** | ASP.NET Core MVC (v8.0) | Arsitektur utama, logika server, & kontroler. |
+| **ORM & Database** | Entity Framework Core (v8.0) + MS SQL Server | Manajemen data Code-First Migration. |
 | **Autentikasi** | ASP.NET Core Identity | Sistem *Role-Based Access Control* (SuperAdmin & Admin). |
-| **Frontend UI** | AdminLTE v3.2<br>Bootstrap 4 | Kerangka *Dashboard* antarmuka, responsif & bersih. |
-| **Tabel Interaktif** | DataTables.js (v1.13) | Tabel data yang mendukung *Search*, *Pagination*, dan *Sort*. |
-| **UI Components** | Select2, SweetAlert2 | Pemilihan *dropdown* yang bisa dicari & Notifikasi Pop-Up Modern. |
-| **Reporting / Export**| ClosedXML & EPPlus | Menghasilkan file Excel rekap laporan kustom secara *on-the-fly*. |
+| **Frontend UI** | AdminLTE v3.2 + Bootstrap 4 | Kerangka Dashboard antarmuka, responsif & bersih. |
+| **Tabel Interaktif** | DataTables.js (v1.13) | Tabel dengan fitur Search, Pagination, Sort, dan Bulk Action. |
+| **UI Components** | Select2, SweetAlert2 | Dropdown yang bisa dicari & notifikasi pop-up modern. |
+| **Reporting / Export** | ClosedXML & EPPlus | Generate file Excel laporan kustom secara *on-the-fly*. |
+| **Background Service** | .NET Hosted Service | Eksekusi auto-backup database terjadwal. |
 
 ---
 
@@ -84,17 +87,19 @@ Diagram di bawah ini menunjukkan struktur relasi database dari MyGudang:
 erDiagram
     KATEGORI ||--o{ BARANG : "has"
     SUPPLIER ||--o{ BARANG_MASUK : "used in"
+
     BARANG ||--o{ BARANG_LOKASI : "stored in"
     LOKASI ||--o{ BARANG_LOKASI : "holds"
     LOKASI ||--o{ BARANG_MASUK : "destination"
     LOKASI ||--o{ BARANG_KELUAR : "source"
-    LOKASI ||--o{ TRANSFER_BARANG : "from / to"
+    LOKASI ||--o{ TRANSFER_BARANG : "from/to"
 
     BARANG ||--o{ BARANG_MASUK : "has history"
     BARANG ||--o{ BARANG_KELUAR : "has history"
     BARANG ||--o{ PEMINJAMAN : "has history"
     BARANG ||--o{ BARANG_KEMBALI : "has history"
     BARANG ||--o{ TRANSFER_BARANG : "has history"
+    BARANG ||--o{ STOK_OPNAME_DETAIL : "audited via"
 
     BARANG ||--o{ BARANG_SERIAL : "has serials"
     BARANG_MASUK ||--o{ BARANG_SERIAL : "generates"
@@ -106,7 +111,6 @@ erDiagram
     BARANG_KELUAR ||--o{ BARANG_KEMBALI : "referred by"
 
     STOK_OPNAME ||--o{ STOK_OPNAME_DETAIL : "contains"
-    BARANG ||--o{ STOK_OPNAME_DETAIL : "audited via"
 
     KATEGORI {
         int Id PK
@@ -131,6 +135,8 @@ erDiagram
         int StokMinimum
         string Gambar
         string Deskripsi
+        datetime CreatedAt
+        datetime UpdatedAt
     }
 
     LOKASI {
@@ -153,8 +159,10 @@ erDiagram
         int SupplierId FK
         int LokasiId FK
         int Jumlah
-        DateTime TanggalMasuk
+        datetime TanggalMasuk
         decimal HargaSatuan
+        string Keterangan
+        datetime CreatedAt
     }
 
     BARANG_KELUAR {
@@ -162,10 +170,14 @@ erDiagram
         int BarangId FK
         int LokasiId FK
         int Jumlah
-        DateTime TanggalKeluar
+        datetime TanggalKeluar
         string Penerima
-        string NoSuratJalan
         string Alamat
+        string NoHpPenerima
+        string Pic
+        string NoSuratJalan
+        string Keterangan
+        datetime CreatedAt
     }
 
     BARANG_SERIAL {
@@ -184,10 +196,16 @@ erDiagram
         int Jumlah
         string NoPeminjaman
         string Peminjam
+        string NipNik
         string Departemen
-        DateTime TanggalPinjam
-        DateTime TanggalJatuhTempo
+        string NoHp
+        datetime TanggalPinjam
+        datetime TanggalJatuhTempo
+        datetime TanggalKembali
         string Status
+        string KondisiKembali
+        string Keterangan
+        datetime CreatedAt
     }
 
     BARANG_KEMBALI {
@@ -195,8 +213,12 @@ erDiagram
         int BarangId FK
         int BarangKeluarId FK
         int Jumlah
-        DateTime TanggalKembali
+        datetime TanggalKembali
         string Kondisi
+        string DikembalikanOleh
+        string TindakLanjut
+        string Keterangan
+        datetime CreatedAt
     }
 
     TRANSFER_BARANG {
@@ -205,9 +227,9 @@ erDiagram
         int DariLokasiId FK
         int KeLokasiId FK
         int Jumlah
-        DateTime TanggalTransfer
+        datetime TanggalTransfer
     }
-    
+
     TRANSFER_BARANG_SERIAL {
         int Id PK
         int TransferBarangId FK
@@ -216,9 +238,10 @@ erDiagram
 
     STOK_OPNAME {
         int Id PK
-        DateTime TanggalOpname
+        datetime TanggalOpname
         string Status
         string Keterangan
+        datetime CreatedAt
     }
 
     STOK_OPNAME_DETAIL {
@@ -228,6 +251,18 @@ erDiagram
         int StokSistem
         int StokFisik
         int Selisih
+        string Keterangan
+    }
+
+    ARSIP {
+        int Id PK
+        string NamaDokumen
+        string NomorDokumen
+        string JenisDokumen
+        string FilePath
+        string NamaFile
+        string Keterangan
+        datetime CreatedAt
     }
 
     APP_SETTING {
@@ -241,8 +276,16 @@ erDiagram
         int Id PK
         string BackupPath
         bool IsAutoBackupEnabled
-        TimeSpan BackupTime
+        time BackupTime
         int RetentionDays
+    }
+
+    KOP_SURAT {
+        int Id PK
+        string NamaPerusahaan
+        string Alamat
+        string Telepon
+        string LogoPath
     }
 ```
 
@@ -252,8 +295,19 @@ erDiagram
 
 Aplikasi memiliki dua level peran user (Role) untuk manajemen akses:
 
-1. **SuperAdmin** (`admin@mygudang.com`): Mempunyai hak akses **penuh (Full Control)** atas semua modul termasuk Manajemen User, Log Aktivitas, Edit Data Barang, Penghapusan Master, Modul Setelan *(Kop Surat, System Settings, Backup Settings, dll)*.
-2. **Admin**: Dikhususkan untuk staf gudang sehari-hari yang dapat mengakses dashboard, seluruh mutasi entri harian (Barang Masuk, Keluar, Peminjaman, Transfer), mengunduh laporan, Master Lokasi/Kategori/Supplier, tanpa izin untuk menghapus data sensitif atau masuk ke konfigurasi sistem.
+| Fitur | SuperAdmin | Admin |
+|-------|:----------:|:-----:|
+| Dashboard & Statistik | ✅ | ✅ |
+| Barang Masuk / Keluar / Kembali | ✅ | ✅ |
+| Peminjaman & Transfer Barang | ✅ | ✅ |
+| Stok Opname | ✅ | ✅ |
+| Laporan & Export Excel | ✅ | ✅ |
+| Master Data (Barang, Kategori, Lokasi, Supplier) | ✅ | ✅ |
+| Arsip Dokumen | ✅ | ✅ |
+| **Manajemen User** | ✅ | ❌ |
+| **Log Aktivitas** | ✅ | ❌ |
+| **Hapus Data Sensitif** | ✅ | ❌ |
+| **Setelan Sistem (Kop Surat, Backup, App Setting)** | ✅ | ❌ |
 
 ---
 

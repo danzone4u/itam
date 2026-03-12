@@ -117,8 +117,6 @@ $('#btnSaveBarangBaru').click(function(){
     var data = {
         kodeBarang: $('#newKode').val(),
         namaBarang: $('#newNama').val(),
-        merk: $('#newMerk').val(),
-        type: $('#newType').val(),
         kategoriId: $('#newKategori').val() || null,
         satuan: $('#newSatuan').val()
     };
@@ -131,7 +129,7 @@ $('#btnSaveBarangBaru').click(function(){
             if (res.success) {
                 $('#listBarangMasuk').append('<option value="'+res.nama+'" data-id="'+res.id+'"></option>');
                 $('#modalBarangBaru').modal('hide');
-                $('#newKode, #newNama, #newMerk, #newType').val('');
+                $('#newKode, #newNama').val('');
                 alert('Barang "'+res.nama+'" berhasil dibuat! Silakan ketik namanya di kolom Barang.');
             } else { alert(res.message); }
         }
@@ -149,23 +147,13 @@ $('#newKategori').on('change', function(){
 </script>
 }
 
-<!-- Modal Barang Baru -->
-<datalist id="listMerk">
-    @foreach(var m in (List<string>)ViewBag.Merks){ <option value="@m"></option> }
-</datalist>
-<datalist id="listType">
-    @foreach(var t in (List<string>)ViewBag.Types){ <option value="@t"></option> }
-</datalist>
+
 <div class="modal fade" id="modalBarangBaru" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
     <div class="modal-header bg-info"><h5 class="modal-title text-white"><i class="fas fa-box"></i> Tambah Barang Baru</h5><button type="button" class="close text-white" data-dismiss="modal">&times;</button></div>
     <div class="modal-body">
         <div class="row">
             <div class="col-md-6"><div class="form-group"><label>Kode Barang <small class="text-muted">(otomatis)</small></label><input type="text" id="newKode" class="form-control" readonly style="background:#e9ecef" /></div></div>
             <div class="col-md-6"><div class="form-group"><label>Nama Barang <span class="text-danger">*</span></label><input type="text" id="newNama" class="form-control" required /></div></div>
-        </div>
-        <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Merk</label><input type="text" id="newMerk" class="form-control" list="listMerk" autocomplete="off" /></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Type</label><input type="text" id="newType" class="form-control" list="listType" autocomplete="off" /></div></div>
         </div>
         <div class="row">
             <div class="col-md-6"><div class="form-group"><label>Kategori</label><select id="newKategori" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Kategoris){<option value="@item.Value">@item.Text</option>}</select></div></div>

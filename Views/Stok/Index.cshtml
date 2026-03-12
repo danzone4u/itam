@@ -7,14 +7,14 @@
     <div class="card-body">
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
-                <tr><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Merk & Type</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Status</th><th width="100">Aksi</th></tr>
+                <tr><th width="50">No</th><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Status</th><th width="100">Aksi</th></tr>
             </thead>
             <tbody>
                 @{ int no = 1; }
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td><td>@item.Merk @item.Type</td><td>@item.Kategori?.NamaKategori</td><td>@item.Satuan</td>
+                        <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td><td>@item.Kategori?.NamaKategori</td><td>@item.Satuan</td>
                         <td><strong>@item.Stok</strong></td>
                         <td>
                             @if (item.Stok == 0) { <span class="badge badge-stok-habis">Habis</span> }

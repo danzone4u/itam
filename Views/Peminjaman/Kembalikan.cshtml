@@ -8,7 +8,7 @@
             <div class="alert alert-info">
                 <strong><i class="fas fa-info-circle"></i> Detail Peminjaman:</strong><br/>
                 No. Peminjaman: <strong>@Model.NoPeminjaman</strong><br/>
-                Barang: <strong>@Model.Barang?.NamaBarang @Model.Barang?.Merk @Model.Barang?.Type</strong> — Jumlah: <strong>@Model.Jumlah</strong><br/>
+                Barang: <strong>@Model.Barang?.NamaBarang</strong> — Jumlah: <strong>@Model.Jumlah</strong><br/>
                 Peminjam: <strong>@Model.Peminjam</strong> @(Model.Departemen != null ? $"({Model.Departemen})" : "")<br/>
                 Tgl Pinjam: <strong>@Model.TanggalPinjam.ToString("dd/MM/yyyy")</strong> — Jatuh Tempo: <strong>@Model.TanggalJatuhTempo.ToString("dd/MM/yyyy")</strong>
                 @if (Model.Status == "Terlambat") { <br/><span class="text-danger"><i class="fas fa-exclamation-triangle"></i> <strong>TERLAMBAT!</strong></span> }

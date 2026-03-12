@@ -20,7 +20,6 @@
                     <th>No. Transaksi</th>
                     <th>Tgl Kembali <i class="fas fa-sort text-muted ml-1"></i></th>
                     <th>Nama Barang</th>
-                    <th>Merk & Type</th>
                     <th>Peminjam/Penerima</th>
                     <th class="text-center">Jml</th>
                     <th>Kondisi</th>
@@ -48,7 +47,7 @@
                                 <br><small class="text-info"><i class="fas fa-link mr-1"></i> Ref: OUT-@item.BarangKeluarId.Value.ToString("D4")</small>
                             }
                         </td>
-                        <td>@item.Barang?.Merk @item.Barang?.Type</td>
+                        <td>@item.Barang?.NamaBarang</td>
                         <td>@item.DikembalikanOleh</td>
                         <td class="text-center"><span class="badge badge-success px-2 py-1" style="font-size: 0.9em;">+@item.Jumlah</span></td>
                         <td>

@@ -26,7 +26,7 @@
                     {
                         <th width="40"><input type="checkbox" id="checkAll"></th>
                     }
-                    <th width="30">No</th><th>Kode</th><th width="250">Nama Barang</th><th>Merk</th><th>Type</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="110">Aksi</th>
+                    <th width="30">No</th><th>Kode</th><th width="250">Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="110">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,7 +41,7 @@
                             </td>
                         }
                         <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td>
-                        <td>@item.Merk</td><td>@item.Type</td>
+
                         <td>@item.Kategori?.NamaKategori</td>
                         <td>@item.Satuan</td>
                         <td>

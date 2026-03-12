@@ -29,7 +29,7 @@
                     <th>Tgl Pinjam</th>
                     <th>Jatuh Tempo</th>
                     <th width="200">Barang</th>
-                    <th>Merk & Type</th>
+                    <th>Jumlah</th>
                     <th>Jml</th>
                     <th>Peminjam</th>
                     <th>Status</th>
@@ -51,7 +51,7 @@
                             @if (isLate) { <i class="fas fa-exclamation-triangle text-danger" title="Terlambat!"></i> }
                         </td>
                         <td>@item.Barang?.NamaBarang</td>
-                        <td>@item.Barang?.Merk @item.Barang?.Type</td>
+                        <td>@item.Barang?.NamaBarang</td>
                         <td>@item.Jumlah</td>
                         <td>
                             @item.Peminjam

@@ -3,21 +3,11 @@
 <div class="card card-outline card-warning">
     <div class="card-header"><h3 class="card-title"><i class="fas fa-edit"></i> Edit Barang</h3></div>
     <form asp-action="Edit" method="post" enctype="multipart/form-data">@Html.AntiForgeryToken()
-        <datalist id="listMerk">
-            @foreach(var m in (List<string>)ViewBag.Merks){ <option value="@m"></option> }
-        </datalist>
-        <datalist id="listType">
-            @foreach(var t in (List<string>)ViewBag.Types){ <option value="@t"></option> }
-        </datalist>
         <input type="hidden" asp-for="Id" /><input type="hidden" asp-for="CreatedAt" /><input type="hidden" asp-for="Gambar" />
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="KodeBarang"></label><input asp-for="KodeBarang" class="form-control" /><span asp-validation-for="KodeBarang" class="text-danger"></span></div></div>
                 <div class="col-md-6"><div class="form-group"><label asp-for="NamaBarang"></label><input asp-for="NamaBarang" class="form-control" /><span asp-validation-for="NamaBarang" class="text-danger"></span></div></div>
-            </div>
-            <div class="row">
-                <div class="col-md-6"><div class="form-group"><label asp-for="Merk"></label><input asp-for="Merk" class="form-control" list="listMerk" autocomplete="off" /><span asp-validation-for="Merk" class="text-danger"></span></div></div>
-                <div class="col-md-6"><div class="form-group"><label asp-for="Type"></label><input asp-for="Type" class="form-control" list="listType" autocomplete="off" /><span asp-validation-for="Type" class="text-danger"></span></div></div>
             </div>
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="KategoriId"></label><select asp-for="KategoriId" asp-items="@ViewBag.Kategoris" class="form-control"><option value="">-- Pilih --</option></select></div></div>

@@ -60,12 +60,103 @@ namespace itam.Controllers
             if (id != kategori.Id) return NotFound();
             if (ModelState.IsValid)
             {
+                var old = await _context.Kategoris.AsNoTracking().FirstOrDefaultAsync(k => k.Id == id);
                 _context.Update(kategori);
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Kategori berhasil diperbarui!";
                 return RedirectToAction(nameof(Index));
             }
             return View(kategori);
+        }
+
+        // ── Ganti prefix semua KodeBarang dalam kategori ini ──
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RenamePrefix(int id, string oldPrefix, string newPrefix)
+        {
+            if (string.IsNullOrWhiteSpace(newPrefix))
+            {
+                TempData["Error"] = "Prefix baru tidak boleh kosong.";
+                return RedirectToAction(nameof(Edit), new { id });
+            }
+
+            newPrefix = newPrefix.Trim().ToUpper();
+            oldPrefix = (oldPrefix ?? "").Trim().ToUpper();
+
+            var kategori = await _context.Kategoris.FindAsync(id);
+            if (kategori == null) return NotFound();
+
+            // Ambil semua barang di kategori ini yang kodenya diawali prefix lama
+            var barangs = await _context.Barangs
+                .Where(b => b.KategoriId == id)
+                .ToListAsync();
+
+            int count = 0;
+            foreach (var b in barangs)
+            {
+                if (string.IsNullOrEmpty(b.KodeBarang)) continue;
+
+                string oldCode = b.KodeBarang;
+                string newCode = oldCode;
+
+                if (!string.IsNullOrEmpty(oldPrefix) && oldCode.StartsWith(oldPrefix + "-", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Ganti prefix, pertahankan suffix angka
+                    newCode = newPrefix + "-" + oldCode.Substring(oldPrefix.Length + 1);
+                }
+                else
+                {
+                    // Prefix lama tidak cocok — coba tebak: ambil bagian sebelum "-" pertama
+                    var dashIdx = oldCode.IndexOf('-');
+                    if (dashIdx > 0)
+                        newCode = newPrefix + oldCode.Substring(dashIdx);
+                    else
+                        newCode = newPrefix + "-" + oldCode;
+                }
+
+                if (newCode != oldCode)
+                {
+                    b.KodeBarang = newCode;
+                    b.UpdatedAt  = DateTime.Now;
+                    count++;
+                }
+            }
+
+            // Update juga KodePrefix di kategori
+            kategori.KodePrefix = newPrefix;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"✅ Prefix diperbarui ke \"{newPrefix}\". {count} kode barang berhasil diperbarui.";
+            return RedirectToAction(nameof(Edit), new { id });
+        }
+
+        // ── Preview: berapa barang yang akan terpengaruh ──
+        [HttpGet]
+        public async Task<IActionResult> PreviewRename(int id, string oldPrefix, string newPrefix)
+        {
+            oldPrefix = (oldPrefix ?? "").Trim().ToUpper();
+            newPrefix = (newPrefix ?? "").Trim().ToUpper();
+
+            var barangs = await _context.Barangs
+                .Where(b => b.KategoriId == id && b.KodeBarang != null)
+                .Select(b => new { b.KodeBarang })
+                .ToListAsync();
+
+            var preview = barangs.Select(b =>
+            {
+                string oldCode = b.KodeBarang ?? "";
+                string newCode;
+                if (!string.IsNullOrEmpty(oldPrefix) && oldCode.StartsWith(oldPrefix + "-", StringComparison.OrdinalIgnoreCase))
+                    newCode = newPrefix + "-" + oldCode.Substring(oldPrefix.Length + 1);
+                else
+                {
+                    var dashIdx = oldCode.IndexOf('-');
+                    newCode = dashIdx > 0 ? newPrefix + oldCode.Substring(dashIdx) : newPrefix + "-" + oldCode;
+                }
+                return new { oldCode, newCode, changed = newCode != oldCode };
+            }).Where(x => x.changed).ToList();
+
+            return Json(new { count = preview.Count, items = preview.Take(10) });
         }
 
         [HttpPost]

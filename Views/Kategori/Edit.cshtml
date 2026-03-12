@@ -9,7 +9,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="NamaKategori"></label><input asp-for="NamaKategori" class="form-control" /><span asp-validation-for="NamaKategori" class="text-danger"></span></div></div>
-                <div class="col-md-6"><div class="form-group"><label asp-for="KodePrefix"></label><input asp-for="KodePrefix" class="form-control" placeholder="Contoh: ELK, ATK, JRG" maxlength="10" style="text-transform:uppercase" /><small class="text-muted">Prefix untuk auto-generate kode barang</small></div></div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="KodePrefix"></label><input asp-for="KodePrefix" class="form-control" id="kodePrefixInput" placeholder="Contoh: ELK, ATK, JRG" maxlength="10" style="text-transform:uppercase" /><small class="text-muted">Prefix untuk auto-generate kode barang <strong>baru</strong></small></div></div>
             </div>
             <div class="form-group">
                 <label asp-for="Deskripsi"></label>
@@ -22,3 +22,110 @@
         </div>
     </form>
 </div>
+
+<!-- ─── Panel Ganti Prefix Massal ─── -->
+<div class="card card-outline card-danger mt-3">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-exchange-alt"></i> Ganti Prefix Kode Barang (Massal)</h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning py-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            Fitur ini akan <strong>mengubah semua KodeBarang</strong> dalam kategori <strong>@Model.NamaKategori</strong> yang menggunakan prefix lama menjadi prefix baru.
+            Gunakan <strong>Preview</strong> terlebih dahulu sebelum menyimpan.
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Prefix Lama (saat ini)</label>
+                    <input type="text" id="oldPrefixInput" class="form-control" value="@Model.KodePrefix" placeholder="Prefix saat ini" style="text-transform:uppercase">
+                    <small class="text-muted">Prefix yang dipakai di kode barang yang ada sekarang</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Prefix Baru</label>
+                    <input type="text" id="newPrefixInput" class="form-control" placeholder="Contoh: LPT, PRN" maxlength="10" style="text-transform:uppercase">
+                    <small class="text-muted">Prefix yang akan menggantikan prefix lama</small>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div>
+                    <button type="button" class="btn btn-info mr-1" onclick="previewRename()">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview result -->
+        <div id="previewResult" class="mb-3" style="display:none">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="thead-light">
+                        <tr><th>Kode Lama</th><th></th><th>Kode Baru</th></tr>
+                    </thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+            </div>
+            <small id="previewMore" class="text-muted"></small>
+        </div>
+
+        <!-- Confirm form -->
+        <form asp-action="RenamePrefix" method="post" id="formRename" onsubmit="return confirmRename()">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id"        value="@Model.Id">
+            <input type="hidden" name="oldPrefix" id="hiddenOldPrefix">
+            <input type="hidden" name="newPrefix" id="hiddenNewPrefix">
+            <button type="submit" class="btn btn-danger" id="btnApplyRename" style="display:none">
+                <i class="fas fa-sync-alt"></i> Terapkan Perubahan Prefix
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function previewRename() {
+    var oldP = $('#oldPrefixInput').val().trim().toUpperCase();
+    var newP = $('#newPrefixInput').val().trim().toUpperCase();
+
+    if (!newP) { alert('Isi prefix baru terlebih dahulu!'); return; }
+    if (oldP === newP) { alert('Prefix baru sama dengan prefix lama!'); return; }
+
+    $('#previewResult').hide();
+    $('#btnApplyRename').hide();
+
+    $.getJSON('@Url.Action("PreviewRename","Kategori")', {
+        id: @Model.Id,
+        oldPrefix: oldP,
+        newPrefix: newP
+    }, function(res) {
+        if (res.count === 0) {
+            alert('Tidak ada kode barang yang perlu diubah dengan prefix "' + oldP + '".');
+            return;
+        }
+        var html = '';
+        res.items.forEach(function(item) {
+            html += '<tr><td><code>' + item.oldCode + '</code></td><td><i class="fas fa-arrow-right text-primary"></i></td><td><code class="text-success">' + item.newCode + '</code></td></tr>';
+        });
+        $('#previewBody').html(html);
+        $('#previewMore').text(res.count > 10 ? '...dan ' + (res.count - 10) + ' lainnya. Total: ' + res.count + ' kode akan diubah.' : 'Total: ' + res.count + ' kode akan diubah.');
+        $('#previewResult').show();
+
+        // Isi hidden inputs dan tampilkan tombol Apply
+        $('#hiddenOldPrefix').val(oldP);
+        $('#hiddenNewPrefix').val(newP);
+        $('#btnApplyRename').show();
+    });
+}
+
+function confirmRename() {
+    var newP = $('#newPrefixInput').val().trim().toUpperCase();
+    return confirm('⚠️ Yakin ingin mengganti SEMUA kode barang menjadi prefix "' + newP + '"?\nTindakan ini tidak bisa dibatalkan!');
+}
+</script>
+}

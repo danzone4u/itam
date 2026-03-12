@@ -26,7 +26,7 @@
             <thead class="thead-light">
                 <tr>
                     <th width="40"><input type="checkbox" id="checkAll"></th>
-                    <th width="30">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th width="250">Barang</th><th>Merk & Type</th><th>S/N</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th>
+                    <th width="30">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th width="250">Barang</th><th>S/N</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -35,7 +35,7 @@
                 {
                     <tr>
                         <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
-                        <td>@(no++)</td><td><span class="badge bg-secondary">@item.NoSuratJalan</span></td><td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td><td>@item.Barang?.Merk @item.Barang?.Type</td>
+                        <td>@(no++)</td><td><span class="badge bg-secondary">@item.NoSuratJalan</span></td><td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td>
                         <td>
                             @{
                                 var snList = item.BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();

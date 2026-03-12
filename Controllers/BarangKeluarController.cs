@@ -444,16 +444,14 @@ namespace itam.Controllers
             ws.Cell(1, 2).Value = "No. Surat Jalan";
             ws.Cell(1, 3).Value = "Tanggal Keluar";
             ws.Cell(1, 4).Value = "Nama Barang";
-            ws.Cell(1, 5).Value = "Merk";
-            ws.Cell(1, 6).Value = "Type";
-            ws.Cell(1, 7).Value = "Serial Number";
-            ws.Cell(1, 8).Value = "Jumlah";
-            ws.Cell(1, 9).Value = "Penerima";
-            ws.Cell(1, 10).Value = "Alamat";
-            ws.Cell(1, 11).Value = "No HP";
-            ws.Cell(1, 12).Value = "Keterangan";
-            ws.Range("A1:L1").Style.Font.Bold = true;
-            ws.Range("A1:L1").Style.Fill.BackgroundColor = XLColor.LightCoral;
+            ws.Cell(1, 5).Value = "Serial Number";
+            ws.Cell(1, 6).Value = "Jumlah";
+            ws.Cell(1, 7).Value = "Penerima";
+            ws.Cell(1, 8).Value = "Alamat";
+            ws.Cell(1, 9).Value = "No HP";
+            ws.Cell(1, 10).Value = "Keterangan";
+            ws.Range("A1:J1").Style.Font.Bold = true;
+            ws.Range("A1:J1").Style.Fill.BackgroundColor = XLColor.LightCoral;
 
             for (int i = 0; i < data.Count; i++)
             {
@@ -461,17 +459,15 @@ namespace itam.Controllers
                 ws.Cell(i + 2, 2).Value = data[i].NoSuratJalan;
                 ws.Cell(i + 2, 3).Value = data[i].TanggalKeluar.ToString("dd/MM/yyyy");
                 ws.Cell(i + 2, 4).Value = data[i].Barang?.NamaBarang;
-                ws.Cell(i + 2, 5).Value = data[i].Barang?.Merk;
-                ws.Cell(i + 2, 6).Value = data[i].Barang?.Type;
                 
                 var snList = data[i].BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
-                ws.Cell(i + 2, 7).Value = snList.Any() ? string.Join(", ", snList) : "-";
+                ws.Cell(i + 2, 5).Value = snList.Any() ? string.Join(", ", snList) : "-";
                 
-                ws.Cell(i + 2, 8).Value = data[i].Jumlah;
-                ws.Cell(i + 2, 9).Value = data[i].Penerima;
-                ws.Cell(i + 2, 10).Value = data[i].Alamat;
-                ws.Cell(i + 2, 11).Value = data[i].NoHpPenerima;
-                ws.Cell(i + 2, 12).Value = data[i].Keterangan;
+                ws.Cell(i + 2, 6).Value = data[i].Jumlah;
+                ws.Cell(i + 2, 7).Value = data[i].Penerima;
+                ws.Cell(i + 2, 8).Value = data[i].Alamat;
+                ws.Cell(i + 2, 9).Value = data[i].NoHpPenerima;
+                ws.Cell(i + 2, 10).Value = data[i].Keterangan;
             }
             ws.Columns().AdjustToContents();
 

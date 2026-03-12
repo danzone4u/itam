@@ -40,9 +40,9 @@
 
         <p>Dengan ini menyatakan bahwa barang berikut telah dikembalikan:</p>
         <table class="table table-bordered" style="margin-bottom:20px;">
-            <thead><tr><th>No</th><th>Nama Barang</th><th>Merk & Type</th><th width="50">Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Keterangan</th></tr></thead>
+            <thead><tr><th>No</th><th>Nama Barang</th><th width="50">Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Keterangan</th></tr></thead>
             <tbody>
-                <tr><td class="text-center">1</td><td>@Model.Barang?.NamaBarang</td><td>@Model.Barang?.Merk @Model.Barang?.Type</td><td class="text-center">@Model.Jumlah</td><td>@Model.Barang?.Satuan</td><td>@Model.Kondisi</td><td>@Model.Keterangan</td></tr>
+                <tr><td class="text-center">1</td><td>@Model.Barang?.NamaBarang</td><td class="text-center">@Model.Jumlah</td><td>@Model.Barang?.Satuan</td><td>@Model.Kondisi</td><td>@Model.Keterangan</td></tr>
             </tbody>
         </table>
 
