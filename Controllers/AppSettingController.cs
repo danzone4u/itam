@@ -54,12 +54,12 @@ namespace itam.Controllers
                     {
                         await LogoFile.CopyToAsync(fileStream);
                     }
-                    model.LogoPath = "/uploads/settings/" + uniqueFileName;
+                    model.LogoPath = "uploads/settings/" + uniqueFileName;
 
                     // Delete old logo
                     if (existingSetting != null && !string.IsNullOrEmpty(existingSetting.LogoPath))
                     {
-                        string oldPath = Path.Combine(_webHostEnvironment.WebRootPath, existingSetting.LogoPath.TrimStart('/'));
+                        string oldPath = Path.Combine(_webHostEnvironment.WebRootPath, existingSetting.LogoPath);
                         if (System.IO.File.Exists(oldPath))
                         {
                             System.IO.File.Delete(oldPath);
@@ -79,7 +79,7 @@ namespace itam.Controllers
                     {
                         await FaviconFile.CopyToAsync(fileStream);
                     }
-                    model.FaviconPath = "/uploads/settings/" + uniqueFileName;
+                    model.FaviconPath = "uploads/settings/" + uniqueFileName;
 
                     // Delete old favicon
                     if (existingSetting != null && !string.IsNullOrEmpty(existingSetting.FaviconPath))

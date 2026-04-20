@@ -69,7 +69,7 @@ namespace itam.Controllers
 
                 if (kop != null && !string.IsNullOrEmpty(kop.LogoPath))
                 {
-                    string oldPath = Path.Combine(_webHostEnvironment.WebRootPath, kop.LogoPath.TrimStart('/'));
+                    string oldPath = Path.Combine(_webHostEnvironment.WebRootPath, kop.LogoPath);
                     if (System.IO.File.Exists(oldPath))
                     {
                         System.IO.File.Delete(oldPath);
@@ -78,11 +78,11 @@ namespace itam.Controllers
 
                 if (kop != null)
                 {
-                    kop.LogoPath = "/uploads/kop_surat/" + uniqueFileName;
+                    kop.LogoPath = "uploads/kop_surat/" + uniqueFileName;
                 }
                 else
                 {
-                    model.LogoPath = "/uploads/kop_surat/" + uniqueFileName;
+                    model.LogoPath = "uploads/kop_surat/" + uniqueFileName;
                 }
             }
             await _context.SaveChangesAsync();

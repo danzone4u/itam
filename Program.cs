@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using itam.Data;
 using itam.Models;
 using itam.Services;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,14 +27,45 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddHostedService<BackupService>();
 
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtectionKeys")))
+    .SetApplicationName("itam_app");
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    var pathBase = builder.Configuration["PathBase"];
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/Login";
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.Name = "itam_auth_cookie";
+    
+    if (!string.IsNullOrEmpty(pathBase))
+    {
+        options.Cookie.Path = pathBase;
+    }
 });
 
 var app = builder.Build();
+
+// Gunakan PathBase dari konfigurasi jika ada (misal di server diisi "/itam")
+var configPathBase = app.Configuration["PathBase"];
+if (!string.IsNullOrEmpty(configPathBase))
+{
+    app.UsePathBase(configPathBase);
+    app.Use((context, next) =>
+    {
+        context.Request.PathBase = configPathBase;
+        return next();
+    });
+}
+
+// Pastikan folder DataProtectionKeys ada
+var keysPath = Path.Combine(app.Environment.ContentRootPath, "DataProtectionKeys");
+if (!Directory.Exists(keysPath))
+{
+    Directory.CreateDirectory(keysPath);
+}
 
 // Seed database
 using (var scope = app.Services.CreateScope())
@@ -66,14 +98,20 @@ using (var scope = app.Services.CreateScope())
     }
     else
     {
-        // Ensure existing admin has SuperAdmin role
+        // Ensure existing admin has SuperAdmin role & FORCE RESET PASSWORD for troubleshooting
         var adminUser = await userManager.FindByNameAsync("admin");
-        if (adminUser != null && !await userManager.IsInRoleAsync(adminUser, "SuperAdmin"))
+        if (adminUser != null)
         {
-            await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
+            // Reset password ke default Admin@123 agar pasti bisa masuk
+            var resetToken = await userManager.GeneratePasswordResetTokenAsync(adminUser);
+            await userManager.ResetPasswordAsync(adminUser, resetToken, "Admin@123");
+
+            if (!await userManager.IsInRoleAsync(adminUser, "SuperAdmin"))
+            {
+                await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
+            }
         }
     }
-
 }
 
 // Configure the HTTP request pipeline.

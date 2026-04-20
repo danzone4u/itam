@@ -46,7 +46,7 @@ namespace itam.Controllers
             {
                 var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
                 await ActivityLogger.LogAsync(_context, username, "Login", "Account", $"User '{username}' berhasil login", ip);
-                return LocalRedirect(returnUrl ?? "/");
+                return LocalRedirect(returnUrl ?? "~/");
             }
 
             ViewBag.Error = "Username atau Password salah.";

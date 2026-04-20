@@ -66,8 +66,8 @@
                         </div>
                         @if (Model.TampilkanLogo)
                         {
-                            var imgPath = !string.IsNullOrEmpty(Model.LogoPath) ? Model.LogoPath : "/images/logo-ppn.png";
-                            <img id="logoPreview" src="@imgPath" alt="Logo" style="height:70px;">
+                            var imgPath = !string.IsNullOrEmpty(Model.LogoPath) ? Model.LogoPath : "images/logo-ppn.png";
+                            <img id="logoPreview" src="~/@imgPath" alt="Logo" style="height:70px;">
                         }
                     </div>
                     <hr style="border-top:3px solid #333; margin:8px 0;" />
