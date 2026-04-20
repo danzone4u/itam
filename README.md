@@ -75,17 +75,194 @@ Aplikasi akan otomatis menjalankan migrasi saat pertama kali dijalankan. Pastika
 
 ---
 
-## 📊 Struktur Data (ERD Preview)
+## 📊 Entity Relationship Diagram (ERD)
+
+Diagram di bawah ini menunjukkan struktur relasi database lengkap dari sistem ITAM:
 
 ```mermaid
 erDiagram
+    %% Master Data Relationships
     KATEGORI ||--o{ BARANG : "has"
-    BARANG ||--o{ BARANG_SERIAL : "has"
-    BARANG_MASUK ||--o{ BARANG_SERIAL : "generates"
-    BARANG_KELUAR ||--o{ BARANG_SERIAL : "assigns"
+    SUPPLIER ||--o{ BARANG_MASUK : "source for"
+    LOKASI ||--o{ BARANG_LOKASI : "manages"
+    LOKASI ||--o{ BARANG_MASUK : "destination"
+    LOKASI ||--o{ BARANG_KELUAR : "source"
+    LOKASI ||--o{ TRANSFER_BARANG : "from/to"
     
+    %% Transaction Relationships
+    BARANG ||--o{ BARANG_MASUK : "received"
+    BARANG ||--o{ BARANG_KELUAR : "distributed"
+    BARANG ||--o{ BARANG_KEMBALI : "returned"
+    BARANG ||--o{ PEMINJAMAN : "borrowed"
+    BARANG ||--o{ TRANSFER_BARANG : "moved"
+    BARANG ||--o{ BARANG_LOKASI : "inventory"
+    BARANG ||--o{ STOK_OPNAME_DETAIL : "audited"
+    BARANG_KELUAR ||--o{ BARANG_KEMBALI : "referred by"
+    
+    %% Serial Number Tracking
+    BARANG ||--o{ BARANG_SERIAL : "has"
+    BARANG_MASUK ||--o{ BARANG_SERIAL : "registers"
+    BARANG_KELUAR ||--o{ BARANG_SERIAL : "targets"
+    BARANG_KEMBALI ||--o{ BARANG_SERIAL : "reclaims"
+    TRANSFER_BARANG ||--o{ TRANSFER_BARANG_SERIAL : "triggers"
+    BARANG_SERIAL ||--o{ TRANSFER_BARANG_SERIAL : "identified by"
+    
+    %% Audit Modules
+    STOK_OPNAME ||--o{ STOK_OPNAME_DETAIL : "records"
+    
+    %% System Log
+    IDENTITY_USER ||--o{ ACTIVITY_LOG : "performs"
+
+    KOP_SURAT {
+        int Id PK
+        string NamaPerusahaan
+        string SubJudul
+        string LogoPath
+    }
+
+    APP_SETTING {
+        int Id PK
+        string AppName
+        string LogoPath
+        string FaviconPath
+    }
+
+    BACKUP_SETTING {
+        int Id PK
+        string BackupPath
+        bool IsAutoBackupEnabled
+        time BackupTime
+    }
+
+    ACTIVITY_LOG {
+        int Id PK
+        string User
+        string Action
+        string Module
+        datetime Timestamp
+    }
+
+    KATEGORI {
+        int Id PK
+        string NamaKategori
+        string KodePrefix
+    }
+
+    SUPPLIER {
+        int Id PK
+        string NamaSupplier
+        string Kontak
+        string Alamat
+    }
+
+    BARANG {
+        int Id PK
+        string KodeBarang
+        string NamaBarang
+        int KategoriId FK
+        string Satuan
+        int Stok
+        int StokMinimum
+        string Gambar
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+
+    LOKASI {
+        int Id PK
+        string Kode
+        string NamaLokasi
+    }
+
+    BARANG_LOKASI {
+        int Id PK
+        int BarangId FK
+        int LokasiId FK
+        int Stok
+    }
+
+    BARANG_MASUK {
+        int Id PK
+        int BarangId FK
+        int SupplierId FK
+        int LokasiId FK
+        int Jumlah
+        datetime TanggalMasuk
+        decimal HargaSatuan
+        string NoSuratJalan
+    }
+
+    BARANG_KELUAR {
+        int Id PK
+        int BarangId FK
+        int LokasiId FK
+        int Jumlah
+        datetime TanggalKeluar
+        string Penerima
+        string NoSuratJalan
+    }
+
+    BARANG_SERIAL {
+        int Id PK
+        int BarangId FK
+        string SerialNumber
+        string Status
+        int BarangMasukId FK
+        int BarangKeluarId FK
+    }
+
+    PEMINJAMAN {
+        int Id PK
+        int BarangId FK
+        string NoPeminjaman
+        string Peminjam
+        datetime TanggalPinjam
+        datetime TanggalJatuhTempo
+        string Status
+    }
+
+    BARANG_KEMBALI {
+        int Id PK
+        int BarangId FK
+        int BarangKeluarId FK
+        int Jumlah
+        datetime TanggalKembali
+        string TindakLanjut
+    }
+
+    TRANSFER_BARANG {
+        int Id PK
+        int BarangId FK
+        int DariLokasiId FK
+        int KeLokasiId FK
+        int Jumlah
+        datetime TanggalTransfer
+    }
+
+    STOK_OPNAME {
+        int Id PK
+        datetime TanggalOpname
+        string Status
+    }
+
+    STOK_OPNAME_DETAIL {
+        int Id PK
+        int StokOpnameId FK
+        int BarangId FK
+        int StokSistem
+        int StokFisik
+        int Selisih
+    }
+
+    ARSIP {
+        int Id PK
+        string NamaDokumen
+        string NomorDokumen
+        string FilePath
+    }
+
     SURAT_SETTING {
-        int Id
+        int Id PK
         string JenisSurat
         string TemplateSurat
         int CounterSekarang
