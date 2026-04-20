@@ -106,15 +106,12 @@ namespace itam.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin,AdminGudang")]
-        public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, string[] keterangans, DateTime tanggalMasuk, string? keteranganGlobal, int? lokasiId, int? supplierId, string? rakKompartemen)
+        public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, string[] keterangans, DateTime tanggalMasuk, string? keteranganGlobal, int? lokasiId, int? supplierId, string? rakKompartemen, string? statusKepemilikan, DateTime? tanggalJatuhTempoSewa)
         {
             if (barangIds == null || barangIds.Length == 0)
             {
                 TempData["Error"] = "Pilih minimal 1 barang!";
-                ViewBag.Barangs = new SelectList(await _context.Barangs.ToListAsync(), "Id", "NamaBarang");
-                ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi");
-                ViewBag.Suppliers = new SelectList(await _context.Suppliers.OrderBy(s => s.NamaSupplier).ToListAsync(), "Id", "NamaSupplier");
-                return View("Create");
+                return RedirectToAction(nameof(Create));
             }
 
             // Extract the dynamic snRows from Request.Form since jagged arrays are differently bound.
@@ -128,6 +125,18 @@ namespace itam.Controllers
                 {
                     var vals = Request.Form[key].Where(v => !string.IsNullOrEmpty(v)).Select(v => v!).ToList();
                     snData[idx] = vals; // this correlates to the row index
+                }
+            }
+
+            var kondisiData = new Dictionary<int, List<string>>();
+            var kondisiKeys = Request.Form.Keys.Where(k => k.StartsWith("kondisiRows[")).ToList();
+            foreach (var key in kondisiKeys)
+            {
+                var indexStr = key.Replace("kondisiRows[", "").Replace("]", "");
+                if (int.TryParse(indexStr, out int idx))
+                {
+                    var vals = Request.Form[key].Select(v => string.IsNullOrWhiteSpace(v) ? "Baru" : v.Trim()).ToList();
+                    kondisiData[idx] = vals;
                 }
             }
 
@@ -198,6 +207,8 @@ namespace itam.Controllers
                     Keterangan = ket,
                     LokasiId = (lokasiId.HasValue && lokasiId.Value > 0) ? lokasiId : await GetOrCreateLokasiAsync("Ruang IT"),
                     SupplierId = (supplierId.HasValue && supplierId.Value > 0) ? supplierId : null,
+                    StatusKepemilikan = string.IsNullOrWhiteSpace(statusKepemilikan) ? "Milik Sendiri" : statusKepemilikan,
+                    TanggalJatuhTempoSewa = tanggalJatuhTempoSewa,
                     CreatedAt = DateTime.Now
                 };
                 _context.BarangMasuks.Add(bm);
@@ -205,13 +216,23 @@ namespace itam.Controllers
 
                 if (snList.Count > 0)
                 {
-                    foreach (var sn in snList)
+                    var kondisiList = new List<string>();
+                    if (orderedSnKeys.Count > i && kondisiData.ContainsKey(orderedSnKeys[i]))
                     {
+                        kondisiList = kondisiData[orderedSnKeys[i]];
+                    }
+
+                    for (int j = 0; j < snList.Count; j++)
+                    {
+                        var sn = snList[j];
                         var finalSn = string.IsNullOrWhiteSpace(sn) || sn == "-" ? "-" : sn.Trim();
+                        var kondisi = (kondisiList.Count > j && !string.IsNullOrWhiteSpace(kondisiList[j])) ? kondisiList[j] : "Baru";
+
                         _context.BarangSerials.Add(new BarangSerial
                         {
                             BarangId = barangIds[i],
                             SerialNumber = finalSn,
+                            Kondisi = kondisi,
                             Status = "Tersedia",
                             BarangMasukId = bm.Id,
                             CreatedAt = DateTime.Now
@@ -268,7 +289,6 @@ namespace itam.Controllers
             var serials = await _context.BarangSerials
                 .Where(s => s.BarangMasukId == id)
                 .OrderBy(s => s.SerialNumber)
-                .Select(s => s.SerialNumber)
                 .ToListAsync();
 
             ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi", bm.LokasiId);
@@ -281,7 +301,7 @@ namespace itam.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> Edit(int id, DateTime tanggalMasuk, int jumlahBaru, string? keterangan, int? lokasiId, int? supplierId)
+        public async Task<IActionResult> Edit(int id, DateTime tanggalMasuk, int jumlahBaru, string? keterangan, int? lokasiId, int? supplierId, string? statusKepemilikan, DateTime? tanggalJatuhTempoSewa)
         {
             var bm = await _context.BarangMasuks.FindAsync(id);
             if (bm == null) return NotFound();
@@ -296,6 +316,14 @@ namespace itam.Controllers
             {
                 var vals = Request.Form[key].Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!.Trim()).ToList();
                 snList.AddRange(vals);
+            }
+
+            var kondisiList = new List<string>();
+            var kondisiKeys = Request.Form.Keys.Where(k => k.StartsWith("kondisiRows")).ToList();
+            foreach (var key in kondisiKeys)
+            {
+                var vals = Request.Form[key].Select(v => string.IsNullOrWhiteSpace(v) ? "Baru" : v!.Trim()).ToList();
+                kondisiList.AddRange(vals);
             }
 
             int actualJumlah = snList.Count > 0 ? snList.Count : jumlahBaru;
@@ -357,18 +385,23 @@ namespace itam.Controllers
             bm.Keterangan = keterangan;
             bm.LokasiId = finalLokasiId;
             bm.SupplierId = (supplierId.HasValue && supplierId.Value > 0) ? supplierId : null;
+            bm.StatusKepemilikan = string.IsNullOrWhiteSpace(statusKepemilikan) ? "Milik Sendiri" : statusKepemilikan;
+            bm.TanggalJatuhTempoSewa = tanggalJatuhTempoSewa;
 
             _context.Update(bm);
 
             // 4. Insert new serials
             if (snList.Count > 0)
             {
-                foreach (var sn in snList)
+                for (int j = 0; j < snList.Count; j++)
                 {
+                    var sn = snList[j];
+                    var kondisi = (kondisiList.Count > j && !string.IsNullOrWhiteSpace(kondisiList[j])) ? kondisiList[j] : "Baru";
                     _context.BarangSerials.Add(new BarangSerial
                     {
                         BarangId = bm.BarangId,
                         SerialNumber = sn,
+                        Kondisi = kondisi,
                         Status = "Tersedia",
                         BarangMasukId = bm.Id,
                         CreatedAt = DateTime.Now
@@ -536,6 +569,7 @@ namespace itam.Controllers
                 {9,  "Keterangan"},
                 {10, "Lokasi Ruangan"},
                 {11, "Rak / Kompartemen"},
+                {12, "Kondisi (Baru/Layak Pakai/Rusak)"},
             };
 
             foreach (var h in headers)
@@ -577,9 +611,10 @@ namespace itam.Controllers
             worksheet.Cells[3, 9].Value  = "Stok awal";
             worksheet.Cells[3, 10].Value = lokasiContoh?.NamaLokasi ?? "";
             worksheet.Cells[3, 11].Value = "Rak A / Lemari 1";
+            worksheet.Cells[3, 12].Value = "Baru";
 
             // style dummy row: light yellow bg
-            var dummyRange = worksheet.Cells[3, 1, 3, 11];
+            var dummyRange = worksheet.Cells[3, 1, 3, 12];
             dummyRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
             dummyRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(255, 255, 204));
             dummyRange.Style.Font.Italic = true;
@@ -627,7 +662,7 @@ namespace itam.Controllers
             // ── STEP 1: Read all rows into staging list ──────────────────────
             var staged = new List<(
                 string KodeBarang, string NamaBarang,
-                string? KategoriNama, List<string> SNs, string? SupplierNama, string? Satuan,
+                string? KategoriNama, List<(string SN, string Kond)> SNs, string? SupplierNama, string? Satuan,
                 int Jumlah, DateTime Tanggal, string? Ket, string? LokasiNama, string? Rak
             )>();
 
@@ -648,12 +683,19 @@ namespace itam.Controllers
                 var ket            = worksheet.Cells[row, 9].Value?.ToString()?.Trim();
                 var lokasiNama     = worksheet.Cells[row, 10].Value?.ToString()?.Trim();
                 var rakKompartemen = worksheet.Cells[row, 11].Value?.ToString()?.Trim();
+                var kondisiField   = worksheet.Cells[row, 12].Value?.ToString()?.Trim();
+                var kondisiVal     = string.IsNullOrWhiteSpace(kondisiField) ? "Baru" : kondisiField;
 
                 // Parse SNs from this row
-                var snList = new List<string>();
+                var snList = new List<(string SN, string Kond)>();
                 if (!string.IsNullOrEmpty(serialNumberStr))
-                    snList = serialNumberStr.Split(new[] { ',', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                {
+                    var splitted = serialNumberStr.Split(new[] { ',', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries)
                                             .Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
+                    foreach(var s in splitted) {
+                        snList.Add((s, kondisiVal));
+                    }
+                }
 
                 // Parse jumlah (fallback to SN count)
                 int.TryParse(jumlahStr, out int jumlah);
@@ -689,12 +731,14 @@ namespace itam.Controllers
             int successCount = 0;
             var nextNumbers = new Dictionary<string, int>();
 
-            // ── Cek duplikat SN sebelum proses simpan ──
+            // ── Kumpulkan SN duplikat (file + database) untuk di-skip ──
             var allImportSNs = staged
                 .SelectMany(r => r.SNs)
-                .Where(s => !string.IsNullOrWhiteSpace(s) && s.Trim() != "-")
-                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s.SN) && s.SN.Trim() != "-")
+                .Select(s => s.SN.Trim())
                 .ToList();
+
+            var skippedSNs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (allImportSNs.Any())
             {
@@ -704,6 +748,7 @@ namespace itam.Controllers
                     .Where(g => g.Count() > 1)
                     .Select(g => g.Key)
                     .ToList();
+                foreach (var d in fileDupes) skippedSNs.Add(d);
 
                 // SN yang sudah ada di database
                 var dbExisting = await _context.BarangSerials
@@ -711,15 +756,7 @@ namespace itam.Controllers
                     .Select(s => s.SerialNumber)
                     .Distinct()
                     .ToListAsync();
-
-                if (fileDupes.Any() || dbExisting.Any())
-                {
-                    var msgs = new List<string>();
-                    if (fileDupes.Any())    msgs.Add($"SN duplikat dalam file: {string.Join(", ", fileDupes)}");
-                    if (dbExisting.Any())   msgs.Add($"SN sudah ada di database: {string.Join(", ", dbExisting)}");
-                    TempData["Error"] = "❌ Import dibatalkan. " + string.Join(" | ", msgs);
-                    return RedirectToAction(nameof(Index));
-                }
+                foreach (var d in dbExisting) skippedSNs.Add(d);
             }
 
             foreach (var grp in groups)
@@ -847,9 +884,20 @@ namespace itam.Controllers
                     }
                 }
 
-                // ── Merge all SNs from all rows in this group ──
-                var allSNs    = grp.SelectMany(r => r.SNs).Where(s => !string.IsNullOrEmpty(s)).ToList();
-                int totalJumlah = allSNs.Count > 0 ? allSNs.Count : grp.Sum(r => r.Jumlah);
+                // ── Merge all SNs from all rows in this group, SKIP duplicates ──
+                var allSNs = grp.SelectMany(r => r.SNs)
+                    .Where(s => !string.IsNullOrEmpty(s.SN))
+                    .ToList();
+
+                // Filter out skipped SNs (duplikat file / sudah ada di DB)
+                var cleanSNs = allSNs
+                    .Where(s => string.IsNullOrWhiteSpace(s.SN) || s.SN.Trim() == "-" || !skippedSNs.Contains(s.SN.Trim()))
+                    .ToList();
+
+                int totalJumlah = cleanSNs.Count > 0 ? cleanSNs.Count : grp.Sum(r => r.Jumlah);
+
+                // Jika semua SN di-skip dan tidak ada jumlah fallback, lewati group ini
+                if (allSNs.Count > 0 && cleanSNs.Count == 0) continue;
 
                 var bm = new BarangMasuk
                 {
@@ -863,12 +911,12 @@ namespace itam.Controllers
                 };
                 _context.BarangMasuks.Add(bm);
 
-                if (allSNs.Count > 0)
+                if (cleanSNs.Count > 0)
                 {
-                    foreach (var sn in allSNs)
+                    foreach (var snTuple in cleanSNs)
                         _context.BarangSerials.Add(new BarangSerial
                         {
-                            BarangId = barang.Id, SerialNumber = sn,
+                            BarangId = barang.Id, SerialNumber = snTuple.SN, Kondisi = snTuple.Kond,
                             Status = "Tersedia", BarangMasuk = bm, CreatedAt = DateTime.Now
                         });
                 }
@@ -877,7 +925,7 @@ namespace itam.Controllers
                     for (int j = 0; j < totalJumlah; j++)
                         _context.BarangSerials.Add(new BarangSerial
                         {
-                            BarangId = barang.Id, SerialNumber = "-",
+                            BarangId = barang.Id, SerialNumber = "-", Kondisi = "Baru",
                             Status = "Tersedia", BarangMasuk = bm, CreatedAt = DateTime.Now
                         });
                 }
@@ -901,7 +949,19 @@ namespace itam.Controllers
             }
 
             await _context.SaveChangesAsync();
-            TempData["Success"] = $"{successCount} entri Barang Masuk berhasil diimport (dari {staged.Count} baris Excel)!";
+
+            // ── Notifikasi gabungan: sukses + warning SN dilewati ──
+            var messages = new List<string>();
+            messages.Add($"✅ {successCount} entri Barang Masuk berhasil diimport (dari {staged.Count} baris Excel)!");
+            if (skippedSNs.Any())
+            {
+                messages.Add($"⚠️ {skippedSNs.Count} SN dilewati karena duplikat: {string.Join(", ", skippedSNs)}");
+            }
+
+            if (skippedSNs.Any())
+                TempData["Warning"] = string.Join(" | ", messages);
+            else
+                TempData["Success"] = messages[0];
             return RedirectToAction(nameof(Index));
         }
     }

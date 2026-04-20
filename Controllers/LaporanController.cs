@@ -323,7 +323,7 @@ namespace itam.Controllers
                 .Include(t => t.Barang).ThenInclude(b => b!.Kategori)
                 .Include(t => t.DariLokasi)
                 .Include(t => t.KeLokasi)
-                .Include(t => t.TransferBarangSerials).ThenInclude(tbs => tbs.BarangSerial)
+                .Include(t => t.TransferBarangSerials!).ThenInclude(tbs => tbs.BarangSerial)
                 .Where(t => t.TanggalTransfer >= from && t.TanggalTransfer <= to.Value.AddDays(1))
                 .OrderBy(t => t.TanggalTransfer)
                 .ToListAsync();

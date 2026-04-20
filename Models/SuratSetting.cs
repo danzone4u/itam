@@ -39,5 +39,24 @@ namespace itam.Models
 
         [Display(Name = "Reset Nomor Urut Tiap Bulan")]
         public bool ResetBulanan { get; set; } = false;
+
+        [Display(Name = "Reset Nomor Urut Tiap Tahun")]
+        public bool ResetTahunan { get; set; } = false;
+
+        [Display(Name = "Template Surat Jalan")]
+        [StringLength(200)]
+        public string TemplateSuratJalan { get; set; } = "{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}";
+
+        [Display(Name = "Template Surat Terima Barang")]
+        [StringLength(200)]
+        public string TemplateSuratTerima { get; set; } = "{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}";
+
+        [Display(Name = "Template Surat Pengembalian")]
+        [StringLength(200)]
+        public string TemplateSuratKembali { get; set; } = "{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}";
+
+        [Display(Name = "Template Surat Peminjaman")]
+        [StringLength(200)]
+        public string TemplateSuratPeminjaman { get; set; } = "{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}";
     }
 }

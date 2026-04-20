@@ -99,29 +99,29 @@ $(function(){
     var rowNum = 0;
     $('#btnAddBarang').click(function(){
         var typed = $('#searchBarang').val();
-        if (!typed) { alert('Ketik dan pilih barang terlebih dahulu!'); return; }
+        if (!typed) { Swal.fire('Peringatan', 'Ketik dan pilih barang terlebih dahulu!', 'warning'); return; }
 
         // Find matching option in datalist
         var matched = null;
         $('#listBarang option').each(function(){
             if ($(this).val() === typed) { matched = $(this); return false; }
         });
-        if (!matched) { alert('Barang tidak ditemukan! Pilih dari daftar.'); return; }
+        if (!matched) { Swal.fire('Peringatan', 'Barang tidak ditemukan! Pilih dari daftar.', 'warning'); return; }
 
         var barangId = matched.data('id');
         var nama = matched.data('nama');
         var stok = parseInt(matched.data('stok'));
         var satuan = matched.data('satuan');
         var jumlah = parseInt($('#inputJumlah').val()) || 1;
-        if (jumlah > stok) { alert('Jumlah melebihi stok! (Stok: ' + stok + ')'); return; }
-        if (jumlah < 1) { alert('Jumlah minimal 1!'); return; }
+        if (jumlah > stok) { Swal.fire('Peringatan', 'Jumlah melebihi stok! (Stok: ' + stok + ')', 'warning'); return; }
+        if (jumlah < 1) { Swal.fire('Peringatan', 'Jumlah minimal 1!', 'warning'); return; }
 
         // Check if barang already in table
         var exists = false;
         $('#tblBarang tbody tr').each(function(){
             if ($(this).data('barangid') == barangId) { exists = true; return false; }
         });
-        if (exists) { alert('Barang sudah ada di daftar!'); return; }
+        if (exists) { Swal.fire('Peringatan', 'Barang sudah ada di daftar!', 'warning'); return; }
 
         rowNum++;
         var row = '<tr data-barangid="' + barangId + '">'

@@ -47,6 +47,14 @@ namespace itam.Models
         [ForeignKey("SupplierId")]
         public Supplier? Supplier { get; set; }
 
+        [Display(Name = "Status Kepemilikan")]
+        [StringLength(50)]
+        public string StatusKepemilikan { get; set; } = "Milik Sendiri";
+
+        [Display(Name = "Jatuh Tempo Sewa")]
+        [DataType(DataType.Date)]
+        public DateTime? TanggalJatuhTempoSewa { get; set; }
+
         public ICollection<BarangSerial>? BarangSerials { get; set; }
     }
 }

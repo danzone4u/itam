@@ -211,7 +211,7 @@ namespace itam.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin,AdminGudang")]
-        public async Task<IActionResult> Edit(int id, string penerima, string? alamat, string? keterangan, string? noSuratJalan, string? noHpPenerima)
+        public async Task<IActionResult> Edit(int id, string penerima, string? alamat, string? keterangan, string? noSuratJalan, string? noHpPenerima, string? pic)
         {
             var bk = await _context.BarangKeluars.FindAsync(id);
             if (bk == null) return NotFound();
@@ -220,6 +220,7 @@ namespace itam.Controllers
             bk.Alamat = alamat;
             bk.Keterangan = keterangan;
             bk.NoHpPenerima = noHpPenerima;
+            bk.Pic = pic;
             if (!string.IsNullOrWhiteSpace(noSuratJalan))
                 bk.NoSuratJalan = noSuratJalan;
 

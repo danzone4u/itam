@@ -181,7 +181,7 @@
 
 @section Scripts {
 <script>
-var _selectedFolder = '@Html.Raw(curPath.Replace("\\","\\\\"))';
+var _selectedFolder = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(curPath));
 
 function openFolderPicker() {
     _selectedFolder = $('#backupPathInput').val() || '';
@@ -248,7 +248,7 @@ function selectFolder(path) {
 }
 
 function confirmFolderPicker() {
-    if (!_selectedFolder) { alert('Pilih folder terlebih dahulu!'); return; }
+    if (!_selectedFolder) { Swal.fire('Peringatan', 'Pilih folder terlebih dahulu!', 'warning'); return; }
     $('#backupPathInput').val(_selectedFolder);
     $('#modalFolderPicker').modal('hide');
 }
@@ -259,7 +259,7 @@ function syncPath() {
 
 function testPath() {
     var path = $('#backupPathInput').val();
-    if (!path) { alert('Isi path terlebih dahulu!'); return; }
+    if (!path) { Swal.fire('Peringatan', 'Isi path terlebih dahulu!', 'warning'); return; }
     $('#testPathResult').html('<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Menguji akses SQL Server...</span>');
     $.ajax({
         url: '@Url.Action("TestPath","Backup")',
@@ -285,7 +285,8 @@ function escJs(str) {
 
 // Inisialisasi: load folder dari path aktif
 $(function(){
-    browseFolder('@Html.Raw(curPath.Replace("\\","\\\\").Replace("'","\\'"))');
+    var initPath = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(curPath));
+    browseFolder(initPath);
 });
 </script>
 }

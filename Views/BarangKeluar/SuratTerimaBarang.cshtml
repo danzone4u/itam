@@ -58,7 +58,6 @@
             <tr>
                 <td class="text-center">1</td>
                 <td>@Model.Barang?.NamaBarang</td>
-                <td>@Model.Barang?.NamaBarang</td>
                 <td class="text-center">@Model.Jumlah</td>
                 <td>@{ var serials = (List<string>)ViewBag.Serials; }@(serials.Any() && serials.Any(s => s != "-") ? string.Join(", ", serials.Where(s => s != "-")) : "-")</td>
                 <td>@Model.Keterangan</td>

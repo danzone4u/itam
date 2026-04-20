@@ -5,54 +5,107 @@
     <form asp-action="Index" method="post">@Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <div class="card-body">
+            @* ─── PREVIEW SECTION ─── *@
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> <strong>Preview Surat Jalan:</strong> <code>@ViewBag.Preview</code><br/>
-                <i class="fas fa-info-circle"></i> <strong>Preview Surat Terima Barang:</strong> <code>@ViewBag.PreviewTerima</code><br/>
-                <i class="fas fa-info-circle"></i> <strong>Preview Surat Pengembalian:</strong> <code>@ViewBag.PreviewKembali</code><br/>
-                <i class="fas fa-info-circle"></i> <strong>Preview Surat Peminjaman:</strong> <code>@ViewBag.PreviewPeminjaman</code>
+                <i class="fas fa-eye"></i> <strong>Preview Hasil Nomor Surat:</strong>
+                <table class="table table-sm table-borderless mb-0 mt-2" style="background: transparent;">
+                    <tr><td width="220"><strong>Surat Jalan:</strong></td><td><code id="previewSJ">@ViewBag.Preview</code></td></tr>
+                    <tr><td><strong>Surat Terima Barang:</strong></td><td><code id="previewSTB">@ViewBag.PreviewTerima</code></td></tr>
+                    <tr><td><strong>Surat Pengembalian:</strong></td><td><code id="previewSK">@ViewBag.PreviewKembali</code></td></tr>
+                    <tr><td><strong>Surat Peminjaman:</strong></td><td><code id="previewSP">@ViewBag.PreviewPeminjaman</code></td></tr>
+                </table>
             </div>
+
+            @* ─── TAG GUIDE ─── *@
+            <div class="alert alert-warning py-2">
+                <i class="fas fa-tags"></i> <strong>Tag yang tersedia untuk Template:</strong>
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <code>{PREFIX}</code> — Prefix sesuai jenis surat<br/>
+                        <code>{NOMOR}</code> — Nomor urut (sesuai panjang digit)<br/>
+                        <code>{SUFFIX}</code> — Suffix / keterangan tambahan<br/>
+                        <code>{TAHUN}</code> — Tahun saat ini (contoh: @DateTime.Now.ToString("yyyy"))
+                    </div>
+                    <div class="col-md-6">
+                        <code>{BULAN}</code> — Bulan saat ini (contoh: @DateTime.Now.ToString("MM"))<br/>
+                        <code>{BULAN_ROMAWI}</code> — Bulan romawi (contoh: @(new[]{"","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"}[DateTime.Now.Month]))<br/>
+                        <code>{TANGGAL}</code> — Tanggal sesuai format di bawah
+                    </div>
+                </div>
+                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle"></i> Anda bisa menggunakan karakter separator bebas antar tag seperti <code>/</code>, <code>-</code>, <code>.</code>.
+                    Contoh: <code>{PREFIX}/{NOMOR}/{BULAN_ROMAWI}/{TAHUN}</code> atau <code>{PREFIX}-{NOMOR}.{SUFFIX}-{TAHUN}</code></small>
+            </div>
+
+            @* ─── TEMPLATE PER JENIS SURAT ─── *@
+            <h5 class="mt-3 mb-3"><i class="fas fa-pen-fancy"></i> Template Format Surat</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="TemplateSuratJalan"></label>
+                        <input asp-for="TemplateSuratJalan" class="form-control template-input" placeholder="{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}" />
+                        <small class="text-muted">Contoh hasil: <span class="template-preview" data-prefix-field="PrefixSuratJalan"></span></small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="TemplateSuratTerima"></label>
+                        <input asp-for="TemplateSuratTerima" class="form-control template-input" placeholder="{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}" />
+                        <small class="text-muted">Contoh hasil: <span class="template-preview" data-prefix-field="PrefixSuratTerima"></span></small>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="TemplateSuratKembali"></label>
+                        <input asp-for="TemplateSuratKembali" class="form-control template-input" placeholder="{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}" />
+                        <small class="text-muted">Contoh hasil: <span class="template-preview" data-prefix-field="PrefixSuratKembali"></span></small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="TemplateSuratPeminjaman"></label>
+                        <input asp-for="TemplateSuratPeminjaman" class="form-control template-input" placeholder="{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}" />
+                        <small class="text-muted">Contoh hasil: <span class="template-preview" data-prefix-field="PrefixSuratPeminjaman"></span></small>
+                    </div>
+                </div>
+            </div>
+
+            <hr/>
+
+            @* ─── PREFIX & KOMPONEN SURAT ─── *@
+            <h5 class="mt-2 mb-3"><i class="fas fa-cog"></i> Komponen Surat</h5>
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="PrefixSuratJalan"></label>
-                        <input asp-for="PrefixSuratJalan" class="form-control" placeholder="SJ" />
+                        <input asp-for="PrefixSuratJalan" class="form-control prefix-input" placeholder="SJ" />
                         <small class="text-muted">Surat Jalan</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="PrefixSuratTerima"></label>
-                        <input asp-for="PrefixSuratTerima" class="form-control" placeholder="STB" />
+                        <input asp-for="PrefixSuratTerima" class="form-control prefix-input" placeholder="STB" />
                         <small class="text-muted">Surat Terima Barang</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="PrefixSuratKembali"></label>
-                        <input asp-for="PrefixSuratKembali" class="form-control" placeholder="SK" />
+                        <input asp-for="PrefixSuratKembali" class="form-control prefix-input" placeholder="SK" />
                         <small class="text-muted">Surat Pengembalian</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label asp-for="Separator"></label>
-                        <select asp-for="Separator" class="form-control">
-                            <option value="-">Dash ( - )</option>
-                            <option value="/">Slash ( / )</option>
-                            <option value=".">Dot ( . )</option>
-                            <option value="_">Underscore ( _ )</option>
-                        </select>
+                        <label asp-for="PrefixSuratPeminjaman"></label>
+                        <input asp-for="PrefixSuratPeminjaman" class="form-control prefix-input" placeholder="SP" />
+                        <small class="text-muted">Surat Peminjaman</small>
                     </div>
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label asp-for="PrefixSuratPeminjaman"></label>
-                        <input asp-for="PrefixSuratPeminjaman" class="form-control" placeholder="SP" />
-                        <small class="text-muted">Surat Peminjaman</small>
-                    </div>
-                </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="FormatTanggal"></label>
@@ -79,15 +132,41 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label asp-for="Suffix"></label>
-                        <input asp-for="Suffix" class="form-control" placeholder="Opsional, misal: PPN" />
+                        <input asp-for="Suffix" class="form-control suffix-input" placeholder="Opsional, misal: PPN" />
                         <small class="text-muted">Contoh: PPN, DEPT-IT, dll</small>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label asp-for="Separator"></label>
+                        <select asp-for="Separator" class="form-control">
+                            <option value="-">Dash ( - )</option>
+                            <option value="/">Slash ( / )</option>
+                            <option value=".">Dot ( . )</option>
+                            <option value="_">Underscore ( _ )</option>
+                        </select>
+                        <small class="text-muted">Digunakan jika template kosong</small>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <div class="custom-control custom-switch">
-                    <input type="checkbox" class="custom-control-input" asp-for="ResetBulanan" id="resetBulanan">
-                    <label class="custom-control-label" for="resetBulanan">Reset nomor urut setiap bulan baru</label>
+
+            @* ─── RESET OPTIONS ─── *@
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" asp-for="ResetBulanan" id="resetBulanan">
+                            <label class="custom-control-label" for="resetBulanan">Reset nomor urut setiap bulan baru</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" asp-for="ResetTahunan" id="resetTahunan">
+                            <label class="custom-control-label" for="resetTahunan">Reset nomor urut setiap tahun baru</label>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,3 +175,86 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+<script>
+$(function(){
+    var bulanRomawi = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+    var now = new Date();
+    var tahun = now.getFullYear().toString();
+    var bulan = ('0' + (now.getMonth()+1)).slice(-2);
+    var hari  = ('0' + now.getDate()).slice(-2);
+    var bulanR = bulanRomawi[now.getMonth()+1];
+
+    function getFormatTanggal() {
+        var fmt = $('#FormatTanggal').val();
+        switch(fmt) {
+            case 'yyyyMMdd': return tahun + bulan + hari;
+            case 'ddMMyyyy': return hari + bulan + tahun;
+            case 'yyyyMM':   return tahun + bulan;
+            case 'MMyyyy':   return bulan + tahun;
+            case 'yyyy':     return tahun;
+            default:         return tahun + bulan + hari;
+        }
+    }
+
+    function padNumber(n, len) {
+        var s = n.toString();
+        while(s.length < len) s = '0' + s;
+        return s;
+    }
+
+    function renderTemplate(template, prefix, suffix, panjang) {
+        if (!template) return '-';
+        var nomor = padNumber(1, panjang);
+        var result = template
+            .replace(/\{PREFIX\}/g, prefix || '')
+            .replace(/\{NOMOR\}/g, nomor)
+            .replace(/\{TAHUN\}/g, tahun)
+            .replace(/\{BULAN_ROMAWI\}/g, bulanR)
+            .replace(/\{BULAN\}/g, bulan)
+            .replace(/\{TANGGAL\}/g, getFormatTanggal())
+            .replace(/\{SUFFIX\}/g, suffix || '');
+        // Clean double separators
+        while(result.indexOf('//')>=0) result=result.replace(/\/\//g,'/');
+        while(result.indexOf('--')>=0) result=result.replace(/--/g,'-');
+        while(result.indexOf('..')>=0) result=result.replace(/\.\./g,'.');
+        result = result.replace(/^[\/\-\.]+|[\/\-\.]+$/g, '');
+        return result;
+    }
+
+    function updateAllPreviews() {
+        var suffix = $('#Suffix').val() || '';
+        var panjang = parseInt($('#PanjangNomorUrut').val()) || 4;
+
+        // Surat Jalan
+        var sjTemplate = $('#TemplateSuratJalan').val();
+        var sjPrefix = $('#PrefixSuratJalan').val();
+        $('#TemplateSuratJalan').closest('.form-group').find('.template-preview').text(renderTemplate(sjTemplate, sjPrefix, suffix, panjang));
+
+        // Surat Terima
+        var stbTemplate = $('#TemplateSuratTerima').val();
+        var stbPrefix = $('#PrefixSuratTerima').val();
+        $('#TemplateSuratTerima').closest('.form-group').find('.template-preview').text(renderTemplate(stbTemplate, stbPrefix, suffix, panjang));
+
+        // Surat Kembali
+        var skTemplate = $('#TemplateSuratKembali').val();
+        var skPrefix = $('#PrefixSuratKembali').val();
+        $('#TemplateSuratKembali').closest('.form-group').find('.template-preview').text(renderTemplate(skTemplate, skPrefix, suffix, panjang));
+
+        // Surat Peminjaman
+        var spTemplate = $('#TemplateSuratPeminjaman').val();
+        var spPrefix = $('#PrefixSuratPeminjaman').val();
+        $('#TemplateSuratPeminjaman').closest('.form-group').find('.template-preview').text(renderTemplate(spTemplate, spPrefix, suffix, panjang));
+    }
+
+    // Update preview on any input change
+    $(document).on('input change', '.template-input, .prefix-input, .suffix-input, #PanjangNomorUrut, #FormatTanggal', function(){
+        updateAllPreviews();
+    });
+
+    // Initial preview
+    updateAllPreviews();
+});
+</script>
+}

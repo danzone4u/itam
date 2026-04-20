@@ -27,6 +27,11 @@
                 <div class="col-md-3"><div class="form-group"><label>Keterangan</label><input type="text" name="keterangan" class="form-control" value="@Model.Keterangan" /></div></div>
             </div>
             
+            <div class="row mb-3">
+                <div class="col-md-3"><div class="form-group"><label>Kepemilikan</label><select name="statusKepemilikan" id="statusKepemilikan" class="form-control"><option value="Milik Sendiri" selected="@(Model.StatusKepemilikan == "Milik Sendiri" ? "selected" : null)">Milik Sendiri</option><option value="Sewa" selected="@(Model.StatusKepemilikan == "Sewa" ? "selected" : null)">Sewa</option></select></div></div>
+                <div class="col-md-3" id="colJatuhTempo" style="@(Model.StatusKepemilikan == "Sewa" ? "display:block;" : "display:none;")"><div class="form-group"><label>Jatuh Tempo Sewa</label><input type="date" name="tanggalJatuhTempoSewa" id="tanggalJatuhTempoSewa" class="form-control" value="@Model.TanggalJatuhTempoSewa?.ToString("yyyy-MM-dd")" @(Model.StatusKepemilikan == "Sewa" ? "required" : "") /></div></div>
+            </div>
+            
             <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle"></i><strong> PERHATIAN:</strong> Mengubah jumlah disini akan otomatis menyesuaikan Stok Utama dan Stok Ruangan barang ini.
             </div>
@@ -39,13 +44,18 @@
             
             <div id="snContainer" class="mt-2" style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius:4px; max-width:500px">
                 @{
-                    var serials = (List<string>)ViewBag.Serials;
-                    if (serials.Any() && serials.Any(s => s != "-"))
+                    var serials = (List<itam.Models.BarangSerial>)ViewBag.Serials;
+                    if (serials.Any() && serials.Any(s => s.SerialNumber != "-"))
                     {
-                        foreach (var sn in serials.Where(s => s != "-"))
+                        foreach (var snItem in serials.Where(s => s.SerialNumber != "-"))
                         {
                             <div class="input-group mb-1 sn-row">
-                                <input type="text" name="snRows" class="form-control sn-val" value="@sn" />
+                                <input type="text" name="snRows" class="form-control sn-val" value="@snItem.SerialNumber" />
+                                <select name="kondisiRows" class="form-control form-control-sm" style="max-width: 120px;">
+                                    <option value="Baru" selected="@(snItem.Kondisi == "Baru" ? "selected" : null)">Baru</option>
+                                    <option value="Layak Pakai" selected="@(snItem.Kondisi == "Layak Pakai" ? "selected" : null)">Layak Pakai</option>
+                                    <option value="Rusak" selected="@(snItem.Kondisi == "Rusak" ? "selected" : null)">Rusak</option>
+                                </select>
                                 <div class="input-group-append">
                                     <button type="button" class="btn btn-danger btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button>
                                 </div>
@@ -85,6 +95,7 @@
             $('#btnAddSn').click(function(){
                 var row = '<div class="input-group mb-1 sn-row">'
                         + '<input type="text" name="snRows" class="form-control sn-val" placeholder="Input S/N..." />'
+                        + '<select name="kondisiRows" class="form-control form-control-sm" style="max-width: 120px;"><option value="Baru">Baru</option><option value="Layak Pakai">Layak Pakai</option><option value="Rusak">Rusak</option></select>'
                         + '<div class="input-group-append"><button type="button" class="btn btn-danger btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button></div>'
                         + '</div>';
                 $('#snContainer').append(row);
@@ -105,6 +116,16 @@
             if(!hasSnList) {
                 $('#jumlahBaru').prop('readonly', false);
             }
+            
+            $('#statusKepemilikan').change(function() {
+                if ($(this).val() === 'Sewa') {
+                    $('#colJatuhTempo').show();
+                    $('#tanggalJatuhTempoSewa').prop('required', true);
+                } else {
+                    $('#colJatuhTempo').hide();
+                    $('#tanggalJatuhTempoSewa').prop('required', false);
+                }
+            });
         });
     </script>
 }

@@ -20,6 +20,7 @@
                     <th>No. Transaksi</th>
                     <th>Tgl Kembali <i class="fas fa-sort text-muted ml-1"></i></th>
                     <th>Nama Barang</th>
+                    <th>S/N</th>
                     <th>Peminjam/Penerima</th>
                     <th class="text-center">Jml</th>
                     <th>Kondisi</th>
@@ -47,7 +48,19 @@
                                 <br><small class="text-info"><i class="fas fa-link mr-1"></i> Ref: OUT-@item.BarangKeluarId.Value.ToString("D4")</small>
                             }
                         </td>
-                        <td>@item.Barang?.NamaBarang</td>
+                        <td>
+                            @{
+                                var snList = item.BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
+                            }
+                            @if (snList.Any())
+                            {
+                                <small class="text-muted">@string.Join(", ", snList)</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
                         <td>@item.DikembalikanOleh</td>
                         <td class="text-center"><span class="badge badge-success px-2 py-1" style="font-size: 0.9em;">+@item.Jumlah</span></td>
                         <td>
@@ -57,6 +70,14 @@
                             @if(item.TindakLanjut == "Di Disposal")
                             {
                                 <span class="badge badge-warning"><i class="fas fa-trash-alt"></i> Di Disposal</span>
+                            }
+                            else if(item.TindakLanjut == "Diperbaiki")
+                            {
+                                <span class="badge badge-danger"><i class="fas fa-tools"></i> Sedang Diperbaiki</span>
+                            }
+                            else if(item.TindakLanjut == "Selesai Diperbaiki")
+                            {
+                                <span class="badge badge-info"><i class="fas fa-check-circle"></i> Selesai Diperbaiki</span>
                             }
                             else
                             {
@@ -79,7 +100,11 @@
                             <a href="@Url.Action("SuratPengembalian", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat"><i class="fas fa-file-alt"></i></a>
                             @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
                             {
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus data pengembalian ini?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                                @if (item.TindakLanjut == "Diperbaiki")
+                                {
+                                    <form asp-action="SelesaiPerbaikan" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Tandai barang ini telah selesai diperbaiki dan masukkan kembali ke stok gudang?')">@Html.AntiForgeryToken()<button class="btn btn-success btn-xs" title="Selesai Diperbaiki"><i class="fas fa-check"></i></button></form>
+                                }
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus data pengembalian ini?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs" title="Hapus"><i class="fas fa-trash"></i></button></form>
                             }
                         </td>
                     </tr>

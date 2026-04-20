@@ -35,14 +35,16 @@
             <tr><td style="width:180px"><strong>No. Surat Kembali</strong></td><td>: @ViewBag.NoSuratKembali</td></tr>
             <tr><td><strong>Tanggal Kembali</strong></td><td>: @Model.TanggalKembali.ToString("dd MMMM yyyy")</td></tr>
             <tr><td><strong>Dikembalikan Oleh</strong></td><td>: @Model.DikembalikanOleh</td></tr>
-            <tr><td><strong>Ref. Barang Keluar</strong></td><td>: @(Model.BarangKeluar?.NoSuratJalan ?? "-")</td></tr>
+            <tr><td><strong>Ref. Barang Keluar</strong></td><td>: @(ViewBag.RefBast ?? "-")</td></tr>
         </table>
 
         <p>Dengan ini menyatakan bahwa barang berikut telah dikembalikan:</p>
         <table class="table table-bordered" style="margin-bottom:20px;">
-            <thead><tr><th>No</th><th>Nama Barang</th><th width="50">Jumlah</th><th>Satuan</th><th>Kondisi</th><th>Keterangan</th></tr></thead>
+            <thead><tr><th>No</th><th>Nama Barang</th><th width="50">Jumlah</th><th>Satuan</th><th>S/N</th><th>Kondisi</th><th>Keterangan</th></tr></thead>
             <tbody>
-                <tr><td class="text-center">1</td><td>@Model.Barang?.NamaBarang</td><td class="text-center">@Model.Jumlah</td><td>@Model.Barang?.Satuan</td><td>@Model.Kondisi</td><td>@Model.Keterangan</td></tr>
+                <tr><td class="text-center">1</td><td>@Model.Barang?.NamaBarang</td><td class="text-center">@Model.Jumlah</td><td>@Model.Barang?.Satuan</td>
+                <td>@{ var snList = Model.BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>(); }@(snList.Any() ? string.Join(", ", snList) : "-")</td>
+                <td>@Model.Kondisi</td><td>@Model.Keterangan</td></tr>
             </tbody>
         </table>
 

@@ -93,8 +93,8 @@ function previewRename() {
     var oldP = $('#oldPrefixInput').val().trim().toUpperCase();
     var newP = $('#newPrefixInput').val().trim().toUpperCase();
 
-    if (!newP) { alert('Isi prefix baru terlebih dahulu!'); return; }
-    if (oldP === newP) { alert('Prefix baru sama dengan prefix lama!'); return; }
+    if (!newP) { Swal.fire('Peringatan', 'Isi prefix baru terlebih dahulu!', 'warning'); return; }
+    if (oldP === newP) { Swal.fire('Peringatan', 'Prefix baru sama dengan prefix lama!', 'warning'); return; }
 
     $('#previewResult').hide();
     $('#btnApplyRename').hide();
@@ -105,7 +105,7 @@ function previewRename() {
         newPrefix: newP
     }, function(res) {
         if (res.count === 0) {
-            alert('Tidak ada kode barang yang perlu diubah dengan prefix "' + oldP + '".');
+            Swal.fire('Info', 'Tidak ada kode barang yang perlu diubah dengan prefix "' + oldP + '".', 'info');
             return;
         }
         var html = '';

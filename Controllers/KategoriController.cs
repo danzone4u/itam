@@ -166,9 +166,24 @@ namespace itam.Controllers
             var kategori = await _context.Kategoris.FindAsync(id);
             if (kategori != null)
             {
-                _context.Kategoris.Remove(kategori);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Kategori berhasil dihapus!";
+                // Cek apakah kategori masih dipakai oleh barang
+                var jumlahBarang = await _context.Barangs.CountAsync(b => b.KategoriId == id);
+                if (jumlahBarang > 0)
+                {
+                    TempData["Error"] = $"Kategori \"{kategori.NamaKategori}\" tidak dapat dihapus karena masih digunakan oleh {jumlahBarang} data barang.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                try
+                {
+                    _context.Kategoris.Remove(kategori);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Kategori berhasil dihapus!";
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["Error"] = $"Kategori \"{kategori.NamaKategori}\" tidak dapat dihapus karena masih terkait dengan data lain.";
+                }
             }
             return RedirectToAction(nameof(Index));
         }

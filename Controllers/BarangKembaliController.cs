@@ -22,6 +22,7 @@ namespace itam.Controllers
             var data = await _context.BarangKembalis
                 .Include(bk => bk.Barang)
                 .Include(bk => bk.BarangKeluar)
+                .Include(bk => bk.BarangSerials)
                 .OrderByDescending(bk => bk.TanggalKembali)
                 .ToListAsync();
             return View(data);
@@ -91,7 +92,9 @@ namespace itam.Controllers
                     foreach (var sn in serialsToUpdate)
                     {
                         sn.BarangKembaliId = model.Id;
-                        sn.Status = model.TindakLanjut == "Di Disposal" ? "Disposal" : "Tersedia";
+                        if (model.TindakLanjut == "Di Disposal") sn.Status = "Disposal";
+                        else if (model.TindakLanjut == "Diperbaiki") sn.Status = "Diperbaiki";
+                        else sn.Status = "Tersedia";
                         
                         // Ambil kondisi S/N dari form
                         var condVal = Request.Form[$"snConditions_{sn.Id}"].ToString();
@@ -109,7 +112,7 @@ namespace itam.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                TempData["Success"] = "Pengembalian barang berhasil dicatat! " + (model.TindakLanjut == "Dikembalikan ke Stok" ? "Stok diperbarui." : "Barang di-disposal.");
+                TempData["Success"] = "Pengembalian barang berhasil dicatat! " + (model.TindakLanjut == "Dikembalikan ke Stok" ? "Stok diperbarui." : (model.TindakLanjut == "Diperbaiki" ? "Barang masuk perbaikan." : "Barang di-disposal."));
                 return RedirectToAction(nameof(Index));
             }
 
@@ -136,7 +139,7 @@ namespace itam.Controllers
             if (item != null)
             {
                 // Kembalikan stok (kurangi lagi) JIKA sebelumnya dimasukkan ke stok
-                if (item.TindakLanjut == "Dikembalikan ke Stok")
+                if (item.TindakLanjut == "Dikembalikan ke Stok" || item.TindakLanjut == "Selesai Diperbaiki")
                 {
                     var barang = await _context.Barangs.FindAsync(item.BarangId);
                     if (barang != null)
@@ -179,7 +182,7 @@ namespace itam.Controllers
             var items = await _context.BarangKembalis.Where(b => ids.Contains(b.Id)).ToListAsync();
             foreach (var item in items)
             {
-                if (item.TindakLanjut == "Dikembalikan ke Stok")
+                if (item.TindakLanjut == "Dikembalikan ke Stok" || item.TindakLanjut == "Selesai Diperbaiki")
                 {
                     var barang = await _context.Barangs.FindAsync(item.BarangId);
                     if (barang != null) { barang.Stok -= item.Jumlah; if (barang.Stok < 0) barang.Stok = 0; }
@@ -200,11 +203,34 @@ namespace itam.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        public async Task<IActionResult> SelesaiPerbaikan(int id)
+        {
+            var item = await _context.BarangKembalis.Include(b => b.BarangSerials).FirstOrDefaultAsync(x => x.Id == id);
+            if (item != null && item.TindakLanjut == "Diperbaiki")
+            {
+                var barang = await _context.Barangs.FindAsync(item.BarangId);
+                if (barang != null) { barang.Stok += item.Jumlah; }
+                
+                item.TindakLanjut = "Selesai Diperbaiki";
+                foreach (var sn in item.BarangSerials)
+                {
+                    if (sn.Status == "Diperbaiki") sn.Status = "Tersedia";
+                }
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Barang selesai diperbaiki dan telah dikembalikan ke stok gudang.";
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
         public async Task<IActionResult> SuratPengembalian(int id)
         {
             var item = await _context.BarangKembalis
                 .Include(bk => bk.Barang)
                 .Include(bk => bk.BarangKeluar)
+                .Include(bk => bk.BarangSerials)
                 .FirstOrDefaultAsync(bk => bk.Id == id);
             if (item == null) return NotFound();
 
@@ -214,6 +240,12 @@ namespace itam.Controllers
             var kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
             ViewBag.Kop = kop;
             ViewBag.NoSuratKembali = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SK");
+
+            if (item.BarangKeluarId.HasValue)
+            {
+                var bkCount = await _context.BarangKeluars.Where(b => b.Id <= item.BarangKeluarId.Value).CountAsync();
+                ViewBag.RefBast = SuratSettingController.GenerateNomorSurat(suratSetting, bkCount, "STB");
+            }
 
             return View(item);
         }

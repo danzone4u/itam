@@ -10,6 +10,10 @@
                 <div class="col-md-3"><div class="form-group"><label>Rak/Kompartemen</label><input type="text" name="rakKompartemen" class="form-control" placeholder="Rak B (Opsional)" /></div></div>
                 <div class="col-md-3"><div class="form-group"><label>Keterangan (Global)</label><input type="text" name="keteranganGlobal" class="form-control" placeholder="Keterangan" /></div></div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><div class="form-group"><label>Kepemilikan</label><select name="statusKepemilikan" id="statusKepemilikan" class="form-control"><option value="Milik Sendiri">Milik Sendiri</option><option value="Sewa">Sewa</option></select></div></div>
+                <div class="col-md-3" id="colJatuhTempo" style="display:none;"><div class="form-group"><label>Jatuh Tempo Sewa</label><input type="date" name="tanggalJatuhTempoSewa" id="tanggalJatuhTempoSewa" class="form-control" /></div></div>
+            </div>
             <hr/>
             <h5><i class="fas fa-list"></i> Daftar Barang
                 <button type="button" class="btn btn-success btn-sm ml-2" id="addRowMasuk"><i class="fas fa-plus"></i> Tambah Baris</button>
@@ -34,6 +38,11 @@
                             <div class="sn-container" data-row-index="0">
                                 <div class="input-group mb-1 sn-input-row">
                                     <input type="text" name="snRows[0]" class="form-control form-control-sm sn-input" placeholder="SN (Opsional, ketik - jika tidak ada)" />
+                                    <select name="kondisiRows[0]" class="form-control form-control-sm" style="max-width: 120px;">
+                                        <option value="Baru">Baru</option>
+                                        <option value="Layak Pakai">Layak Pakai</option>
+                                        <option value="Rusak">Rusak</option>
+                                    </select>
                                     <div class="input-group-append">
                                         <button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button>
                                     </div>
@@ -61,6 +70,8 @@ $('#addRowMasuk').click(function(){
         +'<td><div class="sn-container" data-row-index="'+rowIndex+'">'
         +'<div class="input-group mb-1 sn-input-row">'
         +'<input type="text" name="snRows['+rowIndex+']" class="form-control form-control-sm sn-input" placeholder="SN (Opsional, ketik - jika tidak ada)" />'
+        +'<select name="kondisiRows['+rowIndex+']" class="form-control form-control-sm" style="max-width: 120px;">'
+        +'<option value="Baru">Baru</option><option value="Layak Pakai">Layak Pakai</option><option value="Rusak">Rusak</option></select>'
         +'<div class="input-group-append"><button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button></div>'
         +'</div></div></td>'
         +'<td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>'
@@ -76,6 +87,8 @@ $(document).on('click', '.btn-add-sn', function() {
     var index = $container.data('row-index');
     var newSnRow = '<div class="input-group mb-1 sn-input-row">'
         +'<input type="text" name="snRows['+index+']" class="form-control form-control-sm sn-input" placeholder="SN Baru" />'
+        +'<select name="kondisiRows['+index+']" class="form-control form-control-sm" style="max-width: 120px;">'
+        +'<option value="Baru">Baru</option><option value="Layak Pakai">Layak Pakai</option><option value="Rusak">Rusak</option></select>'
         +'<div class="input-group-append"><button type="button" class="btn btn-danger btn-sm btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button></div>'
         +'</div>';
     $container.append(newSnRow);
@@ -107,7 +120,7 @@ $(document).on('input', '.search-barang', function(){
 
 $(document).on('click','.remove-row',function(){
     if($('#tableMasuk tbody tr').length > 1){ $(this).closest('tr').remove(); renumberMasuk(); }
-    else { alert('Minimal 1 baris barang!'); }
+    else { Swal.fire('Peringatan', 'Minimal 1 baris barang!', 'warning'); }
 });
 
 function renumberMasuk(){ $('#tableMasuk tbody tr').each(function(i){ $(this).find('.row-num').text(i+1); }); }
@@ -120,7 +133,7 @@ $('#btnSaveBarangBaru').click(function(){
         kategoriId: $('#newKategori').val() || null,
         satuan: $('#newSatuan').val()
     };
-    if (!data.namaBarang) { alert('Nama barang wajib diisi!'); return; }
+    if (!data.namaBarang) { Swal.fire('Peringatan', 'Nama barang wajib diisi!', 'warning'); return; }
     $.ajax({
         url: '@Url.Action("CreateAjax","Barang")',
         type: 'POST',
@@ -130,10 +143,48 @@ $('#btnSaveBarangBaru').click(function(){
                 $('#listBarangMasuk').append('<option value="'+res.nama+'" data-id="'+res.id+'"></option>');
                 $('#modalBarangBaru').modal('hide');
                 $('#newKode, #newNama').val('');
-                alert('Barang "'+res.nama+'" berhasil dibuat! Silakan ketik namanya di kolom Barang.');
-            } else { alert(res.message); }
+                
+                var filled = false;
+                $('.search-barang').each(function() {
+                    if ($(this).val() === '') {
+                        $(this).val(res.nama);
+                        $(this).siblings('input[name="barangIds"]').val(res.id);
+                        $(this).closest('tr').find('select[name^="kondisiRows"]').val($('#newKondisi').val());
+                        filled = true;
+                        return false; 
+                    }
+                });
+                
+                if(filled) {
+                    Swal.fire('Berhasil', 'Barang "' + res.nama + '" berhasil dibuat dan otomatis terisi di baris kosong!', 'success');
+                } else {
+                    Swal.fire('Berhasil', 'Barang "' + res.nama + '" berhasil dibuat! Silakan ketik namanya di kolom Barang.', 'success');
+                }
+            } else { Swal.fire('Oops...', res.message, 'error'); }
         }
     });
+});
+
+$('form').submit(function(e) {
+    var valid = true;
+    var errMsg = "";
+    $('#tableMasuk tbody tr').each(function() {
+        var inputVal = $(this).find('.search-barang').val();
+        var hiddenVal = $(this).find('input[name="barangIds"]').val();
+        if (inputVal && (!hiddenVal || hiddenVal === '')) {
+            valid = false;
+            errMsg = 'Barang "' + inputVal + '" tidak ditemukan di daftar sistem. Pastikan memilih dari opsi yang tersedia atau tambahkan Barang Baru.';
+            return false;
+        } else if (!inputVal) {
+            valid = false;
+            errMsg = 'Kolom barang tidak boleh kosong pada salah satu baris.';
+            return false;
+        }
+    });
+    if (!valid) {
+        e.preventDefault();
+        Swal.fire('Peringatan', errMsg, 'warning');
+    }
 });
 
 // Auto-generate kode when kategori selected
@@ -142,6 +193,17 @@ $('#newKategori').on('change', function(){
     if (!katId) { $('#newKode').val(''); return; }
     $.getJSON('@Url.Action("GetNextKode","Barang")' + '?kategoriId=' + katId, function(res){
         $('#newKode').val(res.kode);
+    });
+});
+$(document).ready(function() {
+    $('#statusKepemilikan').change(function() {
+        if ($(this).val() === 'Sewa') {
+            $('#colJatuhTempo').show();
+            $('#tanggalJatuhTempoSewa').prop('required', true);
+        } else {
+            $('#colJatuhTempo').hide();
+            $('#tanggalJatuhTempoSewa').prop('required', false);
+        }
     });
 });
 </script>
@@ -156,8 +218,9 @@ $('#newKategori').on('change', function(){
             <div class="col-md-6"><div class="form-group"><label>Nama Barang <span class="text-danger">*</span></label><input type="text" id="newNama" class="form-control" required /></div></div>
         </div>
         <div class="row">
-            <div class="col-md-6"><div class="form-group"><label>Kategori</label><select id="newKategori" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Kategoris){<option value="@item.Value">@item.Text</option>}</select></div></div>
-            <div class="col-md-6"><div class="form-group"><label>Satuan</label><select id="newSatuan" class="form-control"><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Kategori</label><select id="newKategori" class="form-control"><option value="">-- Pilih --</option>@foreach (var item in (SelectList)ViewBag.Kategoris){<option value="@item.Value">@item.Text</option>}</select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Satuan</label><select id="newSatuan" class="form-control"><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
+            <div class="col-md-4"><div class="form-group"><label>Kondisi Awal</label><select id="newKondisi" class="form-control"><option value="Baru">Baru</option><option value="Layak Pakai">Layak Pakai</option><option value="Rusak">Rusak</option></select></div></div>
         </div>
     </div>
     <div class="modal-footer"><button type="button" class="btn btn-info" id="btnSaveBarangBaru"><i class="fas fa-save"></i> Simpan Barang</button></div>

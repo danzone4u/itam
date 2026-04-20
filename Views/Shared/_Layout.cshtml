@@ -241,17 +241,18 @@
 
         <section class="content">
             <div class="container-fluid">
-                @if (TempData["Success"] != null || TempData["Error"] != null)
+                @if (TempData["Success"] != null || TempData["Error"] != null || TempData["Warning"] != null)
                 {
                     <script>
                     $(function(){
                         @if (TempData["Success"] != null)
                         {
                             <text>
+                            var msg = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Success"]?.ToString()));
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil!',
-                                html: '<p style="font-size:15px;color:#555">@Html.Raw(TempData["Success"]?.ToString()?.Replace("'", "\\'"))</p>',
+                                text: msg,
                                 showConfirmButton: false,
                                 timer: 2500,
                                 timerProgressBar: true,
@@ -267,16 +268,35 @@
                         @if (TempData["Error"] != null)
                         {
                             <text>
+                            var msg = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]?.ToString()));
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Oops!',
-                                html: '<p style="font-size:15px;color:#555">@Html.Raw(TempData["Error"]?.ToString()?.Replace("'", "\\'"))</p>',
+                                text: msg,
                                 confirmButtonColor: '#e74c3c',
                                 confirmButtonText: '<i class="fas fa-check"></i> OK',
                                 background: '#fff',
                                 customClass: {
                                     popup: 'animate__animated animate__shakeX',
                                     title: 'text-danger'
+                                }
+                            });
+                            </text>
+                        }
+                        @if (TempData["Warning"] != null)
+                        {
+                            <text>
+                            var msgWarn = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Warning"]?.ToString()));
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: msgWarn,
+                                confirmButtonColor: '#f39c12',
+                                confirmButtonText: '<i class="fas fa-check"></i> OK',
+                                background: '#fff',
+                                customClass: {
+                                    popup: 'animate__animated animate__fadeInDown',
+                                    title: 'text-warning'
                                 }
                             });
                             </text>

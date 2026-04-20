@@ -63,6 +63,7 @@
                         <label asp-for="TindakLanjut"></label>
                         <select asp-for="TindakLanjut" id="TindakLanjut" class="form-control">
                             <option value="Dikembalikan ke Stok">Dikembalikan ke Stok</option>
+                            <option value="Diperbaiki">Diperbaiki (Service)</option>
                             <option value="Di Disposal">Di Disposal</option>
                         </select>
                     </div>
@@ -148,7 +149,7 @@
         if ($('#snContainer').is(':visible') && $('.sn-check').length > 0) {
             if ($('.sn-check:checked').length === 0) {
                 e.preventDefault();
-                alert('Silakan pilih minimal 1 Serial Number (S/N) yang dikembalikan!');
+                Swal.fire('Peringatan', 'Silakan pilih minimal 1 Serial Number (S/N) yang dikembalikan!', 'warning');
             }
         }
     });

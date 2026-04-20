@@ -23,7 +23,17 @@
                         <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
                         <td>@(no++)</td><td>@item.TanggalMasuk.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td><td><span class="badge bg-success">+@item.Jumlah</span></td>
                         <td>@(item.Lokasi?.NamaLokasi ?? "-")</td>
-                        <td>@item.Keterangan</td>
+                        <td>
+                            @if(item.StatusKepemilikan == "Sewa") {
+                                <span class="badge badge-info"><i class="fas fa-handshake"></i> Sewa</span>
+                                @if (item.TanggalJatuhTempoSewa.HasValue) {
+                                    var hariSisa = (item.TanggalJatuhTempoSewa.Value.Date - DateTime.Now.Date).TotalDays;
+                                    <br/><small class="@(hariSisa <= 30 ? "text-danger font-weight-bold" : "text-muted")"><i class="far fa-clock"></i> JT: @item.TanggalJatuhTempoSewa.Value.ToString("dd/MM/yyyy")</small>
+                                }
+                                <br/>
+                            }
+                            @item.Keterangan
+                        </td>
                         <td>
                             @if (User.IsInRole("SuperAdmin"))
                             {

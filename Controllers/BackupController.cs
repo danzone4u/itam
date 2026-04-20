@@ -26,7 +26,15 @@ namespace itam.Controllers
         {
             var connString = _config.GetConnectionString("DefaultConnection") ?? "";
             var builder = new SqlConnectionStringBuilder(connString);
-            return builder.InitialCatalog;
+            var dbName = builder.InitialCatalog;
+            
+            // Validasi nama database agar aman (hanya alfanumerik dan underscore)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dbName, @"^[a-zA-Z0-9_]+$"))
+            {
+                throw new InvalidOperationException("Nama database tidak valid atau mengandung karakter berbahaya.");
+            }
+            
+            return dbName;
         }
 
         // ── Ambil default backup directory dari SQL Server ──
