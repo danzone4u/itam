@@ -19,141 +19,169 @@
         <form id="bulkDeleteForm" action="@Url.Action("BulkDelete")" method="post" style="display:none;">
             @Html.AntiForgeryToken()
         </form>
-        <table class="table table-bordered table-hover data-table">
+        <table class="table table-bordered table-hover" id="barangTable">
             <thead class="thead-light">
                 <tr>
                     @if (User.IsInRole("SuperAdmin"))
                     {
-                        <th width="40"><input type="checkbox" id="checkAll"></th>
+                        <th width="40" class="text-center"><input type="checkbox" id="checkAll"></th>
                     }
-                    <th width="30">No</th><th>Kode</th><th width="250">Nama Barang</th><th>Kategori</th><th>Satuan</th><th>Stok</th><th>Ruangan</th><th>Update Terakhir</th><th width="110">Aksi</th>
+                    <th width="30">No</th>
+                    <th>Kode</th>
+                    <th width="250">Nama Barang</th>
+                    <th>Kategori</th>
+                    <th>Satuan</th>
+                    <th>Stok</th>
+                    <th>Ruangan</th>
+                    <th>Update Terakhir</th>
+                    <th width="110">Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                @{ int no = 1; }
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        @if (User.IsInRole("SuperAdmin"))
-                        {
-                            <td class="text-center">
-                                <input type="checkbox" name="ids" value="@item.Id" class="checkItem">
-                            </td>
-                        }
-                        <td>@(no++)</td><td>@item.KodeBarang</td><td>@item.NamaBarang</td>
-
-                        <td>@item.Kategori?.NamaKategori</td>
-                        <td>@item.Satuan</td>
-                        <td>
-                            <span class="badge @(item.Stok == 0 ? "badge-stok-habis" : item.Stok <= 5 ? "badge-stok-rendah" : "badge-stok-aman")">@item.Stok</span>
-                        </td>
-                        <td>
-                            @{
-                                var lokasiDict = ViewBag.LokasiPerBarang as Dictionary<int, List<string>>;
-                                var lokasiList = lokasiDict != null && lokasiDict.ContainsKey(item.Id) ? lokasiDict[item.Id] : null;
-                            }
-                            @if (lokasiList != null && lokasiList.Any())
-                            {
-                                @foreach (var lok in lokasiList)
-                                {
-                                    <span class="badge bg-info mr-1">@lok</span>
-                                }
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </td>
-                        <td><small class="text-muted">@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</small></td>
-                        <td>
-                            <a href="@Url.Action("Detail", new { id = item.Id })" class="btn btn-info btn-xs" title="Lihat Histori Barang"><i class="fas fa-info-circle"></i></a>
-                            @if (User.IsInRole("SuperAdmin"))
-                            {
-                                <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit Data Barang"><i class="fas fa-edit"></i></a>
-                                <form action="@Url.Action("Delete", new { id = item.Id })" method="post" class="d-inline delete-form">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-danger btn-xs" title="Hapus"><i class="fas fa-trash"></i></button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
             </tbody>
-        </table>
         </table>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            var datatable = $('.data-table').DataTable();
+        $(document).ready(function () {
+            var selectedIds = [];
+
+            try {
+                var datatable = $('#barangTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": window.location.pathname.replace(/\/Index$/i, '').replace(/\/$/, '') + "/GetData",
+                    "type": "POST",
+                    "error": function (xhr, error, thrown) {
+                        console.error("DataTables Error:", error, thrown);
+                        console.error("Response:", xhr.responseText);
+                        Swal.fire('Error ' + xhr.status, 'Gagal memuat data.<br>URL yang dipanggil:<br><b>' + this.url + '</b><br>Pesan: ' + (thrown || error), 'error');
+                        $('#barangTable_processing').hide();
+                    }
+                },
+                "columns": [
+                    @if (User.IsInRole("SuperAdmin"))
+                    {
+                        <text>
+                        { 
+                            "data": "id", "orderable": false, "className": "text-center",
+                            "render": function(data, type, row) {
+                                var checked = selectedIds.includes(data.toString()) ? "checked" : "";
+                                return '<input type="checkbox" value="' + data + '" class="checkItem" ' + checked + '>';
+                            }
+                        },
+                        </text>
+                    }
+                    { "data": "no", "orderable": false },
+                    { "data": "kodeBarang", "name": "KodeBarang" },
+                    { "data": "namaBarang", "name": "NamaBarang" },
+                    { "data": "kategori", "name": "Kategori" },
+                    { "data": "satuan", "orderable": false },
+                    { 
+                        "data": "stok", "name": "Stok",
+                        "render": function(data, type, row) {
+                            var stokMin = row.stokMinimum || row.StokMinimum || 5;
+                            var badgeClass = data === 0 ? "badge-stok-habis" : (data <= stokMin ? "badge-stok-rendah" : "badge-stok-aman");
+                            return '<span class="badge ' + badgeClass + '">' + data + '</span>';
+                        }
+                    },
+                    { 
+                        "data": "lokasi", "orderable": false,
+                        "render": function(data, type, row) {
+                            if (data && data.length > 0) {
+                                return data.map(lok => '<span class="badge bg-info mr-1">' + lok + '</span>').join('');
+                            }
+                            return '<span class="text-muted">-</span>';
+                        }
+                    },
+                    { "data": "updatedAt", "name": "UpdatedAt" },
+                    { 
+                        "data": "id", "orderable": false,
+                        "render": function(data, type, row) {
+                            var detailUrl = '@Url.Action("Detail", new { id = "__ID__" })'.replace("__ID__", data);
+                            var editUrl = '@Url.Action("Edit", new { id = "__ID__" })'.replace("__ID__", data);
+                            var deleteUrl = '@Url.Action("Delete", new { id = "__ID__" })'.replace("__ID__", data);
+                            
+                            var html = '<a href="' + detailUrl + '" class="btn btn-info btn-xs" title="Lihat Histori"><i class="fas fa-info-circle"></i></a> ';
+                            @if (User.IsInRole("SuperAdmin"))
+                            {
+                                <text>
+                                html += '<a href="' + editUrl + '" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a> ';
+                                html += '<form action="' + deleteUrl + '" method="post" class="d-inline delete-form">' +
+                                        '@Html.AntiForgeryToken()' +
+                                        '<button type="submit" class="btn btn-danger btn-xs" title="Hapus"><i class="fas fa-trash"></i></button>' +
+                                        '</form>';
+                                </text>
+                            }
+                            return html;
+                        }
+                    }
+                ],
+                "order": [[@(User.IsInRole("SuperAdmin") ? 8 : 7), "desc"]], // Default order by UpdatedAt
+                "language": {
+                    "processing": '<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>'
+                },
+                "drawCallback": function() {
+                    updateCheckAll();
+                    toggleBulkDeleteBtn();
+                }
+            });
 
             // Handle "select all" checkbox
             $('#checkAll').on('click', function() {
-                // Get all rows with search applied
-                var rows = datatable.rows({ 'search': 'applied' }).nodes();
-                $('input[type="checkbox"].checkItem', rows).prop('checked', this.checked);
+                var isChecked = this.checked;
+                $('.checkItem').each(function() {
+                    this.checked = isChecked;
+                    updateSelectedIds(this.value, isChecked);
+                });
                 toggleBulkDeleteBtn();
             });
+
+            } catch (initEx) {
+                console.error("DataTables Init Error:", initEx);
+                $('#barangTable').before('<div class="alert alert-danger"><strong>Error JS:</strong> ' + initEx.message + '</div>');
+            }
 
             // Handle individual checkbox clicks
-            $('.data-table tbody').on('change', 'input[type="checkbox"].checkItem', function() {
-                var el = $('#checkAll').get(0);
-                if (!this.checked && el && el.checked) {
-                    el.checked = false;
-                }
+            $('#barangTable tbody').on('change', '.checkItem', function() {
+                updateSelectedIds(this.value, this.checked);
+                updateCheckAll();
                 toggleBulkDeleteBtn();
             });
 
-            // Toggle duplicate button state
+            function updateSelectedIds(id, isChecked) {
+                var index = selectedIds.indexOf(id.toString());
+                if (isChecked && index === -1) {
+                    selectedIds.push(id.toString());
+                } else if (!isChecked && index !== -1) {
+                    selectedIds.splice(index, 1);
+                }
+            }
+
+            function updateCheckAll() {
+                var totalOnPage = $('.checkItem').length;
+                var checkedOnPage = $('.checkItem:checked').length;
+                $('#checkAll').prop('checked', totalOnPage > 0 && totalOnPage === checkedOnPage);
+            }
+
             function toggleBulkDeleteBtn() {
-                var rows = datatable.rows({ 'search': 'applied' }).nodes();
-                var checkedCount = $('input[type="checkbox"].checkItem:checked', rows).length;
-                if (checkedCount > 0) {
-                    $('#btnBulkDelete').show();
+                if (selectedIds.length > 0) {
+                    $('#btnBulkDelete').show().html('<i class="fas fa-trash"></i> Hapus ' + selectedIds.length + ' Terpilih');
                 } else {
                     $('#btnBulkDelete').hide();
                 }
             }
-            // Handle bulk delete submission
-            $('#bulkDeleteForm').on('submit', function(e) {
-                var form = this;
-                var rows = datatable.rows({ 'search': 'applied' }).nodes();
-                var $checked = $('input[type="checkbox"].checkItem:checked', rows);
-                
-                if ($checked.length === 0) {
-                    e.preventDefault();
-                    return;
-                }
 
-                // Append hidden inputs for all selected checkboxes across all pages
-                $checked.each(function() {
-                    $(form).append(
-                        $('<input>')
-                            .attr('type', 'hidden')
-                            .attr('name', 'ids')
-                            .val(this.value)
-                    );
-                });
-                
-                // Let the normal form submission proceed (SweetAlert usually intercepts via class 'delete-form' if applied, 
-                // but since we want to handle the specific confirmation for bulk delete, we might just let normal submit happen,
-                // or if there's a global handler, it will trigger).
-                // Assuming SweetAlert handles .delete-form, we added it to the form tag above.
-            });
-
-            // If there's a custom sweetalert handler, we can trigger it directly:
             $('#btnBulkDelete').on('click', function(e) {
                 e.preventDefault();
-                var rows = datatable.rows({ 'search': 'applied' }).nodes();
-                var $checked = $('input[type="checkbox"].checkItem:checked', rows);
-                
-                if ($checked.length === 0) return;
+                if (selectedIds.length === 0) return;
 
                 Swal.fire({
                     title: 'Apakah Anda yakin?',
-                    text: $checked.length + " data barang akan dihapus permanen!",
+                    text: selectedIds.length + " data barang akan dihapus permanen!",
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
@@ -162,8 +190,31 @@
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        $('#bulkDeleteForm').submit();
+                        var form = $('#bulkDeleteForm');
+                        form.find('input[name="ids"]').remove();
+                        selectedIds.forEach(id => {
+                            form.append($('<input type="hidden" name="ids">').val(id));
+                        });
+                        form.submit();
                     }
+                });
+            });
+
+            // Global delete confirmation
+            $(document).on('submit', '.delete-form', function(e) {
+                e.preventDefault();
+                var form = this;
+                Swal.fire({
+                    title: 'Hapus data?',
+                    text: "Data ini akan dihapus permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) form.submit();
                 });
             });
         });

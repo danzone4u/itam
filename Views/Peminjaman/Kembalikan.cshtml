@@ -1,18 +1,51 @@
-@model itam.Models.Peminjaman
+@model IEnumerable<itam.Models.Peminjaman>
 @{ ViewData["Title"] = "Kembalikan Barang"; }
 <div class="card card-outline card-success">
-    <div class="card-header"><h3 class="card-title"><i class="fas fa-undo"></i> Kembalikan Barang Pinjaman</h3></div>
-    <form asp-action="Kembalikan" method="post">@Html.AntiForgeryToken()
-        <input type="hidden" name="id" value="@Model.Id" />
+    <div class="card-header"><h3 class="card-title"><i class="fas fa-undo"></i> Kembalikan Transaksi Peminjaman</h3></div>
+    <form asp-action="KembalikanTransactionPost" method="post">@Html.AntiForgeryToken()
+        <input type="hidden" name="noPeminjaman" value="@Model.First().NoPeminjaman" />
         <div class="card-body">
             <div class="alert alert-info">
                 <strong><i class="fas fa-info-circle"></i> Detail Peminjaman:</strong><br/>
-                No. Peminjaman: <strong>@Model.NoPeminjaman</strong><br/>
-                Barang: <strong>@Model.Barang?.NamaBarang</strong> — Jumlah: <strong>@Model.Jumlah</strong><br/>
-                Peminjam: <strong>@Model.Peminjam</strong> @(Model.Departemen != null ? $"({Model.Departemen})" : "")<br/>
-                Tgl Pinjam: <strong>@Model.TanggalPinjam.ToString("dd/MM/yyyy")</strong> — Jatuh Tempo: <strong>@Model.TanggalJatuhTempo.ToString("dd/MM/yyyy")</strong>
-                @if (Model.Status == "Terlambat") { <br/><span class="text-danger"><i class="fas fa-exclamation-triangle"></i> <strong>TERLAMBAT!</strong></span> }
+                No. Peminjaman: <strong>@Model.First().NoPeminjaman</strong><br/>
+                Peminjam: <strong>@Model.First().Peminjam</strong> @(Model.First().Departemen != null ? $"({Model.First().Departemen})" : "")<br/>
+                Tgl Pinjam: <strong>@Model.First().TanggalPinjam.ToString("dd/MM/yyyy")</strong> — Jatuh Tempo: <strong>@Model.First().TanggalJatuhTempo.ToString("dd/MM/yyyy")</strong>
+                @if (Model.Any(m => m.Status == "Terlambat")) { <br/><span class="text-danger"><i class="fas fa-exclamation-triangle"></i> <strong>TERLAMBAT!</strong></span> }
             </div>
+            
+            <h5>Daftar Barang yang Dikembalikan:</h5>
+            <table class="table table-bordered mb-3">
+                <thead class="thead-light">
+                    <tr><th>Nama Barang</th><th>Serial Number</th><th>Jumlah</th></tr>
+                </thead>
+                <tbody>
+                    @{ var groupedKembali = Model.GroupBy(p => p.BarangId).ToList(); }
+                    @foreach(var g in groupedKembali)
+                    {
+                        var first = g.First();
+                        var snList = g.Where(x => x.BarangSerial != null).Select(x => x.BarangSerial!.SerialNumber).ToList();
+                        var totalJumlah = g.Sum(x => x.Jumlah);
+                        <tr>
+                            <td>@first.Barang?.NamaBarang</td>
+                            <td>
+                                @if (snList.Any())
+                                {
+                                    foreach(var sn in snList)
+                                    {
+                                        <span class="badge bg-secondary mr-1">@sn</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td>@totalJumlah @first.Barang?.Satuan</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
@@ -22,6 +55,7 @@
                             <option value="Rusak Ringan">Rusak Ringan</option>
                             <option value="Rusak Berat">Rusak Berat</option>
                         </select>
+                        <small class="text-muted">Diterapkan ke semua barang dalam transaksi ini</small>
                     </div>
                 </div>
                 <div class="col-md-8">

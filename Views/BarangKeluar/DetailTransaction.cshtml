@@ -1,0 +1,80 @@
+@model IEnumerable<itam.Models.BarangKeluar>
+@{ 
+    ViewData["Title"] = "Detail Transaksi Barang Keluar"; 
+    var firstItem = Model.FirstOrDefault();
+}
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-list"></i> Detail Transaksi: @(firstItem?.NoSuratJalan ?? "-")</h3>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr><td width="150"><strong>No. Surat Jalan</strong></td><td>: @(firstItem?.NoSuratJalan ?? "-")</td></tr>
+                    <tr><td><strong>Tanggal Keluar</strong></td><td>: @(firstItem?.TanggalKeluar.ToString("dd MMMM yyyy") ?? "-")</td></tr>
+                    <tr><td><strong>Ruangan Asal</strong></td><td>: @(firstItem?.Lokasi?.NamaLokasi ?? "-")</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr><td width="150"><strong>Penerima</strong></td><td>: @(firstItem?.Penerima ?? "-")</td></tr>
+                    <tr><td><strong>No HP</strong></td><td>: @(firstItem?.NoHpPenerima ?? "-")</td></tr>
+                    <tr><td><strong>Alamat</strong></td><td>: @(firstItem?.Alamat ?? "-")</td></tr>
+                    <tr><td><strong>PIC (Pengirim)</strong></td><td>: @(firstItem?.Pic ?? "-")</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <h5><i class="fas fa-boxes"></i> Daftar Item</h5>
+        <table class="table table-bordered table-striped mt-2">
+            <thead class="thead-light">
+                <tr>
+                    <th width="50">No</th>
+                    <th>Nama Barang</th>
+                    <th>Serial Number</th>
+                    <th width="100">Jumlah</th>
+                    <th width="150">Aksi Item</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int no = 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@(no++)</td>
+                        <td>@item.Barang?.NamaBarang</td>
+                        <td>
+                            @{
+                                var snList = item.BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
+                            }
+                            @if (snList.Any())
+                            {
+                                <small>@string.Join(", ", snList)</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td><span class="badge badge-info">@item.Jumlah Unit</span></td>
+                        <td>
+                            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                            {
+                                <a href="@Url.Action("Create", "BarangKembali", new { barangKeluarId = item.Id })" class="btn btn-success btn-xs" title="Kembalikan Barang"><i class="fas fa-undo"></i></a>
+                                <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin menghapus item ini dari transaksi?')">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+    </div>
+</div>

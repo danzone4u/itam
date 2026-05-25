@@ -56,26 +56,35 @@ namespace itam.Controllers
         public async Task<IActionResult> GetChartData(int months = 6)
         {
             var now = DateTime.Now;
-            var monthList = Enumerable.Range(0, months).Select(i => now.AddMonths(-i)).Reverse().ToList();
+            var startDate = new DateTime(now.Year, now.Month, 1).AddMonths(-(months - 1));
 
+            // Optimasi: Gunakan GroupBy di database daripada looping query
+            var masuks = await _context.BarangMasuks
+                .Where(x => x.TanggalMasuk >= startDate)
+                .GroupBy(x => new { x.TanggalMasuk.Year, x.TanggalMasuk.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(x => (int?)x.Jumlah) ?? 0 })
+                .ToListAsync();
+
+            var keluars = await _context.BarangKeluars
+                .Where(x => x.TanggalKeluar >= startDate)
+                .GroupBy(x => new { x.TanggalKeluar.Year, x.TanggalKeluar.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(x => (int?)x.Jumlah) ?? 0 })
+                .ToListAsync();
+
+            var labels = new List<string>();
             var masukData = new List<int>();
             var keluarData = new List<int>();
-            var labels = new List<string>();
 
-            foreach (var month in monthList)
+            for (int i = 0; i < months; i++)
             {
-                var startOfMonth = new DateTime(month.Year, month.Month, 1);
-                var endOfMonth = startOfMonth.AddMonths(1);
-
-                masukData.Add(await _context.BarangMasuks
-                    .Where(b => b.TanggalMasuk >= startOfMonth && b.TanggalMasuk < endOfMonth)
-                    .SumAsync(b => (int?)b.Jumlah) ?? 0);
-
-                keluarData.Add(await _context.BarangKeluars
-                    .Where(b => b.TanggalKeluar >= startOfMonth && b.TanggalKeluar < endOfMonth)
-                    .SumAsync(b => (int?)b.Jumlah) ?? 0);
-
+                var month = startDate.AddMonths(i);
                 labels.Add(month.ToString("MMM yyyy"));
+
+                var m = masuks.FirstOrDefault(x => x.Year == month.Year && x.Month == month.Month);
+                masukData.Add(m?.Total ?? 0);
+
+                var k = keluars.FirstOrDefault(x => x.Year == month.Year && x.Month == month.Month);
+                keluarData.Add(k?.Total ?? 0);
             }
 
             // Kategori chart

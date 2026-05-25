@@ -26,6 +26,9 @@ namespace itam.Controllers
                 .Include(b => b.BarangSerials)
                 .OrderByDescending(b => b.TanggalKeluar)
                 .ToListAsync();
+                
+            ViewBag.SuratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new SuratSetting();
+            
             return View(data);
         }
 
@@ -85,10 +88,10 @@ namespace itam.Controllers
             if (lokasiId.HasValue && lokasiId.Value > 0)
             {
                 var barangs = await _context.BarangLokasis
-                    .Include(bl => bl.Barang)
                     .Where(bl => bl.LokasiId == lokasiId.Value && bl.Stok > 0)
-                    .GroupBy(bl => new { bl.BarangId, bl.Barang!.NamaBarang })
-                    .Select(g => new { value = g.Key.BarangId.ToString(), text = g.Key.NamaBarang })
+                    .Select(bl => new { bl.BarangId, NamaBarang = bl.Barang != null ? bl.Barang.NamaBarang : "" })
+                    .Distinct()
+                    .Select(x => new { value = x.BarangId.ToString(), text = x.NamaBarang })
                     .OrderBy(b => b.text)
                     .ToListAsync();
                 return Json(barangs);
@@ -358,12 +361,16 @@ namespace itam.Controllers
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
             if (bk == null) return NotFound();
             
-            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            var count = await _context.BarangKeluars.Where(b => b.Id <= id).CountAsync(); // Approximate count for this record
+            var allItems = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.BarangSerials)
+                .Where(b => b.NoSuratJalan == bk.NoSuratJalan)
+                .ToListAsync();
+
+            ViewBag.AllItems = allItems;
             
             ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
-            ViewBag.Serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == id).Select(s => s.SerialNumber).ToListAsync();
-            ViewBag.NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SJ");
+            ViewBag.NoSuratJalan = bk.NoSuratJalan;
             
             return View(bk);
         }
@@ -373,14 +380,79 @@ namespace itam.Controllers
             var bk = await _context.BarangKeluars.Include(b => b.Barang).FirstOrDefaultAsync(b => b.Id == id);
             if (bk == null) return NotFound();
             
-            var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            var count = await _context.BarangKeluars.Where(b => b.Id <= id).CountAsync(); // Approximate count for this record
+            var allItems = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.BarangSerials)
+                .Where(b => b.NoSuratJalan == bk.NoSuratJalan)
+                .ToListAsync();
+
+            ViewBag.AllItems = allItems;
             
+            var setting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new SuratSetting();
             ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
-            ViewBag.Serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == id).Select(s => s.SerialNumber).ToListAsync();
-            ViewBag.NoBast = SuratSettingController.GenerateNomorSurat(suratSetting, count, "STB");
+            
+            if (!string.IsNullOrEmpty(bk.NoSuratJalan) && !string.IsNullOrEmpty(setting.PrefixSuratJalan) && !string.IsNullOrEmpty(setting.PrefixSuratTerima))
+            {
+                ViewBag.NoBast = bk.NoSuratJalan.Replace(setting.PrefixSuratJalan, setting.PrefixSuratTerima);
+            }
+            else
+            {
+                ViewBag.NoBast = bk.NoSuratJalan ?? "";
+            }
             
             return View(bk);
+        }
+
+        public async Task<IActionResult> DetailTransaction(string noSuratJalan)
+        {
+            var items = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Include(b => b.Lokasi)
+                .Include(b => b.BarangSerials)
+                .Where(b => b.NoSuratJalan == noSuratJalan)
+                .ToListAsync();
+            
+            if (items == null || !items.Any()) return NotFound();
+            
+            return View(items);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        public async Task<IActionResult> DeleteTransaction(string noSuratJalan)
+        {
+            var items = await _context.BarangKeluars.Where(b => b.NoSuratJalan == noSuratJalan).ToListAsync();
+            if (items.Any())
+            {
+                foreach (var bk in items)
+                {
+                    var barang = await _context.Barangs.FindAsync(bk.BarangId);
+                    if (barang != null) barang.Stok += bk.Jumlah;
+
+                    if (bk.LokasiId.HasValue && bk.LokasiId.Value > 0)
+                    {
+                        var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bk.BarangId && x.LokasiId == bk.LokasiId.Value && x.RakKompartemen == null);
+                        if (bl != null) bl.Stok += bk.Jumlah;
+                        else _context.BarangLokasis.Add(new BarangLokasi { BarangId = bk.BarangId, LokasiId = bk.LokasiId.Value, Stok = bk.Jumlah, RakKompartemen = null });
+                    }
+
+                    var serials = await _context.BarangSerials.Where(s => s.BarangKeluarId == bk.Id).ToListAsync();
+                    foreach (var s in serials) { s.Status = "Tersedia"; s.BarangKeluarId = null; }
+                }
+                
+                try
+                {
+                    _context.BarangKeluars.RemoveRange(items);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Seluruh data transaksi barang keluar berhasil dihapus!";
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["Error"] = "Data tidak dapat dihapus karena masih terkait dengan data lain (misal: Barang Kembali).";
+                }
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         [Authorize(Roles = "SuperAdmin,AdminGudang")]

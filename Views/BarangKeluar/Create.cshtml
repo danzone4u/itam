@@ -31,6 +31,7 @@
                     <div class="card-header py-2">
                         <h3 class="card-title"><i class="fas fa-barcode"></i> Serial Number Tersedia</h3>
                         <div class="card-tools">
+                            <input type="text" id="searchSn" class="form-control form-control-sm" placeholder="Cari SN..." style="width: 150px; display: inline-block; margin-right: 10px;" />
                             <button type="button" class="btn btn-xs btn-info" id="btnCheckAll"><i class="fas fa-check-double"></i> Pilih Semua</button>
                             <button type="button" class="btn btn-xs btn-secondary" id="btnUncheckAll"><i class="fas fa-times"></i> Batal Semua</button>
                         </div>
@@ -111,6 +112,13 @@ $(function(){
     $('#btnCheckAll').click(function(){ $('.sn-check').prop('checked', true); updateCount(); });
     $('#btnUncheckAll').click(function(){ $('.sn-check').prop('checked', false); updateCount(); });
     $(document).on('change', '.sn-check', function(){ updateCount(); });
+
+    $('#searchSn').on('keyup', function(){
+        var val = $(this).val().toLowerCase();
+        $('#snList .custom-checkbox').filter(function(){
+            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+        });
+    });
 
     function updateCount(){ $('#selectedCount').text($('.sn-check:checked').length); }
 

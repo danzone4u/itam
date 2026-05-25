@@ -43,9 +43,42 @@
 
         <p>Dengan ini menyatakan meminjam barang sebagai berikut:</p>
         <table class="table table-bordered" style="margin-bottom:20px;">
-            <thead><tr><th>No</th><th>Nama Barang</th><th width="50">Jumlah</th><th>Satuan</th><th>Keterangan</th></tr></thead>
+            <thead><tr><th>No</th><th>Nama Barang</th><th>Serial Number</th><th width="50">Jumlah</th><th>Satuan</th><th>Keterangan</th></tr></thead>
             <tbody>
-                <tr><td class="text-center">1</td><td>@Model.Barang?.NamaBarang</td><td class="text-center">@Model.Jumlah</td><td>@Model.Barang?.Satuan</td><td>@Model.Keterangan</td></tr>
+                @{
+                    int no = 1;
+                    var allItems = ViewBag.AllItems as IEnumerable<itam.Models.Peminjaman>;
+                }
+                @if (allItems != null)
+                {
+                    var groupedItems = allItems.GroupBy(p => p.BarangId).ToList();
+                    foreach (var g in groupedItems)
+                    {
+                        var first = g.First();
+                        var snList = g.Where(x => x.BarangSerial != null).Select(x => x.BarangSerial!.SerialNumber).ToList();
+                        var snString = snList.Any() ? string.Join(", ", snList) : "-";
+                        var totalJumlah = g.Sum(x => x.Jumlah);
+                        <tr>
+                            <td class="text-center">@(no++)</td>
+                            <td>@first.Barang?.NamaBarang</td>
+                            <td>@snString</td>
+                            <td class="text-center">@totalJumlah</td>
+                            <td>@first.Barang?.Satuan</td>
+                            <td>@first.Keterangan</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td class="text-center">1</td>
+                        <td>@Model.Barang?.NamaBarang</td>
+                        <td>@(Model.BarangSerial?.SerialNumber ?? "-")</td>
+                        <td class="text-center">@Model.Jumlah</td>
+                        <td>@Model.Barang?.Satuan</td>
+                        <td>@Model.Keterangan</td>
+                    </tr>
+                }
             </tbody>
         </table>
 

@@ -48,7 +48,7 @@ namespace itam.Controllers
                     Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                     using var stream = new FileStream(path, FileMode.Create);
                     await dokumenFile.CopyToAsync(stream);
-                    arsip.FilePath = "/arsip/" + fileName;
+                    arsip.FilePath = "arsip/" + fileName;
                     arsip.NamaFile = dokumenFile.FileName;
                 }
                 arsip.CreatedAt = DateTime.Now;
@@ -94,7 +94,7 @@ namespace itam.Controllers
                     Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                     using var stream = new FileStream(path, FileMode.Create);
                     await dokumenFile.CopyToAsync(stream);
-                    arsip.FilePath = "/arsip/" + fileName;
+                    arsip.FilePath = "arsip/" + fileName;
                 }
                 _context.Update(arsip);
                 await _context.SaveChangesAsync();

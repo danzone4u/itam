@@ -55,13 +55,28 @@
     <table class="table table-bordered" style="margin-top:10px;">
         <thead><tr><th>No</th><th>Nama Barang</th><th width="50">Jumlah</th><th>S/N</th><th>Keterangan</th></tr></thead>
         <tbody>
-            <tr>
-                <td class="text-center">1</td>
-                <td>@Model.Barang?.NamaBarang</td>
-                <td class="text-center">@Model.Jumlah</td>
-                <td>@{ var serials = (List<string>)ViewBag.Serials; }@(serials.Any() && serials.Any(s => s != "-") ? string.Join(", ", serials.Where(s => s != "-")) : "-")</td>
-                <td>@Model.Keterangan</td>
-            </tr>
+            @{ 
+                int no = 1; 
+                var allItems = ViewBag.AllItems as IEnumerable<itam.Models.BarangKeluar>;
+            }
+            @if (allItems != null)
+            {
+                foreach (var item in allItems)
+                {
+                    <tr>
+                        <td class="text-center">@(no++)</td>
+                        <td>@item.Barang?.NamaBarang</td>
+                        <td class="text-center">@item.Jumlah</td>
+                        <td>
+                            @{ 
+                                var serials = item.BarangSerials?.Select(s => s.SerialNumber).ToList() ?? new List<string>();
+                            }
+                            @(serials.Any() && serials.Any(s => s != "-") ? string.Join(", ", serials.Where(s => s != "-")) : "-")
+                        </td>
+                        <td>@item.Keterangan</td>
+                    </tr>
+                }
+            }
         </tbody>
     </table>
 

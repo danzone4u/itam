@@ -1,0 +1,93 @@
+@model IEnumerable<itam.Models.Peminjaman>
+@{ ViewData["Title"] = "Detail Transaksi Peminjaman"; }
+
+<div class="card card-outline card-info">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-list-alt"></i> Detail Transaksi: @Model.First().NoPeminjaman</h3>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr><th width="150">No. Peminjaman</th><td>: @Model.First().NoPeminjaman</td></tr>
+                    <tr><th>Tanggal Pinjam</th><td>: @Model.First().TanggalPinjam.ToString("dd MMMM yyyy")</td></tr>
+                    <tr><th>Jatuh Tempo</th><td>: @Model.First().TanggalJatuhTempo.ToString("dd MMMM yyyy")</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr><th width="150">Peminjam</th><td>: @Model.First().Peminjam</td></tr>
+                    @if (!string.IsNullOrEmpty(Model.First().NipNik)) { <tr><th>NIP/NIK</th><td>: @Model.First().NipNik</td></tr> }
+                    @if (!string.IsNullOrEmpty(Model.First().Departemen)) { <tr><th>Departemen</th><td>: @Model.First().Departemen</td></tr> }
+                    @if (!string.IsNullOrEmpty(Model.First().NoHp)) { <tr><th>No. HP</th><td>: @Model.First().NoHp</td></tr> }
+                </table>
+            </div>
+        </div>
+
+        <h5><i class="fas fa-boxes"></i> Daftar Barang Pinjaman</h5>
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th width="50">No</th>
+                    <th>Nama Barang</th>
+                    <th>Serial Number</th>
+                    <th width="100">Jumlah</th>
+                    <th width="150">Status</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ 
+                    int no = 1; 
+                    var groupedItems = Model.GroupBy(p => p.BarangId).ToList();
+                }
+                @foreach (var g in groupedItems)
+                {
+                    var first = g.First();
+                    var snList = g.Where(x => x.BarangSerial != null).Select(x => x.BarangSerial!.SerialNumber).ToList();
+                    var snString = snList.Any() ? string.Join(", ", snList) : "-";
+                    var totalJumlah = g.Sum(x => x.Jumlah);
+                    <tr>
+                        <td class="text-center">@(no++)</td>
+                        <td>@first.Barang?.NamaBarang</td>
+                        <td>
+                            @if (snList.Any())
+                            {
+                                foreach(var sn in snList)
+                                {
+                                    <span class="badge bg-secondary mr-1">@sn</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td class="text-center">@totalJumlah @first.Barang?.Satuan</td>
+                        <td>
+                            @if (first.Status == "Dipinjam")
+                            {
+                                <span class="badge badge-info"><i class="fas fa-clock"></i> Dipinjam</span>
+                            }
+                            else if (first.Status == "Terlambat")
+                            {
+                                <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Terlambat</span>
+                            }
+                            else if (first.Status == "Dikembalikan")
+                            {
+                                <span class="badge badge-success"><i class="fas fa-check-circle"></i> Dikembalikan</span><br/>
+                                <small class="text-muted">Tgl: @first.TanggalKembali?.ToString("dd/MM/yyyy")</small><br/>
+                                <small class="text-muted">Kondisi: @first.KondisiKembali</small>
+                            }
+                        </td>
+                        <td>@first.Keterangan</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+        <a href="@Url.Action("SuratPeminjaman", new { id = Model.First().Id })" class="btn btn-info float-right"><i class="fas fa-print"></i> Cetak Surat</a>
+    </div>
+</div>

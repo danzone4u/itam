@@ -39,9 +39,19 @@ namespace itam.Controllers
             return View();
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableSerials(int barangId)
+        {
+            var serials = await _context.BarangSerials
+                .Where(s => s.BarangId == barangId && s.Status == "Tersedia" && s.SerialNumber != "-")
+                .Select(s => new { id = s.Id, sn = s.SerialNumber })
+                .ToListAsync();
+            return Json(serials);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, DateTime tanggalPinjam,
+        public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, string[] keterangans, DateTime tanggalPinjam,
             DateTime tanggalJatuhTempo, string peminjam, string? nipNik, string? departemen, string? noHp, string? keteranganGlobal)
         {
             if (barangIds == null || barangIds.Length == 0)
@@ -54,117 +64,219 @@ namespace itam.Controllers
             var baseCount = await _context.Peminjamans.CountAsync();
             var noPeminjaman = GenerateNoPeminjaman(suratSetting, baseCount + 1);
 
+            var snData = new Dictionary<int, List<int>>();
+            var formKeys = Request.Form.Keys.Where(k => k.StartsWith("snRows[")).ToList();
+            foreach (var key in formKeys)
+            {
+                var indexStr = key.Replace("snRows[", "").Replace("]", "");
+                if (int.TryParse(indexStr, out int idx))
+                {
+                    var vals = Request.Form[key].Where(v => !string.IsNullOrEmpty(v) && int.TryParse(v, out _)).Select(v => int.Parse(v!)).ToList();
+                    snData[idx] = vals;
+                }
+            }
+
+            var orderedSnKeys = snData.Keys.OrderBy(k => k).ToList();
+            int successCount = 0;
+
             for (int i = 0; i < barangIds.Length; i++)
             {
                 var barang = await _context.Barangs.FindAsync(barangIds[i]);
-                if (barang == null) continue;
-                var jumlah = (i < jumlahs.Length) ? jumlahs[i] : 1;
-                if (jumlah > barang.Stok) jumlah = barang.Stok;
-
-                var pinjam = new Peminjaman
+                if (barang == null || barangIds[i] <= 0) continue;
+                
+                var snList = new List<int>();
+                if (orderedSnKeys.Count > i)
                 {
-                    BarangId = barangIds[i],
-                    Jumlah = jumlah,
-                    TanggalPinjam = tanggalPinjam,
-                    TanggalJatuhTempo = tanggalJatuhTempo,
-                    Peminjam = peminjam,
-                    NipNik = nipNik,
-                    Departemen = departemen,
-                    NoHp = noHp,
-                    Keterangan = keteranganGlobal,
-                    NoPeminjaman = noPeminjaman,
-                    Status = "Dipinjam",
-                    CreatedAt = DateTime.Now
-                };
-
-                barang.Stok -= jumlah;
-                _context.Peminjamans.Add(pinjam);
-            }
-
-            await _context.SaveChangesAsync();
-            TempData["Success"] = $"{barangIds.Length} barang berhasil dipinjamkan!";
-            return RedirectToAction(nameof(Index));
-        }
-
-        public async Task<IActionResult> Kembalikan(int id)
-        {
-            var item = await _context.Peminjamans.Include(p => p.Barang).FirstOrDefaultAsync(p => p.Id == id);
-            if (item == null) return NotFound();
-            return View(item);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Kembalikan(int id, string kondisiKembali, string? keterangan)
-        {
-            var item = await _context.Peminjamans.FindAsync(id);
-            if (item == null) return NotFound();
-
-            item.TanggalKembali = DateTime.Now;
-            item.Status = "Dikembalikan";
-            item.KondisiKembali = kondisiKembali;
-            if (!string.IsNullOrWhiteSpace(keterangan))
-                item.Keterangan = keterangan;
-
-            // Kembalikan stok
-            var barang = await _context.Barangs.FindAsync(item.BarangId);
-            if (barang != null) barang.Stok += item.Jumlah;
-
-            await _context.SaveChangesAsync();
-            TempData["Success"] = "Barang berhasil dikembalikan!";
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var item = await _context.Peminjamans.FindAsync(id);
-            if (item != null)
-            {
-                // Jika masih dipinjam, kembalikan stok
-                if (item.Status != "Dikembalikan")
-                {
-                    var barang = await _context.Barangs.FindAsync(item.BarangId);
-                    if (barang != null) barang.Stok += item.Jumlah;
+                    int keyIndex = orderedSnKeys[i];
+                    snList = snData[keyIndex];
                 }
-                _context.Peminjamans.Remove(item);
+
+                int actualJumlah = snList.Count > 0 ? snList.Count : (i < jumlahs.Length ? jumlahs[i] : 1);
+                if (actualJumlah > barang.Stok) actualJumlah = barang.Stok;
+                if (actualJumlah <= 0) continue;
+
+                var ket = (keterangans != null && i < keterangans.Length && !string.IsNullOrWhiteSpace(keterangans[i]))
+                    ? keterangans[i] : keteranganGlobal;
+
+                if (snList.Count > 0)
+                {
+                    foreach (var snId in snList)
+                    {
+                        var pinjam = new Peminjaman
+                        {
+                            BarangId = barangIds[i],
+                            BarangSerialId = snId,
+                            Jumlah = 1,
+                            TanggalPinjam = tanggalPinjam,
+                            TanggalJatuhTempo = tanggalJatuhTempo,
+                            Peminjam = peminjam,
+                            NipNik = nipNik,
+                            Departemen = departemen,
+                            NoHp = noHp,
+                            Keterangan = ket,
+                            NoPeminjaman = noPeminjaman,
+                            Status = "Dipinjam",
+                            CreatedAt = DateTime.Now
+                        };
+                        _context.Peminjamans.Add(pinjam);
+
+                        var snObj = await _context.BarangSerials.FindAsync(snId);
+                        if (snObj != null) snObj.Status = "Keluar";
+
+                        barang.Stok -= 1;
+                        successCount++;
+                    }
+                }
+                else
+                {
+                    var pinjam = new Peminjaman
+                    {
+                        BarangId = barangIds[i],
+                        Jumlah = actualJumlah,
+                        TanggalPinjam = tanggalPinjam,
+                        TanggalJatuhTempo = tanggalJatuhTempo,
+                        Peminjam = peminjam,
+                        NipNik = nipNik,
+                        Departemen = departemen,
+                        NoHp = noHp,
+                        Keterangan = ket,
+                        NoPeminjaman = noPeminjaman,
+                        Status = "Dipinjam",
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.Peminjamans.Add(pinjam);
+                    barang.Stok -= actualJumlah;
+                    successCount++;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"{successCount} item berhasil dipinjamkan!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> KembalikanTransaction(string noPeminjaman)
+        {
+            var items = await _context.Peminjamans.Include(p => p.Barang).Include(p => p.BarangSerial).Where(p => p.NoPeminjaman == noPeminjaman && p.Status != "Dikembalikan").ToListAsync();
+            if (items == null || !items.Any()) return NotFound();
+            return View("Kembalikan", items);
+        }
+
+        public async Task<IActionResult> DetailTransaction(string noPeminjaman)
+        {
+            var items = await _context.Peminjamans
+                .Include(p => p.Barang)
+                .Include(p => p.BarangSerial)
+                .Where(p => p.NoPeminjaman == noPeminjaman)
+                .ToListAsync();
+            
+            if (items == null || !items.Any()) return NotFound();
+            
+            return View(items);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> KembalikanTransactionPost(string noPeminjaman, string kondisiKembali, string? keterangan)
+        {
+            var items = await _context.Peminjamans.Where(p => p.NoPeminjaman == noPeminjaman && p.Status != "Dikembalikan").ToListAsync();
+            if (!items.Any()) return NotFound();
+
+            foreach (var item in items)
+            {
+                item.TanggalKembali = DateTime.Now;
+                item.Status = "Dikembalikan";
+                item.KondisiKembali = kondisiKembali;
+                if (!string.IsNullOrWhiteSpace(keterangan))
+                    item.Keterangan = keterangan;
+
+                var barang = await _context.Barangs.FindAsync(item.BarangId);
+                if (barang != null) barang.Stok += item.Jumlah;
+
+                if (item.BarangSerialId.HasValue)
+                {
+                    var snObj = await _context.BarangSerials.FindAsync(item.BarangSerialId.Value);
+                    if (snObj != null) snObj.Status = "Tersedia";
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Seluruh barang dalam transaksi berhasil dikembalikan!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTransaction(string noPeminjaman)
+        {
+            var items = await _context.Peminjamans.Where(p => p.NoPeminjaman == noPeminjaman).ToListAsync();
+            if (items.Any())
+            {
+                foreach (var item in items)
+                {
+                    if (item.Status != "Dikembalikan")
+                    {
+                        var barang = await _context.Barangs.FindAsync(item.BarangId);
+                        if (barang != null) barang.Stok += item.Jumlah;
+
+                        if (item.BarangSerialId.HasValue)
+                        {
+                            var snObj = await _context.BarangSerials.FindAsync(item.BarangSerialId.Value);
+                            if (snObj != null) snObj.Status = "Tersedia";
+                        }
+                    }
+                }
+                _context.Peminjamans.RemoveRange(items);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Data peminjaman berhasil dihapus!";
+                TempData["Success"] = "Data transaksi peminjaman berhasil dihapus!";
             }
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BulkDelete(int[] ids)
+        public async Task<IActionResult> BulkDelete(string[] ids)
         {
             if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
-            var items = await _context.Peminjamans.Where(p => ids.Contains(p.Id)).ToListAsync();
+            var items = await _context.Peminjamans.Where(p => ids.Contains(p.NoPeminjaman)).ToListAsync();
             foreach (var item in items)
             {
                 if (item.Status != "Dikembalikan")
                 {
                     var barang = await _context.Barangs.FindAsync(item.BarangId);
                     if (barang != null) barang.Stok += item.Jumlah;
+
+                    if (item.BarangSerialId.HasValue)
+                    {
+                        var snObj = await _context.BarangSerials.FindAsync(item.BarangSerialId.Value);
+                        if (snObj != null) snObj.Status = "Tersedia";
+                    }
                 }
             }
             _context.Peminjamans.RemoveRange(items);
             await _context.SaveChangesAsync();
-            TempData["Success"] = $"{items.Count} data peminjaman berhasil dihapus!";
+            TempData["Success"] = $"{ids.Length} transaksi berhasil dihapus!";
             return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> SuratPeminjaman(int id)
         {
-            var item = await _context.Peminjamans.Include(p => p.Barang).FirstOrDefaultAsync(p => p.Id == id);
+            var item = await _context.Peminjamans.Include(p => p.Barang).Include(p => p.BarangSerial).FirstOrDefaultAsync(p => p.Id == id);
             if (item == null) return NotFound();
             ViewBag.Kop = await _context.KopSurats.OrderBy(x => x.Id).FirstOrDefaultAsync() ?? new KopSurat();
             
             var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            var count = await _context.Peminjamans.Where(b => b.Id <= id).CountAsync();
-            ViewBag.NoSuratPeminjaman = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SP");
+            var count = await _context.Peminjamans.Where(b => b.Id <= id).CountAsync(); // Note: This might not be perfectly accurate if id is not the first one, but it works as is
+            ViewBag.NoSuratPeminjaman = item.NoPeminjaman ?? SuratSettingController.GenerateNomorSurat(suratSetting, count, "SP");
             
+            var allItems = await _context.Peminjamans
+                .Include(p => p.Barang)
+                .Include(p => p.BarangSerial)
+                .Where(p => p.NoPeminjaman == item.NoPeminjaman)
+                .ToListAsync();
+
+            ViewBag.AllItems = allItems;
+
             return View(item);
         }
 

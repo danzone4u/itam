@@ -26,40 +26,50 @@
             <thead class="thead-light">
                 <tr>
                     <th width="40"><input type="checkbox" id="checkAll"></th>
-                    <th width="30">No</th><th>No. Surat Jalan</th><th>Tanggal</th><th width="250">Barang</th><th>S/N</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th>
+                    <th width="30">No</th><th>No. BAST</th><th>Tanggal</th><th width="250">Barang</th><th>S/N</th><th>Jumlah</th><th>Ruangan</th><th>Penerima</th><th>PIC</th><th>No HP</th><th width="170">Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                @{ int no = 1; }
-                @foreach (var item in Model)
+                @{ 
+                    int no = 1; 
+                    var groupedModel = Model.GroupBy(b => b.NoSuratJalan).ToList();
+                }
+                @foreach (var group in groupedModel)
                 {
+                    var item = group.First();
+                    var barangList = group.Select(g => g.Barang?.NamaBarang).Distinct().ToList();
+                    var barangDisplay = barangList.Count > 1 ? $"{barangList.First()} (+{barangList.Count - 1} lainnya)" : barangList.FirstOrDefault();
+                    var totalJumlah = group.Sum(g => g.Jumlah);
+                    
+                    var setting = ViewBag.SuratSetting as itam.Models.SuratSetting;
+                    string noBast = item.NoSuratJalan ?? "-";
+                    if (!string.IsNullOrEmpty(item.NoSuratJalan) && setting != null && !string.IsNullOrEmpty(setting.PrefixSuratJalan) && !string.IsNullOrEmpty(setting.PrefixSuratTerima))
+                    {
+                        noBast = item.NoSuratJalan.Replace(setting.PrefixSuratJalan, setting.PrefixSuratTerima);
+                    }
+
                     <tr>
                         <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
-                        <td>@(no++)</td><td><span class="badge bg-secondary">@item.NoSuratJalan</span></td><td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td><td>@item.Barang?.NamaBarang</td>
+                        <td>@(no++)</td>
+                        <td><span class="badge bg-secondary">@noBast</span></td>
+                        <td>@item.TanggalKeluar.ToString("dd/MM/yyyy")</td>
                         <td>
-                            @{
-                                var snList = item.BarangSerials?.Where(s => s.SerialNumber != "-").Select(s => s.SerialNumber).ToList() ?? new List<string>();
-                            }
-                            @if (snList.Any())
-                            {
-                                <small class="text-muted">@string.Join(", ", snList)</small>
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
+                            @barangDisplay
+                            <br/><small class="text-muted">Total: @totalJumlah unit</small>
                         </td>
-                        <td><span class="badge bg-danger">-@item.Jumlah</span></td>
+                        <td>
+                            <small class="text-muted">Lihat Detail</small>
+                        </td>
+                        <td><span class="badge bg-danger">-@totalJumlah</span></td>
                         <td>@(item.Lokasi?.NamaLokasi ?? "-")</td>
                         <td>@item.Penerima</td><td>@(item.Pic ?? "-")</td><td>@item.NoHpPenerima</td>
                         <td>
+                            <a href="@Url.Action("DetailTransaction", new { noSuratJalan = item.NoSuratJalan })" class="btn btn-primary btn-xs" title="Detail"><i class="fas fa-search"></i> Detail</a>
                             <a href="@Url.Action("SuratJalan", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat Jalan"><i class="fas fa-file-alt"></i> SJ</a>
                             <a href="@Url.Action("SuratTerimaBarang", new { id = item.Id })" class="btn btn-secondary btn-xs" title="Berita Acara Serah Terima"><i class="fas fa-receipt"></i> BAST</a>
                             @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
                             {
-                                <a href="@Url.Action("Create", "BarangKembali", new { barangKeluarId = item.Id })" class="btn btn-success btn-xs" title="Kembalikan Barang"><i class="fas fa-undo"></i></a>
-                                <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-warning btn-xs" title="Edit"><i class="fas fa-edit"></i></a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                                <form asp-action="DeleteTransaction" asp-route-noSuratJalan="@item.NoSuratJalan" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus seluruh transaksi ini?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
                             }
                         </td>
                     </tr>

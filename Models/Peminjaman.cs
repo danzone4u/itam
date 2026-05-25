@@ -14,6 +14,11 @@ namespace itam.Models
         [ForeignKey("BarangId")]
         public Barang? Barang { get; set; }
 
+        public int? BarangSerialId { get; set; }
+
+        [ForeignKey("BarangSerialId")]
+        public BarangSerial? BarangSerial { get; set; }
+
         [Required]
         [Display(Name = "Jumlah")]
         public int Jumlah { get; set; }

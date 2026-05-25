@@ -53,37 +53,45 @@
             </div>
 
             <hr/>
-            <h5><i class="fas fa-boxes"></i> Daftar Barang</h5>
-            <div class="row mb-2">
-                <div class="col-md-6">
-                    <label>Pilih Barang</label>
-                    <input type="text" id="searchBarang" class="form-control" list="listBarang" placeholder="Ketik nama barang..." autocomplete="off" />
-                    <datalist id="listBarang">
-                        @if (ViewBag.Barangs != null)
-                        {
-                            foreach (var b in (IEnumerable<itam.Models.Barang>)ViewBag.Barangs)
-                            {
-                                <option value="@b.NamaBarang (Stok: @b.Stok)" data-id="@b.Id" data-nama="@b.NamaBarang" data-stok="@b.Stok" data-satuan="@b.Satuan"></option>
-                            }
-                        }
-                    </datalist>
-                    <input type="hidden" id="selectedBarangId" />
-                </div>
-                <div class="col-md-3">
-                    <label>Jumlah</label>
-                    <input type="number" id="inputJumlah" class="form-control" placeholder="Jumlah" min="1" value="1" />
-                </div>
-                <div class="col-md-3">
-                    <label>&nbsp;</label>
-                    <button type="button" id="btnAddBarang" class="btn btn-success btn-block"><i class="fas fa-plus"></i> Tambah</button>
-                </div>
-            </div>
+            <h5><i class="fas fa-boxes"></i> Daftar Barang
+                <button type="button" class="btn btn-success btn-sm ml-2" id="addRow"><i class="fas fa-plus"></i> Tambah Baris</button>
+            </h5>
+            <datalist id="listBarang">
+                @if (ViewBag.Barangs != null)
+                {
+                    foreach (var b in (IEnumerable<itam.Models.Barang>)ViewBag.Barangs)
+                    {
+                        <option value="@b.NamaBarang" data-id="@b.Id" data-stok="@b.Stok" data-satuan="@b.Satuan"></option>
+                    }
+                }
+            </datalist>
 
-            <table class="table table-bordered mt-3" id="tblBarang">
+            <table class="table table-bordered mt-2" id="tblBarang">
                 <thead class="thead-light">
-                    <tr><th width="50">No</th><th>Nama Barang</th><th>Satuan</th><th width="100">Jumlah</th><th width="60">Aksi</th></tr>
+                    <tr><th width="50">No</th><th>Barang</th><th width="100">Jumlah</th><th width="300">Serial Number(s)</th><th width="200">Keterangan</th><th width="50">Aksi</th></tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                    <tr>
+                        <td class="row-num">1</td>
+                        <td><input type="text" class="form-control search-barang" list="listBarang" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>
+                        <td><input type="number" name="jumlahs" class="form-control row-jumlah" min="1" value="1" /></td>
+                        <td>
+                            <div class="sn-container" data-row-index="0">
+                                <div class="input-group mb-1 sn-input-row" style="display:none;">
+                                    <select name="snRows[0]" class="form-control form-control-sm sn-select">
+                                        <option value="">-- Pilih SN --</option>
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                </div>
+                                <small class="text-muted no-sn-text">Tidak ada SN</small>
+                            </div>
+                        </td>
+                        <td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>
+                        <td><button type="button" class="btn btn-danger btn-xs remove-row" title="Hapus"><i class="fas fa-times"></i></button></td>
+                    </tr>
+                </tbody>
             </table>
         </div>
         <div class="card-footer">
@@ -95,60 +103,131 @@
 
 @section Scripts {
 <script>
-$(function(){
-    var rowNum = 0;
-    $('#btnAddBarang').click(function(){
-        var typed = $('#searchBarang').val();
-        if (!typed) { Swal.fire('Peringatan', 'Ketik dan pilih barang terlebih dahulu!', 'warning'); return; }
+var rowIndex = 1;
 
-        // Find matching option in datalist
-        var matched = null;
-        $('#listBarang option').each(function(){
-            if ($(this).val() === typed) { matched = $(this); return false; }
-        });
-        if (!matched) { Swal.fire('Peringatan', 'Barang tidak ditemukan! Pilih dari daftar.', 'warning'); return; }
-
-        var barangId = matched.data('id');
-        var nama = matched.data('nama');
-        var stok = parseInt(matched.data('stok'));
-        var satuan = matched.data('satuan');
-        var jumlah = parseInt($('#inputJumlah').val()) || 1;
-        if (jumlah > stok) { Swal.fire('Peringatan', 'Jumlah melebihi stok! (Stok: ' + stok + ')', 'warning'); return; }
-        if (jumlah < 1) { Swal.fire('Peringatan', 'Jumlah minimal 1!', 'warning'); return; }
-
-        // Check if barang already in table
-        var exists = false;
-        $('#tblBarang tbody tr').each(function(){
-            if ($(this).data('barangid') == barangId) { exists = true; return false; }
-        });
-        if (exists) { Swal.fire('Peringatan', 'Barang sudah ada di daftar!', 'warning'); return; }
-
-        rowNum++;
-        var row = '<tr data-barangid="' + barangId + '">'
-            + '<td class="row-num">' + rowNum + '</td>'
-            + '<td>' + nama + '<input type="hidden" name="barangIds" value="' + barangId + '"></td>'
-            + '<td>' + satuan + '</td>'
-            + '<td>' + jumlah + '<input type="hidden" name="jumlahs" value="' + jumlah + '"></td>'
-            + '<td><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fas fa-times"></i></button></td>'
-            + '</tr>';
-        $('#tblBarang tbody').append(row);
-        $('#searchBarang').val('');
-        $('#inputJumlah').val(1);
-        updateSubmit();
-    });
-
-    $(document).on('click', '.remove-row', function(){
-        $(this).closest('tr').remove();
-        // Renumber
-        rowNum = 0;
-        $('#tblBarang tbody tr').each(function(){ rowNum++; $(this).find('.row-num').text(rowNum); });
-        updateSubmit();
-    });
-
-    function updateSubmit(){
-        var cnt = $('#tblBarang tbody tr').length;
-        $('#btnSubmit').prop('disabled', cnt === 0);
-    }
+$('#addRow').click(function(){
+    var n = $('#tblBarang tbody tr').length + 1;
+    var row = '<tr><td class="row-num">'+n+'</td>'
+        +'<td><input type="text" class="form-control search-barang" list="listBarang" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>'
+        +'<td><input type="number" name="jumlahs" class="form-control row-jumlah" min="1" value="1" /></td>'
+        +'<td><div class="sn-container" data-row-index="'+rowIndex+'">'
+        +'<div class="input-group mb-1 sn-input-row" style="display:none;">'
+        +'<select name="snRows['+rowIndex+']" class="form-control form-control-sm sn-select"><option value="">-- Pilih SN --</option></select>'
+        +'<div class="input-group-append"><button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button></div>'
+        +'</div><small class="text-muted no-sn-text">Tidak ada SN</small></div></td>'
+        +'<td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>'
+        +'<td><button type="button" class="btn btn-danger btn-xs remove-row" title="Hapus"><i class="fas fa-times"></i></button></td></tr>';
+    $('#tblBarang tbody').append(row);
+    renumber();
+    rowIndex++;
+    updateSubmit();
 });
+
+$(document).on('click', '.btn-add-sn', function() {
+    var $container = $(this).closest('.sn-container');
+    var index = $container.data('row-index');
+    var $firstSelect = $container.find('.sn-select').first();
+    
+    var options = $firstSelect.html(); // copy options from the first select
+    
+    var newSnRow = '<div class="input-group mb-1 sn-input-row">'
+        +'<select name="snRows['+index+']" class="form-control form-control-sm sn-select">' + options + '</select>'
+        +'<div class="input-group-append"><button type="button" class="btn btn-danger btn-sm btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button></div>'
+        +'</div>';
+    $container.append(newSnRow);
+    
+    // Initialize select2 with search
+    $container.find('.sn-select').last().select2({ theme: 'bootstrap4', width: '100%' });
+    
+    updateRowJumlah($container.closest('tr'));
+});
+
+$(document).on('click', '.btn-remove-sn', function() {
+    var $tr = $(this).closest('tr');
+    $(this).closest('.sn-input-row').remove();
+    updateRowJumlah($tr);
+});
+
+function updateRowJumlah($tr) {
+    var $container = $tr.find('.sn-container');
+    if ($container.find('.sn-input-row:visible').length > 0) {
+        var count = $container.find('.sn-input-row').length;
+        $tr.find('.row-jumlah').val(count).prop('readonly', true);
+    } else {
+        $tr.find('.row-jumlah').prop('readonly', false);
+    }
+}
+
+$(document).on('input', '.search-barang', function(){
+    var typed = $(this).val();
+    var $tr = $(this).closest('tr');
+    var hiddenInput = $(this).siblings('input[name="barangIds"]');
+    var matched = null;
+    $('#listBarang option').each(function(){
+        if ($(this).val() === typed) { matched = $(this); return false; }
+    });
+    
+    if (matched) {
+        var barangId = matched.data('id');
+        var stok = matched.data('stok');
+        hiddenInput.val(barangId);
+        $tr.find('.row-jumlah').attr('max', stok);
+        
+        // Load SNs via AJAX
+        $.getJSON('@Url.Action("GetAvailableSerials", "Peminjaman")' + '?barangId=' + barangId, function(res) {
+            var $container = $tr.find('.sn-container');
+            if (res && res.length > 0) {
+                var options = '<option value="">-- Pilih SN --</option>';
+                $.each(res, function(i, item) {
+                    options += '<option value="'+item.id+'">'+item.sn+'</option>';
+                });
+                var $selects = $container.find('.sn-select');
+                if ($selects.hasClass("select2-hidden-accessible")) {
+                    $selects.select2('destroy');
+                }
+                $selects.html(options);
+                
+                // Initialize select2 on the original select
+                $selects.select2({ theme: 'bootstrap4', width: '100%' });
+                
+                // restore existing visible select if there are any
+                $container.find('.sn-input-row').show();
+                $container.find('.no-sn-text').hide();
+                updateRowJumlah($tr);
+            } else {
+                $container.find('.sn-input-row').hide();
+                $container.find('.no-sn-text').show();
+                $tr.find('.row-jumlah').prop('readonly', false);
+            }
+        });
+    } else {
+        hiddenInput.val('');
+        var $container = $tr.find('.sn-container');
+        $container.find('.sn-input-row').hide();
+        $container.find('.no-sn-text').show();
+        $tr.find('.row-jumlah').prop('readonly', false);
+    }
+    updateSubmit();
+});
+
+$(document).on('click','.remove-row',function(){
+    if($('#tblBarang tbody tr').length > 1){ $(this).closest('tr').remove(); renumber(); }
+    else { Swal.fire('Peringatan', 'Minimal 1 baris barang!', 'warning'); }
+    updateSubmit();
+});
+
+function renumber(){ $('#tblBarang tbody tr').each(function(i){ $(this).find('.row-num').text(i+1); }); }
+
+function updateSubmit(){
+    var valid = true;
+    $('#tblBarang tbody tr').each(function() {
+        var id = $(this).find('input[name="barangIds"]').val();
+        if (!id) valid = false;
+    });
+    $('#btnSubmit').prop('disabled', !valid);
+}
+
+// Initial state
+updateSubmit();
 </script>
 }

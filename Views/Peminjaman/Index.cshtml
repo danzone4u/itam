@@ -37,12 +37,23 @@
                 </tr>
             </thead>
             <tbody>
-                @{ int no = 1; }
-                @foreach (var item in Model)
+                @{ 
+                    int no = 1; 
+                    var groupedModel = Model.GroupBy(p => p.NoPeminjaman).ToList();
+                }
+                @foreach (var group in groupedModel)
                 {
-                    var isLate = item.Status == "Terlambat";
-                    <tr class="@(isLate ? "table-danger" : item.Status == "Dikembalikan" ? "table-success" : "")">
-                        <td><input type="checkbox" class="bulk-check" value="@item.Id"></td>
+                    var item = group.First();
+                    var isLate = group.Any(g => g.Status == "Terlambat");
+                    var isAllReturned = group.All(g => g.Status == "Dikembalikan");
+                    var displayStatus = isAllReturned ? "Dikembalikan" : (isLate ? "Terlambat" : "Dipinjam");
+                    
+                    var barangList = group.Select(g => g.Barang?.NamaBarang).Distinct().ToList();
+                    var barangDisplay = barangList.Count > 1 ? $"{barangList.First()} (+{barangList.Count - 1} lainnya)" : barangList.FirstOrDefault();
+                    var totalJumlah = group.Sum(g => g.Jumlah);
+
+                    <tr class="@(isLate ? "table-danger" : displayStatus == "Dikembalikan" ? "table-success" : "")">
+                        <td><input type="checkbox" class="bulk-check" value="@item.NoPeminjaman"></td>
                         <td>@(no++)</td>
                         <td><span class="badge bg-secondary">@item.NoPeminjaman</span></td>
                         <td>@item.TanggalPinjam.ToString("dd/MM/yyyy")</td>
@@ -50,25 +61,29 @@
                             @item.TanggalJatuhTempo.ToString("dd/MM/yyyy")
                             @if (isLate) { <i class="fas fa-exclamation-triangle text-danger" title="Terlambat!"></i> }
                         </td>
-                        <td>@item.Barang?.NamaBarang</td>
-                        <td>@item.Barang?.NamaBarang</td>
-                        <td>@item.Jumlah</td>
+                        <td>
+                            @barangDisplay
+                            <br/><small class="text-muted">Total: @totalJumlah unit</small>
+                        </td>
+                        <td>@totalJumlah</td>
+                        <td>@totalJumlah</td>
                         <td>
                             @item.Peminjam
                             @if (!string.IsNullOrEmpty(item.Departemen)) { <br/><small class="text-muted">@item.Departemen</small> }
                         </td>
                         <td>
-                            @if (item.Status == "Dipinjam") { <span class="badge badge-info"><i class="fas fa-clock"></i> Dipinjam</span> }
-                            else if (item.Status == "Terlambat") { <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Terlambat</span> }
+                            @if (displayStatus == "Dipinjam") { <span class="badge badge-info"><i class="fas fa-clock"></i> Dipinjam</span> }
+                            else if (displayStatus == "Terlambat") { <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Terlambat</span> }
                             else { <span class="badge badge-success"><i class="fas fa-check-circle"></i> Dikembalikan</span> }
                         </td>
                         <td>
-                            @if (item.Status != "Dikembalikan")
+                            <a href="@Url.Action("DetailTransaction", new { noPeminjaman = item.NoPeminjaman })" class="btn btn-primary btn-xs" title="Detail"><i class="fas fa-search"></i> Detail</a>
+                            @if (displayStatus != "Dikembalikan")
                             {
-                                <a href="@Url.Action("Kembalikan", new { id = item.Id })" class="btn btn-success btn-xs" title="Kembalikan"><i class="fas fa-undo"></i> Kembali</a>
+                                <a href="@Url.Action("KembalikanTransaction", new { noPeminjaman = item.NoPeminjaman })" class="btn btn-success btn-xs" title="Kembalikan"><i class="fas fa-undo"></i> Kembali</a>
                             }
                             <a href="@Url.Action("SuratPeminjaman", new { id = item.Id })" class="btn btn-info btn-xs" title="Surat"><i class="fas fa-file-alt"></i></a>
-                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
+                            <form asp-action="DeleteTransaction" asp-route-noPeminjaman="@item.NoPeminjaman" method="post" style="display:inline" onsubmit="return confirm('Yakin hapus seluruh transaksi ini?')">@Html.AntiForgeryToken()<button class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button></form>
                         </td>
                     </tr>
                 }

@@ -122,6 +122,12 @@ namespace itam.Data
                 .HasForeignKey(bs => bs.BarangKembaliId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<Peminjaman>()
+                .HasOne(p => p.BarangSerial)
+                .WithMany()
+                .HasForeignKey(p => p.BarangSerialId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<BarangLokasi>()
                 .HasOne(bl => bl.Barang)
                 .WithMany()
@@ -175,6 +181,18 @@ namespace itam.Data
                 .WithMany()
                 .HasForeignKey(bk => bk.LokasiId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexing for performance
+            builder.Entity<Barang>().HasIndex(b => b.NamaBarang);
+            builder.Entity<Barang>().HasIndex(b => b.KodeBarang);
+            builder.Entity<BarangMasuk>().HasIndex(bm => bm.TanggalMasuk);
+            builder.Entity<BarangKeluar>().HasIndex(bk => bk.TanggalKeluar);
+
+            // Index tambahan untuk mempercepat pencarian lokasi dan serial
+            builder.Entity<BarangLokasi>().HasIndex(bl => bl.BarangId);
+            builder.Entity<BarangLokasi>().HasIndex(bl => bl.Stok);
+            builder.Entity<BarangSerial>().HasIndex(bs => bs.BarangId);
+            builder.Entity<BarangSerial>().HasIndex(bs => bs.Status);
         }
     }
 }

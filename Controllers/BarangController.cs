@@ -20,32 +20,116 @@ namespace itam.Controllers
             _env = env;
         }
 
-        public async Task<IActionResult> Index(string? search, int? kategoriId)
+        public IActionResult Index()
         {
-            var query = _context.Barangs.Include(b => b.Kategori).AsQueryable();
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(b => b.NamaBarang.Contains(search) || b.KodeBarang.Contains(search));
-                ViewBag.Search = search;
-            }
-            if (kategoriId.HasValue)
-            {
-                query = query.Where(b => b.KategoriId == kategoriId);
-                ViewBag.KategoriId = kategoriId;
-            }
-            ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori", kategoriId);
-            var barangList = await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
+            return View();
+        }
 
-            // Load ruangan per barang
-            var lokasiData = await _context.BarangLokasis
-                .Include(bl => bl.Lokasi)
-                .Where(bl => bl.Stok > 0)
-                .ToListAsync();
-            ViewBag.LokasiPerBarang = lokasiData
-                .GroupBy(bl => bl.BarangId)
-                .ToDictionary(g => g.Key, g => g.Select(bl => bl.Lokasi!.NamaLokasi).ToList());
+        [HttpPost]
+        public async Task<IActionResult> GetData()
+        {
+            try 
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Request.Form["start"].FirstOrDefault();
+                var length = Request.Form["length"].FirstOrDefault();
+                var sortColumnIdx = Request.Form["order[0][column]"].FirstOrDefault();
+                var sortColumn = Request.Form["columns[" + sortColumnIdx + "][name]"].FirstOrDefault();
+                var sortColumnDirection = Request.Form["order[0][dir]"].FirstOrDefault();
+                var searchValue = Request.Form["search[value]"].FirstOrDefault();
 
-            return View(barangList);
+                int pageSize = length != null ? Convert.ToInt32(length) : 10;
+                int skip = start != null ? Convert.ToInt32(start) : 0;
+
+                var baseQuery = _context.Barangs.AsNoTracking();
+                int totalRecords = await baseQuery.CountAsync();
+
+                var query = baseQuery.Include(b => b.Kategori).AsQueryable();
+
+                // Search
+                if (!string.IsNullOrEmpty(searchValue))
+                { 
+                    query = query.Where(m => m.NamaBarang.Contains(searchValue) 
+                                          || m.KodeBarang.Contains(searchValue)
+                                          || (m.Kategori != null && m.Kategori.NamaKategori.Contains(searchValue)));
+                }
+
+                // Total records after filter
+                int filteredRecords = await query.CountAsync();
+
+                // Sorting
+                if (!(string.IsNullOrEmpty(sortColumn) && string.IsNullOrEmpty(sortColumnDirection)))
+                {
+                    // Simple manual sorting to avoid complex expression building for now
+                    switch (sortColumn)
+                    {
+                        case "NamaBarang":
+                            query = sortColumnDirection == "asc" ? query.OrderBy(b => b.NamaBarang) : query.OrderByDescending(b => b.NamaBarang);
+                            break;
+                        case "KodeBarang":
+                            query = sortColumnDirection == "asc" ? query.OrderBy(b => b.KodeBarang) : query.OrderByDescending(b => b.KodeBarang);
+                            break;
+                        case "Kategori":
+                            query = sortColumnDirection == "asc" ? query.OrderBy(b => b.Kategori != null ? b.Kategori.NamaKategori : "") : query.OrderByDescending(b => b.Kategori != null ? b.Kategori.NamaKategori : "");
+                            break;
+                        case "Stok":
+                            query = sortColumnDirection == "asc" ? query.OrderBy(b => b.Stok) : query.OrderByDescending(b => b.Stok);
+                            break;
+                        case "UpdatedAt":
+                            query = sortColumnDirection == "asc" ? query.OrderBy(b => b.UpdatedAt) : query.OrderByDescending(b => b.UpdatedAt);
+                            break;
+                        default:
+                            query = query.OrderByDescending(b => b.CreatedAt);
+                            break;
+                    }
+                }
+                else
+                {
+                    query = query.OrderByDescending(b => b.CreatedAt);
+                }
+
+                // Pagination
+                var data = await query.Skip(skip).Take(pageSize).ToListAsync();
+
+                // Load locations only for the current page items
+                var itemIds = data.Select(d => d.Id).ToList();
+                var lokasiData = await _context.BarangLokasis
+                    .Include(bl => bl.Lokasi)
+                    .Where(bl => itemIds.Contains(bl.BarangId) && bl.Stok > 0)
+                    .ToListAsync();
+
+                var lokasiPerBarang = lokasiData
+                    .GroupBy(bl => bl.BarangId)
+                    .ToDictionary(g => g.Key, g => g.Select(bl => bl.Lokasi!.NamaLokasi).ToList());
+
+                int drawCount = int.TryParse(draw, out int d) ? d : 0;
+
+                var jsonData = new
+                {
+                    draw = drawCount,
+                    recordsFiltered = filteredRecords,
+                    recordsTotal = totalRecords,
+                    data = data.Select((item, index) => new
+                    {
+                        id = item.Id,
+                        kodeBarang = item.KodeBarang,
+                        namaBarang = item.NamaBarang,
+                        kategori = item.Kategori?.NamaKategori ?? "-",
+                        satuan = item.Satuan,
+                        stok = item.Stok,
+                        stokMinimum = item.StokMinimum,
+                        lokasi = lokasiPerBarang.ContainsKey(item.Id) ? lokasiPerBarang[item.Id] : new List<string>(),
+                        updatedAt = item.UpdatedAt.ToString("dd/MM/yyyy HH:mm"),
+                        no = skip + index + 1
+                    })
+                };
+
+                return Json(jsonData);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = "Server error: " + ex.Message });
+            }
         }
 
         [Authorize(Roles = "SuperAdmin,AdminGudang")]
