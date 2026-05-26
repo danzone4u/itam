@@ -36,7 +36,7 @@
             <tr><td><strong>Tanggal Pinjam</strong></td><td>: @Model.TanggalPinjam.ToString("dd MMMM yyyy")</td></tr>
             <tr><td><strong>Jatuh Tempo</strong></td><td>: @Model.TanggalJatuhTempo.ToString("dd MMMM yyyy")</td></tr>
             <tr><td><strong>Peminjam</strong></td><td>: @Model.Peminjam</td></tr>
-            @if (!string.IsNullOrEmpty(Model.NipNik)) { <tr><td><strong>NIP/NIK</strong></td><td>: @Model.NipNik</td></tr> }
+            @if (!string.IsNullOrEmpty(Model.NipNik)) { <tr><td><strong>Nopeg</strong></td><td>: @Model.NipNik</td></tr> }
             @if (!string.IsNullOrEmpty(Model.Departemen)) { <tr><td><strong>Departemen</strong></td><td>: @Model.Departemen</td></tr> }
             @if (!string.IsNullOrEmpty(Model.NoHp)) { <tr><td><strong>No. HP</strong></td><td>: @Model.NoHp</td></tr> }
         </table>

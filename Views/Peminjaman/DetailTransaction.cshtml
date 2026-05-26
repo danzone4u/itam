@@ -17,7 +17,7 @@
             <div class="col-md-6">
                 <table class="table table-sm table-borderless">
                     <tr><th width="150">Peminjam</th><td>: @Model.First().Peminjam</td></tr>
-                    @if (!string.IsNullOrEmpty(Model.First().NipNik)) { <tr><th>NIP/NIK</th><td>: @Model.First().NipNik</td></tr> }
+                    @if (!string.IsNullOrEmpty(Model.First().NipNik)) { <tr><th>Nopeg</th><td>: @Model.First().NipNik</td></tr> }
                     @if (!string.IsNullOrEmpty(Model.First().Departemen)) { <tr><th>Departemen</th><td>: @Model.First().Departemen</td></tr> }
                     @if (!string.IsNullOrEmpty(Model.First().NoHp)) { <tr><th>No. HP</th><td>: @Model.First().NoHp</td></tr> }
                 </table>

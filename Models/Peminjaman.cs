@@ -28,7 +28,7 @@ namespace itam.Models
         [StringLength(200)]
         public string Peminjam { get; set; } = string.Empty;
 
-        [Display(Name = "NIP/NIK")]
+        [Display(Name = "Nopeg")]
         [StringLength(50)]
         public string? NipNik { get; set; }
 
