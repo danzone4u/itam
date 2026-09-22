@@ -80,8 +80,10 @@ namespace itam.Controllers
                 if (match.Success && int.TryParse(match.Groups[1].Value, out int idx))
                 {
                     var vals = Request.Form[key]
-                        .Where(v => !string.IsNullOrEmpty(v) && int.TryParse(v, out _))
-                        .Select(v => int.Parse(v))
+                        .Where(v => !string.IsNullOrEmpty(v))
+                        .Select(v => int.TryParse(v, out int parsedVal) ? (int?)parsedVal : null)
+                        .Where(v => v.HasValue)
+                        .Select(v => v!.Value)
                         .ToList();
                     snData[idx] = vals;
                 }
@@ -172,7 +174,7 @@ namespace itam.Controllers
                 {
                     var firstItem = addedItems.First();
                     var itemDetails = string.Join("\n", addedItems.Select(item => 
-                        $"- {item.Barang.NamaBarang} (Jml: {item.Jumlah}{(item.BarangSerial != null ? $", SN: {item.BarangSerial.SerialNumber}" : "")})"));
+                        $"- {item.Barang?.NamaBarang} (Jml: {item.Jumlah}{(item.BarangSerial != null ? $", SN: {item.BarangSerial.SerialNumber}" : "")})"));
 
                     var msg = $"🔔 *Peminjaman Baru ({noPeminjaman})*\n" +
                               $"Peminjam: *{firstItem.Peminjam}*\n" +
@@ -259,7 +261,7 @@ namespace itam.Controllers
                 {
                     var firstItem = returnedItems.First();
                     var itemDetails = string.Join("\n", returnedItems.Select(item => 
-                        $"- {item.Barang.NamaBarang} (Jml: {item.Jumlah}{(item.BarangSerial != null ? $", SN: {item.BarangSerial.SerialNumber}" : "")})"));
+                        $"- {item.Barang?.NamaBarang} (Jml: {item.Jumlah}{(item.BarangSerial != null ? $", SN: {item.BarangSerial.SerialNumber}" : "")})"));
 
                     var msg = $"✅ *Pengembalian Barang ({noPeminjaman})*\n" +
                               $"Peminjam: *{firstItem.Peminjam}*\n" +

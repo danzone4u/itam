@@ -398,7 +398,7 @@ namespace itam.Controllers
             var formKeys = Request.Form.Keys.Where(k => k.StartsWith("snRows")).ToList();
             foreach (var key in formKeys)
             {
-                rawSnVals.AddRange(Request.Form[key].Where(v => !string.IsNullOrWhiteSpace(v)));
+                rawSnVals.AddRange(Request.Form[key].Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!));
             }
             var snList = ParseAndSplitSNs(rawSnVals);
 
