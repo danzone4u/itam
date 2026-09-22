@@ -77,7 +77,13 @@
                     }
                     { "data": "no", "orderable": false },
                     { "data": "kodeBarang", "name": "KodeBarang" },
-                    { "data": "namaBarang", "name": "NamaBarang" },
+                    { 
+                        "data": "namaBarang", "name": "NamaBarang",
+                        "render": function(data, type, row) {
+                            var star = row.isOperasional ? ' <span class="badge badge-warning" title="Prioritas Barang Operasional"><i class="fas fa-star text-white"></i> Operasional</span>' : '';
+                            return '<b>' + data + '</b>' + star;
+                        }
+                    },
                     { "data": "kategori", "name": "Kategori" },
                     { "data": "satuan", "orderable": false },
                     { 

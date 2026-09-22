@@ -16,12 +16,21 @@
     </div>
     <div class="card-body">
         <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
-            <div class="btn-group" role="group">
+            <div class="btn-group flex-wrap" role="group">
                 <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm @(string.IsNullOrEmpty(currentStatus) ? "active" : "")">
                     Semua
                 </a>
                 <a href="@Url.Action("Index", new { status = "Menunggu Approval" })" class="btn btn-outline-warning btn-sm @(currentStatus == "Menunggu Approval" ? "active" : "")">
                     Menunggu Approval @if (pendingCount > 0) { <span class="badge badge-danger">@pendingCount</span> }
+                </a>
+                <a href="@Url.Action("Index", new { status = "Dipakai Operasional" })" class="btn btn-outline-primary btn-sm @(currentStatus == "Dipakai Operasional" ? "active" : "")">
+                    Dipakai Operasional
+                </a>
+                <a href="@Url.Action("Index", new { status = "Menunggu Persetujuan Pengembalian" })" class="btn btn-outline-warning btn-sm @(currentStatus == "Menunggu Persetujuan Pengembalian" ? "active" : "")">
+                    Menunggu Return
+                </a>
+                <a href="@Url.Action("Index", new { status = "Dikembalikan" })" class="btn btn-outline-info btn-sm @(currentStatus == "Dikembalikan" ? "active" : "")">
+                    Dikembalikan
                 </a>
                 <a href="@Url.Action("Index", new { status = "Disetujui" })" class="btn btn-outline-success btn-sm @(currentStatus == "Disetujui" ? "active" : "")">
                     Disetujui
@@ -57,6 +66,9 @@
                     var statusBadge = item.Status switch
                     {
                         "Disetujui" => "badge-success",
+                        "Dipakai Operasional" => "badge-primary",
+                        "Menunggu Persetujuan Pengembalian" => "badge-warning text-dark",
+                        "Dikembalikan" => "badge-info",
                         "Ditolak" => "badge-danger",
                         "Dibatalkan" => "badge-secondary",
                         _ => "badge-warning"
@@ -65,7 +77,15 @@
                     var jenisBadge = item.JenisPermintaan switch
                     {
                         "Peminjaman" => "badge-info",
+                        "BarangOperasional" => "badge-warning text-dark",
                         _ => "badge-primary"
+                    };
+
+                    var jenisText = item.JenisPermintaan switch
+                    {
+                        "Peminjaman" => "Peminjaman",
+                        "BarangOperasional" => "Barang Operasional",
+                        _ => "Barang Keluar"
                     };
 
                     var totalItemCount = item.Details.Sum(d => d.Jumlah);
@@ -76,7 +96,7 @@
                     <tr>
                         <td>@(no++)</td>
                         <td><span class="badge bg-secondary font-monospace">@item.NoPermintaan</span></td>
-                        <td><span class="badge @jenisBadge">@(item.JenisPermintaan == "Peminjaman" ? "Peminjaman" : "Barang Keluar")</span></td>
+                        <td><span class="badge @jenisBadge">@jenisText</span></td>
                         <td>@item.PemohonUser</td>
                         <td>
                             <strong>@item.Penerima</strong>

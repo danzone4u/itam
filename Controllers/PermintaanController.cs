@@ -53,7 +53,8 @@ namespace itam.Controllers
         {
             ViewBag.Barangs = await _context.Barangs
                 .Where(b => b.Stok > 0)
-                .OrderBy(b => b.NamaBarang)
+                .OrderByDescending(b => b.IsOperasional)
+                .ThenBy(b => b.NamaBarang)
                 .ToListAsync();
             ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi");
             return View();
@@ -77,7 +78,7 @@ namespace itam.Controllers
             if (barangIds == null || barangIds.Length == 0)
             {
                 TempData["Error"] = "Pilih minimal 1 barang!";
-                ViewBag.Barangs = await _context.Barangs.Where(b => b.Stok > 0).OrderBy(b => b.NamaBarang).ToListAsync();
+                ViewBag.Barangs = await _context.Barangs.Where(b => b.Stok > 0).OrderByDescending(b => b.IsOperasional).ThenBy(b => b.NamaBarang).ToListAsync();
                 ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi", lokasiId);
                 return View();
             }
@@ -90,7 +91,7 @@ namespace itam.Controllers
                 if (barang == null || barang.Stok < jml)
                 {
                     TempData["Error"] = $"Stok barang '{barang?.NamaBarang ?? "Unknown"}' tidak mencukupi! (Tersedia: {barang?.Stok ?? 0}, Diminta: {jml})";
-                    ViewBag.Barangs = await _context.Barangs.Where(b => b.Stok > 0).OrderBy(b => b.NamaBarang).ToListAsync();
+                    ViewBag.Barangs = await _context.Barangs.Where(b => b.Stok > 0).OrderByDescending(b => b.IsOperasional).ThenBy(b => b.NamaBarang).ToListAsync();
                     ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi", lokasiId);
                     return View();
                 }
@@ -138,7 +139,7 @@ namespace itam.Controllers
             try
             {
                 var lokasiObj = lokasiId.HasValue && lokasiId.Value > 0 ? await _context.Lokasis.FindAsync(lokasiId.Value) : null;
-                var jenisLabel = jenisPermintaan == "Peminjaman" ? "📌 *Peminjaman Barang*" : "📤 *Barang Keluar*";
+                var jenisLabel = jenisPermintaan == "Peminjaman" ? "📌 *Peminjaman Barang*" : (jenisPermintaan == "BarangOperasional" ? "⚙️ *Barang Operasional*" : "📤 *Barang Keluar*");
                 var msg = $"🔔 *Permintaan Barang Baru ({permintaan.NoPermintaan})*\n" +
                           $"Jenis: {jenisLabel}\n" +
                           $"Pemohon: *{permintaan.PemohonUser}*\n" +
@@ -320,6 +321,41 @@ namespace itam.Controllers
                 }
 
                 permintaan.BarangKeluarId = firstBk?.Id;
+                permintaan.Status = "Disetujui";
+            }
+            else if (permintaan.JenisPermintaan == "BarangOperasional")
+            {
+                // Process as BarangOperasional
+                foreach (var detail in permintaan.Details)
+                {
+                    var barang = await _context.Barangs.FindAsync(detail.BarangId);
+                    if (barang == null) continue;
+
+                    barang.Stok = Math.Max(0, barang.Stok - detail.Jumlah);
+
+                    if (permintaan.LokasiId.HasValue)
+                    {
+                        var bl = await _context.BarangLokasis
+                            .FirstOrDefaultAsync(x => x.BarangId == detail.BarangId && x.LokasiId == permintaan.LokasiId.Value);
+                        if (bl != null)
+                        {
+                            bl.Stok = Math.Max(0, bl.Stok - detail.Jumlah);
+                        }
+                    }
+
+                    var availableSerials = await _context.BarangSerials
+                        .Where(s => s.BarangId == detail.BarangId && s.Status == "Tersedia")
+                        .OrderBy(s => s.SerialNumber == "-" ? 0 : 1)
+                        .ThenBy(s => s.Id)
+                        .Take(detail.Jumlah)
+                        .ToListAsync();
+
+                    foreach (var s in availableSerials)
+                    {
+                        s.Status = "Dipakai Operasional";
+                    }
+                }
+                permintaan.Status = "Dipakai Operasional";
             }
             else
             {
@@ -368,9 +404,9 @@ namespace itam.Controllers
                 }
 
                 permintaan.PeminjamanId = firstPeminjaman?.Id;
+                permintaan.Status = "Disetujui";
             }
 
-            permintaan.Status = "Disetujui";
             permintaan.ApprovedBy = User.Identity?.Name ?? "Admin";
             permintaan.ApprovedAt = DateTime.Now;
             permintaan.CatatanAdmin = catatanAdmin;
@@ -445,6 +481,140 @@ namespace itam.Controllers
 
             ViewBag.Kop = await _context.KopSurats.FirstOrDefaultAsync() ?? new KopSurat();
             return View(permintaan);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AjukanPengembalian(int id, string? catatanPemohon)
+        {
+            var permintaan = await _context.Permintaans
+                .Include(p => p.Details)
+                    .ThenInclude(d => d.Barang)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (permintaan == null) return NotFound();
+
+            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && permintaan.PemohonUser != User.Identity?.Name)
+            {
+                return Forbid();
+            }
+
+            if (permintaan.Status != "Dipakai Operasional")
+            {
+                TempData["Error"] = "Hanya permintaan berstatus 'Dipakai Operasional' yang dapat diajukan pengembalian.";
+                return RedirectToAction(nameof(Detail), new { id });
+            }
+
+            permintaan.Status = "Menunggu Persetujuan Pengembalian";
+            if (!string.IsNullOrWhiteSpace(catatanPemohon))
+            {
+                permintaan.CatatanAdmin = string.IsNullOrEmpty(permintaan.CatatanAdmin)
+                    ? $"[Pemohon]: {catatanPemohon}"
+                    : $"{permintaan.CatatanAdmin} | [Pemohon]: {catatanPemohon}";
+            }
+
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                var msg = $"🔔 *Pengajuan Pengembalian Barang Operasional ({permintaan.NoPermintaan})*\n" +
+                          $"Pemohon: *{permintaan.PemohonUser}*\n" +
+                          $"Penerima: *{permintaan.Penerima}*\n" +
+                          $"Status: *Menunggu Persetujuan Admin*";
+                await _telegram.SendAsync(msg);
+            }
+            catch { }
+
+            TempData["Success"] = "Pengajuan pengembalian barang operasional berhasil dikirim! Menunggu persetujuan Admin.";
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        public async Task<IActionResult> SetujuiPengembalian(int id, string kondisi, string tindakLanjut, string? catatanAdmin)
+        {
+            var permintaan = await _context.Permintaans
+                .Include(p => p.Details)
+                    .ThenInclude(d => d.Barang)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (permintaan == null) return NotFound();
+
+            if (permintaan.Status != "Menunggu Persetujuan Pengembalian" && permintaan.Status != "Dipakai Operasional")
+            {
+                TempData["Error"] = "Status permintaan tidak valid untuk disetujui pengembaliannya.";
+                return RedirectToAction(nameof(Detail), new { id });
+            }
+
+            var selectedKondisi = string.IsNullOrEmpty(kondisi) ? "Baik" : kondisi;
+            var selectedTindakLanjut = string.IsNullOrEmpty(tindakLanjut) ? "Dikembalikan ke Stok" : tindakLanjut;
+
+            foreach (var detail in permintaan.Details)
+            {
+                var barangKembali = new BarangKembali
+                {
+                    BarangId = detail.BarangId,
+                    Jumlah = detail.Jumlah,
+                    TanggalKembali = DateTime.Now,
+                    Kondisi = selectedKondisi,
+                    DikembalikanOleh = permintaan.Penerima,
+                    Keterangan = $"[Operasional {permintaan.NoPermintaan}] {catatanAdmin}".TrimEnd(),
+                    TindakLanjut = selectedTindakLanjut,
+                    CreatedAt = DateTime.Now
+                };
+                _context.BarangKembalis.Add(barangKembali);
+
+                var barang = await _context.Barangs.FindAsync(detail.BarangId);
+                if (barang != null && selectedTindakLanjut == "Dikembalikan ke Stok")
+                {
+                    barang.Stok += detail.Jumlah;
+
+                    if (permintaan.LokasiId.HasValue)
+                    {
+                        var bl = await _context.BarangLokasis
+                            .FirstOrDefaultAsync(x => x.BarangId == detail.BarangId && x.LokasiId == permintaan.LokasiId.Value);
+                        if (bl != null)
+                        {
+                            bl.Stok += detail.Jumlah;
+                        }
+                    }
+
+                    var serials = await _context.BarangSerials
+                        .Where(s => s.BarangId == detail.BarangId && s.Status == "Dipakai Operasional")
+                        .Take(detail.Jumlah)
+                        .ToListAsync();
+                    foreach (var s in serials)
+                    {
+                        s.Status = "Tersedia";
+                        s.BarangKembaliId = barangKembali.Id;
+                    }
+                }
+            }
+
+            permintaan.Status = "Dikembalikan";
+            if (!string.IsNullOrWhiteSpace(catatanAdmin))
+            {
+                permintaan.CatatanAdmin = string.IsNullOrEmpty(permintaan.CatatanAdmin)
+                    ? $"[Admin Return]: {catatanAdmin}"
+                    : $"{permintaan.CatatanAdmin} | [Admin Return]: {catatanAdmin}";
+            }
+
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                var msg = $"✅ *Pengembalian Barang Operasional DISETUJUI ({permintaan.NoPermintaan})*\n" +
+                          $"Pemohon: *{permintaan.PemohonUser}*\n" +
+                          $"Penerima: *{permintaan.Penerima}*\n" +
+                          $"Kondisi: *{selectedKondisi}*\n" +
+                          $"Tindak Lanjut: *{selectedTindakLanjut}*";
+                await _telegram.SendAsync(msg);
+            }
+            catch { }
+
+            TempData["Success"] = $"Pengembalian barang operasional {permintaan.NoPermintaan} berhasil DISETUJUI!";
+            return RedirectToAction(nameof(Detail), new { id });
         }
 
         [HttpGet]

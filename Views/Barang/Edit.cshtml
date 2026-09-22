@@ -16,6 +16,17 @@
                 <div class="col-md-6"><div class="form-group"><label asp-for="StokMinimum"></label><input asp-for="StokMinimum" class="form-control" /><small class="text-muted">Alert ditampilkan di Dashboard jika stok <= nilai ini</small></div></div>
                 <div class="col-md-6"><div class="form-group"><label asp-for="Stok"></label><input asp-for="Stok" class="form-control bg-light" type="number" readonly /><small class="text-info"><i class="fas fa-info-circle"></i> Stok dihitung otomatis dari transaksi. Gunakan menu <b>Sinkronkan Stok</b> atau <b>Stok Opname</b> untuk koreksi.</small></div></div>
             </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input class="custom-control-input" type="checkbox" asp-for="IsOperasional" id="IsOperasionalEditCheck">
+                            <label for="IsOperasionalEditCheck" class="custom-control-label font-weight-bold text-primary"><i class="fas fa-star text-warning"></i> Prioritas Barang Operasional</label>
+                        </div>
+                        <small class="text-muted">Barang ini akan muncul di urutan teratas saat user mengajukan permintaan.</small>
+                    </div>
+                </div>
+            </div>
             @if (!string.IsNullOrEmpty(Model.Gambar))
             {
                 <div class="form-group"><label>Gambar Saat Ini</label><br/><img src="@Model.Gambar" alt="Gambar" style="max-height:150px;" class="img-thumbnail" /></div>

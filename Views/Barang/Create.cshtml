@@ -14,6 +14,16 @@
             </div>
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="StokMinimum"></label><input asp-for="StokMinimum" class="form-control" value="5" /><small class="text-muted">Alert ditampilkan di Dashboard jika stok <= nilai ini</small></div></div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <div class="custom-control custom-checkbox mt-2">
+                            <input class="custom-control-input" type="checkbox" asp-for="IsOperasional" id="IsOperasionalCheck">
+                            <label for="IsOperasionalCheck" class="custom-control-label font-weight-bold text-primary"><i class="fas fa-star text-warning"></i> Prioritas Barang Operasional</label>
+                        </div>
+                        <small class="text-muted">Barang ini akan muncul di urutan teratas saat user mengajukan permintaan.</small>
+                    </div>
+                </div>
             </div>
             <div class="form-group"><label>Gambar</label><input type="file" name="gambarFile" class="form-control" accept="image/*" /></div>
             <div class="form-group"><label asp-for="Deskripsi"></label><textarea asp-for="Deskripsi" class="form-control" rows="3"></textarea></div>

@@ -189,6 +189,7 @@ namespace itam.Data
             // Indexing for performance
             builder.Entity<Barang>().HasIndex(b => b.NamaBarang);
             builder.Entity<Barang>().HasIndex(b => b.KodeBarang);
+            builder.Entity<Barang>().HasIndex(b => b.IsOperasional);
             builder.Entity<BarangMasuk>().HasIndex(bm => bm.TanggalMasuk);
             builder.Entity<BarangKeluar>().HasIndex(bk => bk.TanggalKeluar);
 

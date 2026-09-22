@@ -16,6 +16,7 @@
                         <label class="required">Jenis Permintaan</label>
                         <select name="jenisPermintaan" id="jenisPermintaan" class="form-control" required>
                             <option value="BarangKeluar">Barang Keluar (Permanent Issue / Habis Pakai)</option>
+                            <option value="BarangOperasional">Barang Operasional (Operational Use / Harus Kembali)</option>
                             <option value="Peminjaman">Peminjaman (Temporary Loan / Harus Kembali)</option>
                         </select>
                     </div>
@@ -84,7 +85,7 @@
                         @foreach (var b in barangs)
                         {
                             <option value="@b.Id" data-nama="@b.NamaBarang" data-satuan="@b.Satuan" data-stok="@b.Stok">
-                                @b.NamaBarang (Stok: @b.Stok @b.Satuan)
+                                @(b.IsOperasional ? "⭐ [OPERASIONAL] " : "")@b.NamaBarang (Stok: @b.Stok @b.Satuan)
                             </option>
                         }
                     </select>
@@ -127,7 +128,8 @@
             $('.select2').select2({ theme: 'bootstrap4' });
 
             $('#jenisPermintaan').change(function () {
-                if ($(this).val() === 'Peminjaman') {
+                var val = $(this).val();
+                if (val === 'Peminjaman' || val === 'BarangOperasional') {
                     $('#divTanggalDibutuhkan').slideDown();
                 } else {
                     $('#divTanggalDibutuhkan').slideUp();

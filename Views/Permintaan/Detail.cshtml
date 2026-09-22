@@ -6,6 +6,9 @@
     var statusBadge = Model.Status switch
     {
         "Disetujui" => "badge-success",
+        "Dipakai Operasional" => "badge-primary",
+        "Menunggu Persetujuan Pengembalian" => "badge-warning text-dark",
+        "Dikembalikan" => "badge-info",
         "Ditolak" => "badge-danger",
         "Dibatalkan" => "badge-secondary",
         _ => "badge-warning"
@@ -14,7 +17,15 @@
     var jenisBadge = Model.JenisPermintaan switch
     {
         "Peminjaman" => "badge-info",
+        "BarangOperasional" => "badge-warning text-dark",
         _ => "badge-primary"
+    };
+
+    var jenisText = Model.JenisPermintaan switch
+    {
+        "Peminjaman" => "Peminjaman Barang",
+        "BarangOperasional" => "Barang Operasional",
+        _ => "Barang Keluar"
     };
 }
 
@@ -27,7 +38,7 @@
             <div class="card-body">
                 <table class="table table-sm table-striped">
                     <tr><th>No. Permintaan</th><td><span class="badge bg-secondary font-monospace">@Model.NoPermintaan</span></td></tr>
-                    <tr><th>Jenis Permintaan</th><td><span class="badge @jenisBadge">@(Model.JenisPermintaan == "Peminjaman" ? "Peminjaman Barang" : "Barang Keluar")</span></td></tr>
+                    <tr><th>Jenis Permintaan</th><td><span class="badge @jenisBadge">@jenisText</span></td></tr>
                     <tr><th>Status</th><td><span class="badge @statusBadge">@Model.Status</span></td></tr>
                     <tr><th>Pemohon (User)</th><td>@Model.PemohonUser</td></tr>
                     <tr><th>Penerima / Pengguna</th><td><strong>@Model.Penerima</strong></td></tr>
@@ -134,6 +145,26 @@
                     </button>
                 </div>
             }
+            else if (Model.Status == "Dipakai Operasional" && (Model.PemohonUser == User.Identity?.Name || isStaffOrAdmin))
+            {
+                <div class="card-footer bg-light p-3 text-center">
+                    <h5 class="text-primary mb-2"><i class="fas fa-undo text-warning"></i> Pengembalian Barang Operasional</h5>
+                    <p class="text-muted small mb-3">Penggunaan barang operasional telah selesai? Klik tombol di bawah untuk mengajukan pengembalian barang ke Admin Gudang.</p>
+                    <button type="button" class="btn btn-warning btn-lg font-weight-bold" data-toggle="modal" data-target="#modalUserReturn">
+                        <i class="fas fa-undo-alt mr-1"></i> Kembalikan Barang
+                    </button>
+                </div>
+            }
+            else if (Model.Status == "Menunggu Persetujuan Pengembalian" && isStaffOrAdmin)
+            {
+                <div class="card-footer bg-light p-3 text-center">
+                    <h5 class="text-warning mb-2"><i class="fas fa-user-shield"></i> Persetujuan Pengembalian Admin</h5>
+                    <p class="text-muted small mb-3">Pemohon mengajukan pengembalian barang. Silakan periksa barang fisik lalu klik Setujui Pengembalian.</p>
+                    <button type="button" class="btn btn-success btn-lg" data-toggle="modal" data-target="#modalAdminApproveReturn">
+                        <i class="fas fa-check-double mr-1"></i> Setujui Pengembalian Barang
+                    </button>
+                </div>
+            }
         </div>
     </div>
 </div>
@@ -194,6 +225,87 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i> Batal</button>
                         <button type="submit" class="btn btn-danger"><i class="fas fa-ban"></i> Tolak Permintaan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.Status == "Dipakai Operasional" && (Model.PemohonUser == User.Identity?.Name || isStaffOrAdmin))
+{
+    <!-- Modal User Ajukan Pengembalian -->
+    <div class="modal fade" id="modalUserReturn" tabindex="-1" role="dialog" aria-labelledby="modalUserReturnLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title font-weight-bold" id="modalUserReturnLabel"><i class="fas fa-undo-alt mr-1"></i> Form Pengajuan Pengembalian Barang Operasional</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form asp-action="AjukanPengembalian" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle mr-1"></i> Anda akan mengembalikan barang operasional dari nomor permintaan <strong>@Model.NoPermintaan</strong>. Pengajuan ini akan dikirim ke Admin untuk diperiksa.
+                        </div>
+                        <div class="form-group">
+                            <label>Catatan Pengembalian (Opsional)</label>
+                            <textarea name="catatanPemohon" class="form-control" rows="3" placeholder="Misal: Barang telah selesai digunakan dalam keadaan baik dan lengkap."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i> Batal</button>
+                        <button type="submit" class="btn btn-warning font-weight-bold"><i class="fas fa-paper-plane"></i> Kirim Pengajuan Pengembalian</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@if ((Model.Status == "Menunggu Persetujuan Pengembalian" || Model.Status == "Dipakai Operasional") && isStaffOrAdmin)
+{
+    <!-- Modal Admin Setujui Pengembalian -->
+    <div class="modal fade" id="modalAdminApproveReturn" tabindex="-1" role="dialog" aria-labelledby="modalAdminApproveReturnLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalAdminApproveReturnLabel"><i class="fas fa-check-double mr-1"></i> Persetujuan Pengembalian Barang Operasional</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form asp-action="SetujuiPengembalian" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle mr-1"></i> Memproses pengembalian barang operasional <strong>@Model.NoPermintaan</strong>. Stok akan dikembalikan sesuai tindak lanjut yang dipilih.
+                        </div>
+                        <div class="form-group">
+                            <label class="required font-weight-bold">Kondisi Barang Saat Kembali</label>
+                            <select name="kondisi" class="form-control" required>
+                                <option value="Baik">Baik (Normal)</option>
+                                <option value="Rusak Ringan">Rusak Ringan</option>
+                                <option value="Rusak Berat">Rusak Berat</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="required font-weight-bold">Tindak Lanjut Stok</label>
+                            <select name="tindakLanjut" class="form-control" required>
+                                <option value="Dikembalikan ke Stok">Dikembalikan ke Stok Gudang (Stok +)</option>
+                                <option value="Afkir / Disposal">Afkir / Disposal (Stok Tidak Bertambah)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Catatan Admin (Opsional)</label>
+                            <textarea name="catatanAdmin" class="form-control" rows="2" placeholder="Misal: Diterima kembali di gudang dalam kondisi lengkap."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i> Batal</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-check-circle"></i> Setujui & Process Pengembalian</button>
                     </div>
                 </form>
             </div>

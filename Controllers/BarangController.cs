@@ -120,6 +120,7 @@ namespace itam.Controllers
                         satuan = item.Satuan,
                         stok = item.Stok,
                         stokMinimum = item.StokMinimum,
+                        isOperasional = item.IsOperasional,
                         lokasi = lokasiPerBarang.ContainsKey(item.Id) ? lokasiPerBarang[item.Id] : new List<string>(),
                         updatedAt = item.UpdatedAt.ToString("dd/MM/yyyy HH:mm"),
                         no = skip + index + 1

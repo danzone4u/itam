@@ -44,6 +44,9 @@ namespace itam.Models
         [StringLength(1000)]
         public string? Deskripsi { get; set; }
 
+        [Display(Name = "Prioritas Operasional")]
+        public bool IsOperasional { get; set; } = false;
+
         [Display(Name = "Tanggal Dibuat")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
