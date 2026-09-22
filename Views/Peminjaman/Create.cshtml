@@ -53,46 +53,73 @@
             </div>
 
             <hr/>
-            <h5><i class="fas fa-boxes"></i> Daftar Barang
-                <button type="button" class="btn btn-success btn-sm ml-2" id="addRow"><i class="fas fa-plus"></i> Tambah Baris</button>
-            </h5>
-            <datalist id="listBarang">
-                @if (ViewBag.Barangs != null)
-                {
-                    foreach (var b in (IEnumerable<itam.Models.Barang>)ViewBag.Barangs)
+            <h5><i class="fas fa-list"></i> Pilih Barang & Serial Number</h5>
+            <div class="form-group">
+                <label>Pilih Barang</label>
+                <select id="selectBarang" class="form-control select2" style="width:100%">
+                    <option value="">-- Pilih Barang --</option>
+                    @if (ViewBag.Barangs != null)
                     {
-                        <option value="@b.NamaBarang" data-id="@b.Id" data-stok="@b.Stok" data-satuan="@b.Satuan"></option>
+                        foreach (var b in (IEnumerable<itam.Models.Barang>)ViewBag.Barangs)
+                        {
+                            <option value="@b.Id" data-stok="@b.Stok">@b.NamaBarang</option>
+                        }
                     }
-                }
-            </datalist>
+                </select>
+            </div>
 
-            <table class="table table-bordered mt-2" id="tblBarang">
+            <!-- Box for SNs (Hidden by default, shown when SNs exist) -->
+            <div id="snContainer" style="display:none;">
+                <div class="card card-outline card-info">
+                    <div class="card-header py-2">
+                        <h3 class="card-title"><i class="fas fa-barcode"></i> Serial Number Tersedia</h3>
+                        <div class="card-tools">
+                            <input type="text" id="searchSn" class="form-control form-control-sm" placeholder="Cari SN..." style="width: 150px; display: inline-block; margin-right: 10px;" />
+                            <button type="button" class="btn btn-xs btn-info" id="btnCheckAll"><i class="fas fa-check-double"></i> Pilih Semua</button>
+                            <button type="button" class="btn btn-xs btn-secondary" id="btnUncheckAll"><i class="fas fa-times"></i> Batal Semua</button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="snList" style="max-height:300px; overflow-y:auto;">
+                        <!-- SN checkboxes loaded via AJAX -->
+                    </div>
+                    <div class="card-footer py-2">
+                        <span>Terpilih: <strong id="selectedCount">0</strong> unit</span>
+                        <button type="button" class="btn btn-danger btn-sm float-right" id="btnAddSelectedSn"><i class="fas fa-plus"></i> Tambahkan ke Daftar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Box for Non-SN Items (Hidden by default, shown when NO SNs exist) -->
+            <div id="nonSnContainer" style="display:none;">
+                <div class="card card-outline card-info">
+                    <div class="card-header py-2">
+                        <h3 class="card-title"><i class="fas fa-box"></i> Barang Tanpa Serial Number</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Barang ini tidak menggunakan Serial Number. Silakan masukkan jumlah yang ingin dipinjam.</p>
+                        <div class="form-group mb-0">
+                            <label>Jumlah</label>
+                            <input type="number" id="inputJumlah" class="form-control" style="width: 150px;" min="1" value="1" />
+                            <small class="text-muted">Maksimal stok: <strong id="maxStok"></strong></small>
+                        </div>
+                    </div>
+                    <div class="card-footer py-2">
+                        <button type="button" class="btn btn-danger btn-sm float-right" id="btnAddNonSn"><i class="fas fa-plus"></i> Tambahkan ke Daftar</button>
+                    </div>
+                </div>
+            </div>
+
+            <hr/>
+            <h5><i class="fas fa-clipboard-list"></i> Daftar Barang Peminjaman</h5>
+            <table class="table table-bordered mt-2" id="tableKeluar">
                 <thead class="thead-light">
-                    <tr><th width="50">No</th><th>Barang</th><th width="100">Jumlah</th><th width="300">Serial Number(s)</th><th width="200">Keterangan</th><th width="50">Aksi</th></tr>
+                    <tr><th width="50">No</th><th>Barang</th><th width="300">Serial Number(s)</th><th width="100">Jumlah</th><th width="200">Keterangan</th><th width="50">Aksi</th></tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="row-num">1</td>
-                        <td><input type="text" class="form-control search-barang" list="listBarang" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>
-                        <td><input type="number" name="jumlahs" class="form-control row-jumlah" min="1" value="1" /></td>
-                        <td>
-                            <div class="sn-container" data-row-index="0">
-                                <div class="input-group mb-1 sn-input-row" style="display:none;">
-                                    <select name="snRows[0]" class="form-control form-control-sm sn-select">
-                                        <option value="">-- Pilih SN --</option>
-                                    </select>
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                </div>
-                                <small class="text-muted no-sn-text">Tidak ada SN</small>
-                            </div>
-                        </td>
-                        <td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>
-                        <td><button type="button" class="btn btn-danger btn-xs remove-row" title="Hapus"><i class="fas fa-times"></i></button></td>
-                    </tr>
+                    <!-- Rows added via JavaScript -->
                 </tbody>
             </table>
+            <div class="text-muted" id="emptyMsg"><i class="fas fa-info-circle"></i> Belum ada barang. Pilih barang dan klik "Tambahkan ke Daftar".</div>
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary" id="btnSubmit" disabled><i class="fas fa-save"></i> Simpan Peminjaman</button>
@@ -103,131 +130,150 @@
 
 @section Scripts {
 <script>
-var rowIndex = 1;
+$(function(){
+    $('.select2').select2({ theme:'bootstrap4', placeholder:'-- Pilih Barang --', allowClear:true });
 
-$('#addRow').click(function(){
-    var n = $('#tblBarang tbody tr').length + 1;
-    var row = '<tr><td class="row-num">'+n+'</td>'
-        +'<td><input type="text" class="form-control search-barang" list="listBarang" placeholder="Ketik nama barang..." autocomplete="off" required /><input type="hidden" name="barangIds" /></td>'
-        +'<td><input type="number" name="jumlahs" class="form-control row-jumlah" min="1" value="1" /></td>'
-        +'<td><div class="sn-container" data-row-index="'+rowIndex+'">'
-        +'<div class="input-group mb-1 sn-input-row" style="display:none;">'
-        +'<select name="snRows['+rowIndex+']" class="form-control form-control-sm sn-select"><option value="">-- Pilih SN --</option></select>'
-        +'<div class="input-group-append"><button type="button" class="btn btn-success btn-sm btn-add-sn" title="Tambah S/N"><i class="fas fa-plus"></i></button></div>'
-        +'</div><small class="text-muted no-sn-text">Tidak ada SN</small></div></td>'
-        +'<td><input type="text" name="keterangans" class="form-control" placeholder="Opsional" /></td>'
-        +'<td><button type="button" class="btn btn-danger btn-xs remove-row" title="Hapus"><i class="fas fa-times"></i></button></td></tr>';
-    $('#tblBarang tbody').append(row);
-    renumber();
-    rowIndex++;
-    updateSubmit();
-});
-
-$(document).on('click', '.btn-add-sn', function() {
-    var $container = $(this).closest('.sn-container');
-    var index = $container.data('row-index');
-    var $firstSelect = $container.find('.sn-select').first();
-    
-    var options = $firstSelect.html(); // copy options from the first select
-    
-    var newSnRow = '<div class="input-group mb-1 sn-input-row">'
-        +'<select name="snRows['+index+']" class="form-control form-control-sm sn-select">' + options + '</select>'
-        +'<div class="input-group-append"><button type="button" class="btn btn-danger btn-sm btn-remove-sn" title="Hapus SN"><i class="fas fa-times"></i></button></div>'
-        +'</div>';
-    $container.append(newSnRow);
-    
-    // Initialize select2 with search
-    $container.find('.sn-select').last().select2({ theme: 'bootstrap4', width: '100%' });
-    
-    updateRowJumlah($container.closest('tr'));
-});
-
-$(document).on('click', '.btn-remove-sn', function() {
-    var $tr = $(this).closest('tr');
-    $(this).closest('.sn-input-row').remove();
-    updateRowJumlah($tr);
-});
-
-function updateRowJumlah($tr) {
-    var $container = $tr.find('.sn-container');
-    if ($container.find('.sn-input-row:visible').length > 0) {
-        var count = $container.find('.sn-input-row').length;
-        $tr.find('.row-jumlah').val(count).prop('readonly', true);
-    } else {
-        $tr.find('.row-jumlah').prop('readonly', false);
-    }
-}
-
-$(document).on('input', '.search-barang', function(){
-    var typed = $(this).val();
-    var $tr = $(this).closest('tr');
-    var hiddenInput = $(this).siblings('input[name="barangIds"]');
-    var matched = null;
-    $('#listBarang option').each(function(){
-        if ($(this).val() === typed) { matched = $(this); return false; }
-    });
-    
-    if (matched) {
-        var barangId = matched.data('id');
-        var stok = matched.data('stok');
-        hiddenInput.val(barangId);
-        $tr.find('.row-jumlah').attr('max', stok);
+    // Load SNs when barang selected
+    $('#selectBarang').on('change', function(){
+        var barangId = $(this).val();
+        var stok = $(this).find('option:selected').data('stok');
         
-        // Load SNs via AJAX
-        $.getJSON('@Url.Action("GetAvailableSerials", "Peminjaman")' + '?barangId=' + barangId, function(res) {
-            var $container = $tr.find('.sn-container');
-            if (res && res.length > 0) {
-                var options = '<option value="">-- Pilih SN --</option>';
-                $.each(res, function(i, item) {
-                    options += '<option value="'+item.id+'">'+item.sn+'</option>';
+        if (!barangId) { 
+            $('#snContainer').hide(); 
+            $('#nonSnContainer').hide();
+            return; 
+        }
+        
+        $.getJSON('@Url.Action("GetAvailableSerials", "Peminjaman")' + '?barangId=' + barangId, function(data){
+            if (data && data.length > 0) {
+                // Has SNs
+                var html = '';
+                var unitNo = 0;
+                data.forEach(function(item){
+                    var label = item.sn === '-' ? 'Unit ' + (++unitNo) : item.sn;
+                    html += '<div class="custom-control custom-checkbox d-inline-block mr-3 mb-2">'
+                        + '<input type="checkbox" class="custom-control-input sn-check" id="sn_'+item.id+'" data-sn-id="'+item.id+'" data-sn="'+label+'">'
+                        + '<label class="custom-control-label" for="sn_'+item.id+'">'+label+'</label></div>';
                 });
-                var $selects = $container.find('.sn-select');
-                if ($selects.hasClass("select2-hidden-accessible")) {
-                    $selects.select2('destroy');
-                }
-                $selects.html(options);
-                
-                // Initialize select2 on the original select
-                $selects.select2({ theme: 'bootstrap4', width: '100%' });
-                
-                // restore existing visible select if there are any
-                $container.find('.sn-input-row').show();
-                $container.find('.no-sn-text').hide();
-                updateRowJumlah($tr);
+                $('#snList').html(html);
+                $('#snContainer').show();
+                $('#nonSnContainer').hide();
+                updateCount();
             } else {
-                $container.find('.sn-input-row').hide();
-                $container.find('.no-sn-text').show();
-                $tr.find('.row-jumlah').prop('readonly', false);
+                // No SNs
+                $('#snContainer').hide();
+                $('#nonSnContainer').show();
+                $('#inputJumlah').attr('max', stok).val(1);
+                $('#maxStok').text(stok);
             }
         });
-    } else {
-        hiddenInput.val('');
-        var $container = $tr.find('.sn-container');
-        $container.find('.sn-input-row').hide();
-        $container.find('.no-sn-text').show();
-        $tr.find('.row-jumlah').prop('readonly', false);
-    }
-    updateSubmit();
-});
-
-$(document).on('click','.remove-row',function(){
-    if($('#tblBarang tbody tr').length > 1){ $(this).closest('tr').remove(); renumber(); }
-    else { Swal.fire('Peringatan', 'Minimal 1 baris barang!', 'warning'); }
-    updateSubmit();
-});
-
-function renumber(){ $('#tblBarang tbody tr').each(function(i){ $(this).find('.row-num').text(i+1); }); }
-
-function updateSubmit(){
-    var valid = true;
-    $('#tblBarang tbody tr').each(function() {
-        var id = $(this).find('input[name="barangIds"]').val();
-        if (!id) valid = false;
     });
-    $('#btnSubmit').prop('disabled', !valid);
-}
 
-// Initial state
-updateSubmit();
+    // Check/Uncheck all
+    $('#btnCheckAll').click(function(){ $('.sn-check').prop('checked', true); updateCount(); });
+    $('#btnUncheckAll').click(function(){ $('.sn-check').prop('checked', false); updateCount(); });
+    $(document).on('change', '.sn-check', function(){ updateCount(); });
+
+    $('#searchSn').on('keyup', function(){
+        var val = $(this).val().toLowerCase();
+        $('#snList .custom-checkbox').filter(function(){
+            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+        });
+    });
+
+    function updateCount(){ $('#selectedCount').text($('.sn-check:checked').length); }
+
+    // Add selected SNs to table
+    $('#btnAddSelectedSn').click(function(){
+        var barangId = $('#selectBarang').val();
+        var barangName = $('#selectBarang option:selected').text();
+        var checked = $('.sn-check:checked');
+        if (checked.length === 0) { Swal.fire('Peringatan', 'Pilih minimal 1 SN!', 'warning'); return; }
+
+        var snNames = [];
+        var snIds = [];
+        checked.each(function(){
+            snIds.push($(this).data('sn-id'));
+            snNames.push($(this).data('sn'));
+        });
+
+        var n = $('#tableKeluar tbody tr').length; // 0-indexed for snRows!
+        var row = '<tr>'
+            + '<td class="row-num">' + (n+1) + '</td>'
+            + '<td>' + barangName + '<input type="hidden" name="barangIds" value="' + barangId + '"></td>'
+            + '<td><small>' + snNames.join(', ') + '</small>';
+        snIds.forEach(function(id){ row += '<input type="hidden" name="snRows[' + n + '][]" value="' + id + '">'; });
+        row += '</td>'
+            + '<td><input type="number" name="jumlahs" class="form-control form-control-sm" value="' + checked.length + '" readonly></td>'
+            + '<td><input type="text" name="keterangans" class="form-control form-control-sm" placeholder="Opsional" /></td>'
+            + '<td><button type="button" class="btn btn-danger btn-xs remove-row-k"><i class="fas fa-times"></i></button></td>'
+            + '</tr>';
+
+        $('#tableKeluar tbody').append(row);
+        $('#emptyMsg').hide();
+
+        // Reset selection
+        $('#selectBarang').val('').trigger('change');
+        $('#snContainer').hide();
+        renumberKeluar();
+        updateSubmit();
+    });
+
+    // Add Non-SN item to table
+    $('#btnAddNonSn').click(function(){
+        var barangId = $('#selectBarang').val();
+        var barangName = $('#selectBarang option:selected').text();
+        var jml = parseInt($('#inputJumlah').val());
+        var max = parseInt($('#inputJumlah').attr('max'));
+        
+        if (isNaN(jml) || jml < 1) { Swal.fire('Peringatan', 'Jumlah tidak valid!', 'warning'); return; }
+        if (jml > max) { Swal.fire('Peringatan', 'Jumlah melebihi stok yang tersedia!', 'warning'); return; }
+
+        var n = $('#tableKeluar tbody tr').length;
+        var row = '<tr>'
+            + '<td class="row-num">' + (n+1) + '</td>'
+            + '<td>' + barangName + '<input type="hidden" name="barangIds" value="' + barangId + '"></td>'
+            + '<td><span class="text-muted">Tidak ada SN</span></td>'
+            + '<td><input type="number" name="jumlahs" class="form-control form-control-sm" value="' + jml + '" readonly></td>'
+            + '<td><input type="text" name="keterangans" class="form-control form-control-sm" placeholder="Opsional" /></td>'
+            + '<td><button type="button" class="btn btn-danger btn-xs remove-row-k"><i class="fas fa-times"></i></button></td>'
+            + '</tr>';
+
+        $('#tableKeluar tbody').append(row);
+        $('#emptyMsg').hide();
+
+        // Reset selection
+        $('#selectBarang').val('').trigger('change');
+        $('#nonSnContainer').hide();
+        renumberKeluar();
+        updateSubmit();
+    });
+
+    $(document).on('click','.remove-row-k',function(){
+        $(this).closest('tr').remove();
+        renumberKeluar();
+        if ($('#tableKeluar tbody tr').length === 0) $('#emptyMsg').show();
+        updateSubmit();
+    });
+
+    function renumberKeluar(){ 
+        $('#tableKeluar tbody tr').each(function(i){ 
+            $(this).find('.row-num').text(i+1); 
+            // Also renumber the snRows[X][] inputs to match the row index!
+            $(this).find('input[name^="snRows["]').each(function() {
+                var currentName = $(this).attr('name');
+                var newName = currentName.replace(/snRows\[\d+\]/, 'snRows[' + i + ']');
+                $(this).attr('name', newName);
+            });
+        }); 
+    }
+
+    function updateSubmit(){
+        $('#btnSubmit').prop('disabled', $('#tableKeluar tbody tr').length === 0);
+    }
+
+    // Initial state
+    updateSubmit();
+});
 </script>
 }

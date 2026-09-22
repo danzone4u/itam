@@ -22,6 +22,10 @@ namespace itam.Models
         [StringLength(50)]
         public string PrefixSuratPeminjaman { get; set; } = "SP";
 
+        [Display(Name = "Prefix Permintaan Barang")]
+        [StringLength(50)]
+        public string PrefixPermintaan { get; set; } = "REQ";
+
         [Display(Name = "Format Tanggal")]
         [StringLength(20)]
         public string FormatTanggal { get; set; } = "yyyyMMdd";
@@ -58,5 +62,9 @@ namespace itam.Models
         [Display(Name = "Template Surat Peminjaman")]
         [StringLength(200)]
         public string TemplateSuratPeminjaman { get; set; } = "{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}";
+
+        [Display(Name = "Template Permintaan Barang")]
+        [StringLength(200)]
+        public string TemplatePermintaan { get; set; } = "{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}";
     }
 }

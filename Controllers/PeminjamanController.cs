@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using itam.Data;
 using itam.Models;
+using itam.Services;
 
 namespace itam.Controllers
 {
@@ -11,10 +12,14 @@ namespace itam.Controllers
     public class PeminjamanController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITelegramService _telegram;
+        private readonly IEmailService _email;
 
-        public PeminjamanController(ApplicationDbContext context)
+        public PeminjamanController(ApplicationDbContext context, ITelegramService telegram, IEmailService email)
         {
             _context = context;
+            _telegram = telegram;
+            _email = email;
         }
 
         public async Task<IActionResult> Index()
@@ -64,39 +69,41 @@ namespace itam.Controllers
             var baseCount = await _context.Peminjamans.CountAsync();
             var noPeminjaman = GenerateNoPeminjaman(suratSetting, baseCount + 1);
 
+            // Build a dictionary of row index -> list of selected SN IDs
             var snData = new Dictionary<int, List<int>>();
-            var formKeys = Request.Form.Keys.Where(k => k.StartsWith("snRows[")).ToList();
+            var formKeys = Request.Form.Keys.Where(k => k.StartsWith("snRows["))
+                .ToList();
             foreach (var key in formKeys)
             {
-                var indexStr = key.Replace("snRows[", "").Replace("]", "");
-                if (int.TryParse(indexStr, out int idx))
+                // Extract numeric index from key (supports snRows[0] and snRows[0][])
+                var match = System.Text.RegularExpressions.Regex.Match(key, @"snRows\[(\d+)\](?:\[\])?");
+                if (match.Success && int.TryParse(match.Groups[1].Value, out int idx))
                 {
-                    var vals = Request.Form[key].Where(v => !string.IsNullOrEmpty(v) && int.TryParse(v, out _)).Select(v => int.Parse(v!)).ToList();
+                    var vals = Request.Form[key]
+                        .Where(v => !string.IsNullOrEmpty(v) && int.TryParse(v, out _))
+                        .Select(v => int.Parse(v))
+                        .ToList();
                     snData[idx] = vals;
                 }
             }
 
-            var orderedSnKeys = snData.Keys.OrderBy(k => k).ToList();
+            // Iterate over each barang row and associate its SN list (if any) by matching the row index directly
             int successCount = 0;
-
             for (int i = 0; i < barangIds.Length; i++)
             {
                 var barang = await _context.Barangs.FindAsync(barangIds[i]);
                 if (barang == null || barangIds[i] <= 0) continue;
-                
-                var snList = new List<int>();
-                if (orderedSnKeys.Count > i)
-                {
-                    int keyIndex = orderedSnKeys[i];
-                    snList = snData[keyIndex];
-                }
+
+                // Get SN list for this row index (i) if present; otherwise empty list
+                var snList = snData.ContainsKey(i) ? snData[i] : new List<int>();
 
                 int actualJumlah = snList.Count > 0 ? snList.Count : (i < jumlahs.Length ? jumlahs[i] : 1);
                 if (actualJumlah > barang.Stok) actualJumlah = barang.Stok;
                 if (actualJumlah <= 0) continue;
 
-                var ket = (keterangans != null && i < keterangans.Length && !string.IsNullOrWhiteSpace(keterangans[i]))
-                    ? keterangans[i] : keteranganGlobal;
+                var ket = (keterangans != null && i < keterangans.Length && !string.IsNullOrWhiteSpace(keterangans[i])
+                    ? keterangans[i]
+                    : keteranganGlobal);
 
                 if (snList.Count > 0)
                 {
@@ -123,7 +130,7 @@ namespace itam.Controllers
                         var snObj = await _context.BarangSerials.FindAsync(snId);
                         if (snObj != null) snObj.Status = "Keluar";
 
-                        barang.Stok -= 1;
+                        barang.Stok = Math.Max(0, barang.Stok - 1);
                         successCount++;
                     }
                 }
@@ -145,12 +152,49 @@ namespace itam.Controllers
                         CreatedAt = DateTime.Now
                     };
                     _context.Peminjamans.Add(pinjam);
-                    barang.Stok -= actualJumlah;
+                    barang.Stok = Math.Max(0, barang.Stok - actualJumlah);
                     successCount++;
                 }
             }
 
             await _context.SaveChangesAsync();
+
+            // Kirim Notifikasi
+            try
+            {
+                var addedItems = await _context.Peminjamans
+                    .Include(p => p.Barang)
+                    .Include(p => p.BarangSerial)
+                    .Where(p => p.NoPeminjaman == noPeminjaman)
+                    .ToListAsync();
+
+                if (addedItems.Any())
+                {
+                    var firstItem = addedItems.First();
+                    var itemDetails = string.Join("\n", addedItems.Select(item => 
+                        $"- {item.Barang.NamaBarang} (Jml: {item.Jumlah}{(item.BarangSerial != null ? $", SN: {item.BarangSerial.SerialNumber}" : "")})"));
+
+                    var msg = $"🔔 *Peminjaman Baru ({noPeminjaman})*\n" +
+                              $"Peminjam: *{firstItem.Peminjam}*\n" +
+                              $"Nopeg: *{firstItem.NipNik ?? "-"}*\n" +
+                              $"Departemen: *{firstItem.Departemen ?? "-"}*\n" +
+                              $"Tgl Pinjam: *{firstItem.TanggalPinjam:dd/MM/yyyy}*\n" +
+                              $"Jatuh Tempo: *{firstItem.TanggalJatuhTempo:dd/MM/yyyy}*\n" +
+                              $"Keterangan: *{keteranganGlobal ?? "-"}*\n\n" +
+                              $"*Daftar Barang:*\n{itemDetails}";
+
+                    if (await _context.TelegramBotSettings.AnyAsync(s => s.IsEnabled))
+                    {
+                        _ = Task.Run(() => _telegram.SendAsync(msg));
+                    }
+                    _ = Task.Run(() => _email.SendEmailAsync("Peminjaman Baru", msg, isPeminjaman: true));
+                }
+            }
+            catch
+            {
+                // Silently ignore
+            }
+
             TempData["Success"] = $"{successCount} item berhasil dipinjamkan!";
             return RedirectToAction(nameof(Index));
         }
@@ -201,6 +245,42 @@ namespace itam.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            // Kirim Notifikasi
+            try
+            {
+                var returnedItems = await _context.Peminjamans
+                    .Include(p => p.Barang)
+                    .Include(p => p.BarangSerial)
+                    .Where(p => p.NoPeminjaman == noPeminjaman)
+                    .ToListAsync();
+
+                if (returnedItems.Any())
+                {
+                    var firstItem = returnedItems.First();
+                    var itemDetails = string.Join("\n", returnedItems.Select(item => 
+                        $"- {item.Barang.NamaBarang} (Jml: {item.Jumlah}{(item.BarangSerial != null ? $", SN: {item.BarangSerial.SerialNumber}" : "")})"));
+
+                    var msg = $"✅ *Pengembalian Barang ({noPeminjaman})*\n" +
+                              $"Peminjam: *{firstItem.Peminjam}*\n" +
+                              $"Nopeg: *{firstItem.NipNik ?? "-"}*\n" +
+                              $"Tgl Kembali: *{DateTime.Now:dd/MM/yyyy HH:mm}*\n" +
+                              $"Kondisi: *{kondisiKembali}*\n" +
+                              $"Keterangan: *{keterangan ?? "-"}*\n\n" +
+                              $"*Daftar Barang:*\n{itemDetails}";
+
+                    if (await _context.TelegramBotSettings.AnyAsync(s => s.IsEnabled))
+                    {
+                        _ = Task.Run(() => _telegram.SendAsync(msg));
+                    }
+                    _ = Task.Run(() => _email.SendEmailAsync("Pengembalian Barang", msg, isPeminjaman: true));
+                }
+            }
+            catch
+            {
+                // Silently ignore
+            }
+
             TempData["Success"] = "Seluruh barang dalam transaksi berhasil dikembalikan!";
             return RedirectToAction(nameof(Index));
         }

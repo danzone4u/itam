@@ -7,7 +7,7 @@ using itam.Models;
 
 namespace itam.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,AdminGudang,User")]
+    [Authorize(Roles = "SuperAdmin,AdminGudang")]
     public class BarangKembaliController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -31,16 +31,21 @@ namespace itam.Controllers
         [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Create(int? barangKeluarId)
         {
-            ViewBag.Barangs = new SelectList(
-                await _context.Barangs.OrderBy(b => b.NamaBarang).ToListAsync(),
-                "Id", "NamaBarang");
-
-            var barangKeluarList = await _context.BarangKeluars
-                .Include(bk => bk.Barang)
-                .OrderByDescending(bk => bk.TanggalKeluar)
-                .Select(bk => new { bk.Id, Display = bk.Barang!.NamaBarang + " - " + bk.Penerima + " (" + bk.TanggalKeluar.ToString("dd/MM/yyyy") + ") - Qty: " + bk.Jumlah })
+            var suratJalans = await _context.BarangKeluars
+                .Where(bk => bk.NoSuratJalan != null)
+                .Select(bk => new { 
+                    NoSuratJalan = bk.NoSuratJalan, 
+                    Tanggal = bk.TanggalKeluar,
+                    Penerima = bk.Penerima
+                })
+                .Distinct()
+                .OrderByDescending(s => s.Tanggal)
                 .ToListAsync();
-            ViewBag.BarangKeluars = new SelectList(barangKeluarList, "Id", "Display", barangKeluarId);
+
+            ViewBag.SuratJalans = suratJalans.Select(s => new SelectListItem {
+                Value = s.NoSuratJalan,
+                Text = $"{s.NoSuratJalan} - {s.Penerima} ({s.Tanggal:dd/MM/yyyy})"
+            }).ToList();
 
             // Pre-fill from BarangKeluar if provided
             if (barangKeluarId.HasValue)
@@ -48,7 +53,8 @@ namespace itam.Controllers
                 var bk = await _context.BarangKeluars.FindAsync(barangKeluarId);
                 if (bk != null)
                 {
-                    ViewBag.PrefilledBarangId = bk.BarangId;
+                    ViewBag.PrefilledSuratJalan = bk.NoSuratJalan;
+                    ViewBag.PrefilledBarangKeluarId = bk.Id;
                     ViewBag.PrefilledJumlah = bk.Jumlah;
                     ViewBag.PrefilledPenerima = bk.Penerima;
                 }
@@ -116,16 +122,27 @@ namespace itam.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Barangs = new SelectList(
-                await _context.Barangs.OrderBy(b => b.NamaBarang).ToListAsync(),
-                "Id", "NamaBarang", model.BarangId);
-
-            var barangKeluarList = await _context.BarangKeluars
-                .Include(bk => bk.Barang)
-                .OrderByDescending(bk => bk.TanggalKeluar)
-                .Select(bk => new { bk.Id, Display = bk.Barang!.NamaBarang + " - " + bk.Penerima + " (" + bk.TanggalKeluar.ToString("dd/MM/yyyy") + ") - Qty: " + bk.Jumlah })
+            var suratJalans = await _context.BarangKeluars
+                .Where(bk => bk.NoSuratJalan != null)
+                .Select(bk => new { 
+                    NoSuratJalan = bk.NoSuratJalan, 
+                    Tanggal = bk.TanggalKeluar,
+                    Penerima = bk.Penerima
+                })
+                .Distinct()
+                .OrderByDescending(s => s.Tanggal)
                 .ToListAsync();
-            ViewBag.BarangKeluars = new SelectList(barangKeluarList, "Id", "Display", model.BarangKeluarId);
+
+            ViewBag.SuratJalans = suratJalans.Select(s => new SelectListItem {
+                Value = s.NoSuratJalan,
+                Text = $"{s.NoSuratJalan} - {s.Penerima} ({s.Tanggal:dd/MM/yyyy})"
+            }).ToList();
+
+            if (model.BarangKeluarId.HasValue)
+            {
+                var bk = await _context.BarangKeluars.FindAsync(model.BarangKeluarId);
+                if (bk != null) ViewBag.PrefilledSuratJalan = bk.NoSuratJalan;
+            }
 
             return View(model);
         }
@@ -179,7 +196,7 @@ namespace itam.Controllers
         public async Task<IActionResult> BulkDelete(int[] ids)
         {
             if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
-            var items = await _context.BarangKembalis.Where(b => ids.Contains(b.Id)).ToListAsync();
+            var items = await _context.BarangKembalis.Include(bk => bk.BarangSerials).Where(b => ids.Contains(b.Id)).ToListAsync();
             foreach (var item in items)
             {
                 if (item.TindakLanjut == "Dikembalikan ke Stok" || item.TindakLanjut == "Selesai Diperbaiki")
@@ -194,6 +211,15 @@ namespace itam.Controllers
                     if (bk != null)
                     {
                         bk.Jumlah += item.Jumlah;
+                    }
+                }
+
+                if (item.BarangSerials != null)
+                {
+                    foreach (var sn in item.BarangSerials)
+                    {
+                        sn.BarangKembaliId = null;
+                        sn.Status = "Keluar";
                     }
                 }
             }
@@ -266,6 +292,24 @@ namespace itam.Controllers
                 .ToList();
 
             return Json(new { barangId = bk.BarangId, jumlah = bk.Jumlah, penerima = bk.Penerima, serials = serials });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetItemsBySuratJalan(string noSuratJalan)
+        {
+            if (string.IsNullOrEmpty(noSuratJalan)) return Json(new object[] { });
+
+            var items = await _context.BarangKeluars
+                .Include(b => b.Barang)
+                .Where(b => b.NoSuratJalan == noSuratJalan)
+                .Select(b => new {
+                    id = b.Id,
+                    text = b.Barang!.NamaBarang + " - Qty: " + b.Jumlah,
+                    barangId = b.BarangId
+                })
+                .ToListAsync();
+
+            return Json(items);
         }
     }
 }

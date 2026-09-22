@@ -5,6 +5,7 @@
     var appName = appSetting?.AppName ?? "IT Asset Management";
     var logoPath = appSetting?.LogoPath ?? "";
     var faviconPath = appSetting?.FaviconPath ?? "";
+    var pendingPermintaanCount = _context.Permintaans.Count(p => p.Status == "Menunggu Approval");
 }
 <!DOCTYPE html>
 <html lang="id">
@@ -16,13 +17,13 @@
     {
         <link rel="icon" type="image/x-icon" href="~/@faviconPath">
     }
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="~/lib/source-sans-pro/index.css">
+    <link rel="stylesheet" href="~/lib/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="~/lib/admin-lte/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="~/lib/datatables.net-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/lib/select2/dist/css/select2.min.css">
+    <link rel="stylesheet" href="~/lib/select2-bootstrap4-theme/dist/select2-bootstrap4.min.css">
+    <link rel="stylesheet" href="~/lib/sweetalert2/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="~/css/site.css">
 </head>
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
@@ -35,6 +36,34 @@
             </li>
         </ul>
         <ul class="navbar-nav ml-auto">
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+            {
+                <li class="nav-item dropdown">
+                    <a class="nav-link" data-toggle="dropdown" href="#" title="Notifikasi Permintaan">
+                        <i class="far fa-bell"></i>
+                        @if (pendingPermintaanCount > 0)
+                        {
+                            <span class="badge badge-warning navbar-badge">@pendingPermintaanCount</span>
+                        }
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                        <span class="dropdown-item dropdown-header">@pendingPermintaanCount Permintaan Pending</span>
+                        <div class="dropdown-divider"></div>
+                        @if (pendingPermintaanCount > 0)
+                        {
+                            <a href="@Url.Action("Index", "Permintaan", new { status = "Menunggu Approval" })" class="dropdown-item text-warning font-weight-bold">
+                                <i class="fas fa-clipboard-check mr-2"></i> @pendingPermintaanCount pengajuan butuh persetujuan
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="dropdown-item text-muted">Tidak ada pengajuan pending.</span>
+                        }
+                        <div class="dropdown-divider"></div>
+                        <a href="@Url.Action("Index", "Permintaan")" class="dropdown-item dropdown-footer">Lihat Semua Permintaan</a>
+                    </div>
+                </li>
+            }
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
                     <i class="fas fa-user-circle"></i> @User.Identity?.Name
@@ -80,39 +109,48 @@
                             <p>Dashboard</p>
                         </a>
                     </li>
-                    <li class="nav-item has-treeview @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
-                        <a href="javascript:void(0);" class="nav-link @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
-                            <i class="nav-icon fas fa-boxes"></i>
-                            <p>Barang <i class="right fas fa-angle-left"></i></p>
+                    <li class="nav-item">
+                        <a href="@Url.Action("Index","Permintaan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permintaan" ? "active" : "")">
+                            <i class="nav-icon fas fa-clipboard-list" style="color:#fd7e14;"></i>
+                            <p>
+                                Permintaan Barang
+                                @if ((User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang")) && pendingPermintaanCount > 0)
+                                {
+                                    <span class="badge badge-warning right">@pendingPermintaanCount</span>
+                                }
+                            </p>
                         </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="@Url.Action("Index","Barang")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Barang" ? "active" : "")">
-                                    <i class="far fa-circle nav-icon"></i><p>Data Barang</p>
-                                </a>
-                            </li>
-                            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
-                            {
+                    </li>
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                    {
+                        <li class="nav-item has-treeview @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
+                            <a href="javascript:void(0);" class="nav-link @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
+                                <i class="nav-icon fas fa-boxes"></i>
+                                <p>Barang <i class="right fas fa-angle-left"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Index","Barang")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Barang" ? "active" : "")">
+                                        <i class="far fa-circle nav-icon"></i><p>Data Barang</p>
+                                    </a>
+                                </li>
                                 <li class="nav-item">
                                     <a href="@Url.Action("Index","BarangMasuk")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangMasuk" ? "active" : "")">
                                         <i class="far fa-circle nav-icon text-success"></i><p>Barang Masuk</p>
                                     </a>
                                 </li>
-                            }
-                            <li class="nav-item">
-                                <a href="@Url.Action("Index","BarangKeluar")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")">
-                                    <i class="far fa-circle nav-icon text-danger"></i><p>Barang Keluar</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="@Url.Action("Index","BarangKembali")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKembali" ? "active" : "")">
-                                    <i class="far fa-circle nav-icon text-info"></i><p>Barang Kembali</p>
-                                </a>
-                            }
-                        </ul>
-                    </li>
-                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
-                    {
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Index","BarangKeluar")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKeluar" ? "active" : "")">
+                                        <i class="far fa-circle nav-icon text-danger"></i><p>Barang Keluar</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action("Index","BarangKembali")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKembali" ? "active" : "")">
+                                        <i class="far fa-circle nav-icon text-info"></i><p>Barang Kembali</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                         <li class="nav-item has-treeview @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
                             <a href="javascript:void(0);" class="nav-link @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
                                 <i class="nav-icon fas fa-cubes"></i>
@@ -176,7 +214,7 @@
                     }
                     @if (User.IsInRole("SuperAdmin"))
                     {
-                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup", "ActivityLog", "AppSetting" };
+                        var settingControllers = new[] { "ChartSetting", "User", "KopSurat", "SuratSetting", "Backup", "ActivityLog", "AppSetting", "Settings" };
                         var isSettingActive = settingControllers.Contains(ViewContext.RouteData.Values["controller"]?.ToString());
                     <li class="nav-item has-treeview @(isSettingActive ? "menu-open" : "")">
                         <a href="javascript:void(0);" class="nav-link @(isSettingActive ? "active" : "")">
@@ -219,6 +257,11 @@
                                     <i class="far fa-circle nav-icon"></i><p>Log Aktivitas</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="@Url.Action("Index","BarangKembali")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKembali" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon text-info"></i><p>Barang Kembali</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     }
@@ -241,7 +284,7 @@
 
         <section class="content">
             <div class="container-fluid">
-                @if (TempData["Success"] != null || TempData["Error"] != null || TempData["Warning"] != null)
+                @if (TempData["Success"] != null || TempData["Error"] != null || ViewBag.Error != null || TempData["Warning"] != null)
                 {
                     <script>
                     $(function(){
@@ -265,19 +308,20 @@
                             });
                             </text>
                         }
-                        @if (TempData["Error"] != null)
+                        @if (TempData["Error"] != null || ViewBag.Error != null)
                         {
                             <text>
-                            var msg = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["Error"]?.ToString()));
+                            var msgErr = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((TempData["Error"] ?? ViewBag.Error)?.ToString()));
+                            var formattedErr = msgErr ? msgErr.replace(/ \| /g, '<br/>• ').replace(/\n/g, '<br/>') : 'Terjadi kesalahan saat menyimpan data.';
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Oops!',
-                                text: msg,
-                                confirmButtonColor: '#e74c3c',
-                                confirmButtonText: '<i class="fas fa-check"></i> OK',
+                                title: '<span style="font-size: 22px; font-weight: bold; color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Gagal Menyimpan Data!</span>',
+                                html: '<div class="text-left py-2" style="font-size: 15px; color: #444; line-height: 1.6;">' + (formattedErr.indexOf('•') >= 0 || formattedErr.indexOf('❌') >= 0 ? formattedErr : '• ' + formattedErr) + '</div>',
+                                confirmButtonColor: '#dc3545',
+                                confirmButtonText: '<i class="fas fa-check"></i> OK, Perbaiki',
                                 background: '#fff',
                                 customClass: {
-                                    popup: 'animate__animated animate__shakeX',
+                                    popup: 'animate__animated animate__shakeX shadow-lg',
                                     title: 'text-danger'
                                 }
                             });
@@ -317,12 +361,12 @@
     </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/js/adminlte.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="~/lib/jquery/jquery.min.js"></script>
+<script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="~/lib/datatables.net/js/jquery.dataTables.min.js"></script>
+<script src="~/lib/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="~/lib/admin-lte/dist/js/adminlte.min.js"></script>
+<script src="~/lib/chart.js/dist/chart.min.js"></script>
 <script>
     $(document).ready(function () {
         $('.data-table').each(function() {
@@ -376,7 +420,7 @@
         $('.select2').select2({ theme: 'bootstrap4', placeholder: '-- Pilih --', allowClear: true });
     });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="~/lib/select2/dist/js/select2.min.js"></script>
 <script>
     $(function(){ $('.select2').select2({ theme: 'bootstrap4', placeholder: '-- Pilih --', allowClear: true }); });
 
@@ -399,7 +443,7 @@
         }
     })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="~/lib/sweetalert2/dist/sweetalert2.min.js"></script>
 <script>
     $(document).ready(function () {
         // Strip all onsubmit confirm() attributes and replace with SweetAlert2
@@ -507,6 +551,56 @@
     });
 </script>
 <script>
+    // Intercept forms that fail HTML5 validation and show SweetAlert2 popup
+    $(document).on('submit', 'form', function (e) {
+        var form = this;
+        if ($(form).attr('method') && $(form).attr('method').toLowerCase() === 'get') return;
+        if ($(form).data('swal-delete') !== undefined || $(form).hasClass('no-swal-val')) return;
+
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            var invalidLabels = [];
+            $(form).find(':invalid').each(function () {
+                var $elem = $(this);
+                var labelText = '';
+                var $fg = $elem.closest('.form-group, td');
+                if ($fg.length > 0) {
+                    labelText = $fg.find('label').text().replace('*', '').trim();
+                }
+                if (!labelText) {
+                    labelText = $elem.attr('placeholder') || $elem.attr('name') || 'Kolom wajib';
+                }
+                if (invalidLabels.indexOf(labelText) === -1) {
+                    invalidLabels.push(labelText);
+                }
+            });
+
+            var errorHtml = 'Data tidak berhasil tersimpan karena beberapa kolom wajib belum diisi:<br/><ul class="text-left mt-2 mb-0" style="font-size: 14px; color: #dc3545;">';
+            if (invalidLabels.length > 0) {
+                invalidLabels.forEach(function(lbl) {
+                    errorHtml += '<li><b>' + lbl + '</b></li>';
+                });
+            } else {
+                errorHtml += '<li><b>Lengkapi semua kolom bertanda bintang (*).</b></li>';
+            }
+            errorHtml += '</ul>';
+
+            Swal.fire({
+                icon: 'error',
+                title: '<span style="font-size: 20px; font-weight: bold; color: #dc3545;"><i class="fas fa-times-circle"></i> Gagal Menyimpan Data!</span>',
+                html: errorHtml,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: '<i class="fas fa-pen"></i> Periksa Inputan',
+                customClass: {
+                    popup: 'animate__animated animate__shakeX shadow-lg'
+                }
+            });
+            $(form).addClass('was-validated');
+        }
+    });
+
     // Auto-mark required fields with red asterisk (skip readonly and jumlah fields)
     $(function () {
         $('input[required], select[required], textarea[required]').each(function () {

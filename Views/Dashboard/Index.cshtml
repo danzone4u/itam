@@ -1,10 +1,116 @@
 @{
     ViewData["Title"] = "Dashboard";
     var charts = (List<itam.Models.ChartSetting>)ViewBag.Charts;
+    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang");
+    var userRecentReqs = (List<itam.Models.Permintaan>?)ViewBag.UserRecentPermintaans ?? new List<itam.Models.Permintaan>();
 }
 
+@if (!isStaffOrAdmin)
+{
+    <div class="row">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+                <div class="inner">
+                    <h3>@ViewBag.UserPermintaanPending</h3>
+                    <p>Permintaan Pending</p>
+                </div>
+                <div class="icon"><i class="fas fa-clock"></i></div>
+                <a href="@Url.Action("Index","Permintaan", new { status = "Menunggu Approval" })" class="small-box-footer">Lihat Status <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+                <div class="inner">
+                    <h3>@ViewBag.UserPermintaanDisetujui</h3>
+                    <p>Permintaan Disetujui</p>
+                </div>
+                <div class="icon"><i class="fas fa-check-circle"></i></div>
+                <a href="@Url.Action("Index","Permintaan", new { status = "Disetujui" })" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>@ViewBag.UserPermintaanDitolak</h3>
+                    <p>Permintaan Ditolak</p>
+                </div>
+                <div class="icon"><i class="fas fa-times-circle"></i></div>
+                <a href="@Url.Action("Index","Permintaan", new { status = "Ditolak" })" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3><i class="fas fa-plus-circle"></i></h3>
+                    <p>Buat Permintaan Baru</p>
+                </div>
+                <div class="icon"><i class="fas fa-paper-plane"></i></div>
+                <a href="@Url.Action("Create","Permintaan")" class="small-box-footer">Form Pengajuan <i class="fas fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+    </div>
+
+    @if (userRecentReqs.Any())
+    {
+        <div class="card card-outline card-primary">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h3 class="card-title mb-0"><i class="fas fa-clipboard-list text-primary mr-1"></i> Permintaan Barang Saya Terbaru</h3>
+                <div class="card-tools ml-auto">
+                    <a href="@Url.Action("Index", "Permintaan")" class="btn btn-primary btn-xs">Lihat Semua Permintaan Saya</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>No. Request</th>
+                            <th>Jenis</th>
+                            <th>Penerima</th>
+                            <th>Barang Diminta</th>
+                            <th>Tanggal</th>
+                            <th>Status</th>
+                            <th width="120">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in userRecentReqs)
+                        {
+                            var itemSummary = string.Join(", ", item.Details.Select(d => $"{d.Barang?.NamaBarang} ({d.Jumlah})"));
+                            var statusBadge = item.Status switch
+                            {
+                                "Disetujui" => "badge-success",
+                                "Ditolak" => "badge-danger",
+                                "Dibatalkan" => "badge-secondary",
+                                _ => "badge-warning"
+                            };
+
+                            <tr>
+                                <td><span class="badge bg-secondary font-monospace">@item.NoPermintaan</span></td>
+                                <td><span class="badge @(item.JenisPermintaan == "Peminjaman" ? "badge-info" : "badge-primary")">@(item.JenisPermintaan == "Peminjaman" ? "Peminjaman" : "Barang Keluar")</span></td>
+                                <td><strong>@item.Penerima</strong></td>
+                                <td>@itemSummary</td>
+                                <td>@item.TanggalPengajuan.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td><span class="badge @statusBadge">@item.Status</span></td>
+                                <td>
+                                    <a href="@Url.Action("Detail", "Permintaan", new { id = item.Id })" class="btn btn-info btn-xs">
+                                        <i class="fas fa-eye"></i> Detail
+                                    </a>
+                                    <a href="@Url.Action("SuratPermintaan", "Permintaan", new { id = item.Id })" class="btn btn-secondary btn-xs">
+                                        <i class="fas fa-print"></i> Form
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
+else
+{
 <div class="row">
-    <div class="col-lg-3 col-6">
+    <div class="col-lg col-md-4 col-6">
         <div class="small-box bg-info">
             <div class="inner">
                 <h3>@ViewBag.TotalBarang</h3>
@@ -14,27 +120,37 @@
             <a href="@Url.Action("Index","Barang")" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
-    <div class="col-lg-3 col-6">
+    <div class="col-lg col-md-4 col-6">
         <div class="small-box bg-gradient-teal">
             <div class="inner">
                 <h3>@ViewBag.TotalBarangMasuk</h3>
-                <p>Total Barang Masuk</p>
+                <p>Barang Masuk</p>
             </div>
             <div class="icon"><i class="fas fa-arrow-down"></i></div>
             <a href="@Url.Action("Index","BarangMasuk")" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
-    <div class="col-lg-3 col-6">
+    <div class="col-lg col-md-4 col-6">
         <div class="small-box bg-gradient-orange">
             <div class="inner">
                 <h3>@ViewBag.TotalBarangKeluar</h3>
-                <p>Total Barang Keluar</p>
+                <p>Barang Keluar</p>
             </div>
             <div class="icon"><i class="fas fa-arrow-up"></i></div>
             <a href="@Url.Action("Index","BarangKeluar")" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
-    <div class="col-lg-3 col-6">
+    <div class="col-lg col-md-4 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>@ViewBag.PendingPermintaanCount</h3>
+                <p>Permintaan Pending</p>
+            </div>
+            <div class="icon"><i class="fas fa-clipboard-check"></i></div>
+            <a href="@Url.Action("Index","Permintaan", new { status = "Menunggu Approval" })" class="small-box-footer">Lihat Detail <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    <div class="col-lg col-md-4 col-6">
         <div class="small-box bg-danger">
             <div class="inner">
                 <h3>@ViewBag.StokRendah</h3>
@@ -45,6 +161,7 @@
         </div>
     </div>
 </div>
+}
 
 @if (charts.Any())
 {
@@ -116,7 +233,53 @@ else
     </div>
 }
 
-@{ var overdueCount = (int)ViewBag.OverduePeminjaman; }
+@{ var pendingReqs = (List<itam.Models.Permintaan>?)ViewBag.PendingPermintaanItems ?? new List<itam.Models.Permintaan>(); }
+@if (pendingReqs.Any() && (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang")))
+{
+    <div class="card card-outline card-warning">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h3 class="card-title mb-0"><i class="fas fa-bell text-warning mr-1"></i> Permintaan Menunggu Persetujuan Admin (@ViewBag.PendingPermintaanCount)</h3>
+            <div class="card-tools ml-auto">
+                <a href="@Url.Action("Index", "Permintaan", new { status = "Menunggu Approval" })" class="btn btn-warning btn-xs">Lihat Semua</a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>No. Request</th>
+                        <th>Jenis</th>
+                        <th>Pemohon</th>
+                        <th>Penerima</th>
+                        <th>Barang Diminta</th>
+                        <th>Tanggal</th>
+                        <th width="80">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in pendingReqs)
+                    {
+                        var itemSummary = string.Join(", ", item.Details.Select(d => $"{d.Barang?.NamaBarang} ({d.Jumlah})"));
+                        <tr class="table-warning">
+                            <td><span class="badge bg-secondary">@item.NoPermintaan</span></td>
+                            <td><span class="badge @(item.JenisPermintaan == "Peminjaman" ? "badge-info" : "badge-primary")">@(item.JenisPermintaan == "Peminjaman" ? "Peminjaman" : "Barang Keluar")</span></td>
+                            <td>@item.PemohonUser</td>
+                            <td><strong>@item.Penerima</strong></td>
+                            <td>@itemSummary</td>
+                            <td>@item.TanggalPengajuan.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <a href="@Url.Action("Detail", "Permintaan", new { id = item.Id })" class="btn btn-primary btn-xs">
+                                    <i class="fas fa-check-circle"></i> Review
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+@{ var overdueCount = (int)(ViewBag.OverduePeminjaman ?? 0); }
 @if (overdueCount > 0)
 {
     <div class="card card-outline card-warning">

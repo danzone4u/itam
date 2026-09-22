@@ -32,6 +32,10 @@ namespace itam.Data
         public DbSet<BackupSetting> BackupSettings { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<AppSetting> AppSettings { get; set; }
+        public DbSet<TelegramBotSetting> TelegramBotSettings { get; set; }
+        public DbSet<EmailSetting> EmailSettings { get; set; }
+        public DbSet<Permintaan> Permintaans { get; set; }
+        public DbSet<PermintaanDetail> PermintaanDetails { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -193,6 +197,39 @@ namespace itam.Data
             builder.Entity<BarangLokasi>().HasIndex(bl => bl.Stok);
             builder.Entity<BarangSerial>().HasIndex(bs => bs.BarangId);
             builder.Entity<BarangSerial>().HasIndex(bs => bs.Status);
+
+            builder.Entity<PermintaanDetail>()
+                .HasOne(d => d.Permintaan)
+                .WithMany(p => p.Details)
+                .HasForeignKey(d => d.PermintaanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<PermintaanDetail>()
+                .HasOne(d => d.Barang)
+                .WithMany()
+                .HasForeignKey(d => d.BarangId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Permintaan>()
+                .HasOne(p => p.Lokasi)
+                .WithMany()
+                .HasForeignKey(p => p.LokasiId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Permintaan>()
+                .HasOne(p => p.BarangKeluar)
+                .WithMany()
+                .HasForeignKey(p => p.BarangKeluarId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Permintaan>()
+                .HasOne(p => p.Peminjaman)
+                .WithMany()
+                .HasForeignKey(p => p.PeminjamanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Permintaan>().HasIndex(p => p.Status);
+            builder.Entity<Permintaan>().HasIndex(p => p.PemohonUser);
         }
     }
 }

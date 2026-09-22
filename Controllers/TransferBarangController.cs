@@ -83,7 +83,7 @@ namespace itam.Controllers
             foreach(var bld in stokAsalList.Where(x => x.Stok > 0).OrderBy(x => x.Id)) {
                 if(sisa <= 0) break;
                 int deduct = Math.Min(bld.Stok, sisa);
-                bld.Stok -= deduct;
+                bld.Stok = Math.Max(0, bld.Stok - deduct);
                 sisa -= deduct;
             }
 
@@ -153,7 +153,7 @@ namespace itam.Controllers
                 foreach(var bld in blsTujuan) {
                     if(sisa <= 0) break;
                     int deduct = Math.Min(bld.Stok, sisa);
-                    bld.Stok -= deduct;
+                    bld.Stok = Math.Max(0, bld.Stok - deduct);
                     sisa -= deduct;
                 }
 
@@ -184,7 +184,7 @@ namespace itam.Controllers
                 foreach(var bld in blsTujuan) {
                     if(sisa <= 0) break;
                     int deduct = Math.Min(bld.Stok, sisa);
-                    bld.Stok -= deduct;
+                    bld.Stok = Math.Max(0, bld.Stok - deduct);
                     sisa -= deduct;
                 }
             }

@@ -23,6 +23,33 @@ namespace itam.Controllers
             ViewBag.TotalBarangKeluar = await _context.BarangKeluars.SumAsync(x => (int?)x.Jumlah) ?? 0;
             ViewBag.StokRendah = await _context.Barangs.CountAsync(b => b.Stok <= b.StokMinimum);
 
+            // User Specific Statistics
+            var username = User.Identity?.Name ?? "";
+            ViewBag.UserPermintaanPending = await _context.Permintaans.CountAsync(p => p.PemohonUser == username && p.Status == "Menunggu Approval");
+            ViewBag.UserPermintaanDisetujui = await _context.Permintaans.CountAsync(p => p.PemohonUser == username && p.Status == "Disetujui");
+            ViewBag.UserPermintaanDitolak = await _context.Permintaans.CountAsync(p => p.PemohonUser == username && p.Status == "Ditolak");
+            ViewBag.UserRecentPermintaans = await _context.Permintaans
+                .Include(p => p.Lokasi)
+                .Include(p => p.Details)
+                    .ThenInclude(d => d.Barang)
+                .Where(p => p.PemohonUser == username)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
+            // Pending Permintaan count & list (for admin)
+            ViewBag.PendingPermintaanCount = await _context.Permintaans
+                .CountAsync(p => p.Status == "Menunggu Approval");
+
+            ViewBag.PendingPermintaanItems = await _context.Permintaans
+                .Include(p => p.Lokasi)
+                .Include(p => p.Details)
+                    .ThenInclude(d => d.Barang)
+                .Where(p => p.Status == "Menunggu Approval")
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(5)
+                .ToListAsync();
+
             // Low stock items (per-barang threshold)
             ViewBag.LowStockItems = await _context.Barangs
                 .Include(b => b.Kategori)

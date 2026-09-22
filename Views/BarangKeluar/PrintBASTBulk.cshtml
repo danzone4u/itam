@@ -55,7 +55,7 @@
                     }
                     @if (contacts.Any()) { <p style="font-size:11px; color:#888; margin:2px 0 0 0;">@string.Join(" | ", contacts)</p> }
                 </div>
-                @if (kop.TampilkanLogo) { <img src="/images/logo-ppn.png" alt="Logo" style="height:112px;"> }
+                @if (kop.TampilkanLogo) { var imgPath = !string.IsNullOrEmpty(kop.LogoPath) ? kop.LogoPath : "images/logo-ppn.png"; <img src="~/@imgPath" alt="Logo" style="height:112px;"> }
             </div>
         </div>
         

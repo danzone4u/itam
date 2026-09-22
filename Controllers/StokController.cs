@@ -11,14 +11,32 @@ namespace itam.Controllers
     public class StokController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly Services.IStokSyncService _stokSync;
 
-        public StokController(ApplicationDbContext context)
+        public StokController(ApplicationDbContext context, Services.IStokSyncService stokSync)
         {
             _context = context;
+            _stokSync = stokSync;
         }
 
         public async Task<IActionResult> Index(string? search, int? kategoriId)
         {
+            // Auto-heal negative stok if any exists in DB
+            var negBarangs = await _context.Barangs.Where(b => b.Stok < 0).ToListAsync();
+            if (negBarangs.Any())
+            {
+                foreach (var b in negBarangs) b.Stok = 0;
+            }
+            var negLokasis = await _context.BarangLokasis.Where(bl => bl.Stok < 0).ToListAsync();
+            if (negLokasis.Any())
+            {
+                foreach (var bl in negLokasis) bl.Stok = 0;
+            }
+            if (negBarangs.Any() || negLokasis.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
+
             var query = _context.Barangs.Include(b => b.Kategori).AsQueryable();
             if (!string.IsNullOrEmpty(search))
             {
@@ -32,6 +50,40 @@ namespace itam.Controllers
             }
             ViewBag.Kategoris = new SelectList(await _context.Kategoris.ToListAsync(), "Id", "NamaKategori", kategoriId);
             return View(await query.OrderBy(b => b.NamaBarang).ToListAsync());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        public async Task<IActionResult> SyncStok(int? id)
+        {
+            if (id.HasValue && id.Value > 0)
+            {
+                var newStok = await _stokSync.SyncBarangAsync(id.Value);
+                TempData["Success"] = $"Stok & Serial Number berhasil disinkronkan! (Stok saat ini: {newStok})";
+            }
+            else
+            {
+                var count = await _stokSync.SyncAllBarangAsync();
+                TempData["Success"] = $"Seluruh data stok & Serial Number ({count} barang) berhasil disinkronkan sesuai riwayat transaksi!";
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        public async Task<IActionResult> FixNegativeStok()
+        {
+            var negBarangs = await _context.Barangs.Where(b => b.Stok < 0).ToListAsync();
+            foreach (var b in negBarangs) b.Stok = 0;
+
+            var negLokasis = await _context.BarangLokasis.Where(bl => bl.Stok < 0).ToListAsync();
+            foreach (var bl in negLokasis) bl.Stok = 0;
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"Stok negatif berhasil diperbarui ke 0. ({negBarangs.Count} barang, {negLokasis.Count} lokasi diperbaiki)";
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> KartuStok(int id)

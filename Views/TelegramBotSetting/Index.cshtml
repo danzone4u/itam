@@ -1,0 +1,76 @@
+@model itam.Models.TelegramBotSetting
+
+@{
+    ViewData["Title"] = "Pengaturan Bot Telegram";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card card-outline card-primary shadow">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fab fa-telegram-plane mr-1 text-primary"></i>
+                    Konfigurasi Telegram Bot
+                </h3>
+            </div>
+            <!-- /.card-header -->
+            <!-- form start -->
+            <form asp-action="Save" method="post">
+                <div class="card-body">
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="form-group row">
+                        <label asp-for="BotToken" class="col-sm-3 col-form-label">Bot Token <span class="text-danger">*</span></label>
+                        <div class="col-sm-9">
+                            <input asp-for="BotToken" class="form-control" placeholder="Contoh: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" required />
+                            <span asp-validation-for="BotToken" class="text-danger text-sm"></span>
+                            <small class="text-muted">Token rahasia bot yang diperoleh dari <a href="https://t.me/BotFather" target="_blank" rel="noopener">@@BotFather</a>.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mt-3">
+                        <label asp-for="ChatIds" class="col-sm-3 col-form-label">Chat IDs <span class="text-danger">*</span></label>
+                        <div class="col-sm-9">
+                            <textarea asp-for="ChatIds" class="form-control" rows="3" placeholder="Contoh: -100123456789, 987654321" required></textarea>
+                            <span asp-validation-for="ChatIds" class="text-danger text-sm"></span>
+                            <small class="text-muted">Masukkan ID grup (biasanya diawali tanda minus, misal: <code>-100xxx</code>) atau ID user penerima. Pisahkan dengan tanda koma (<code>,</code>) jika lebih dari satu.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mt-3">
+                        <label class="col-sm-3 col-form-label">Status Notifikasi</label>
+                        <div class="col-sm-9 d-flex align-items-center">
+                            <div class="custom-control custom-switch">
+                                <input asp-for="IsEnabled" type="checkbox" class="custom-control-input" id="isEnabledSwitch">
+                                <label class="custom-control-label font-weight-normal" for="isEnabledSwitch">Aktifkan Notifikasi Telegram</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.card-body -->
+
+                <div class="card-footer d-flex justify-content-between">
+                    <div>
+                        @if (Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.BotToken))
+                        {
+                            <button type="submit" asp-action="TestConnection" class="btn btn-info shadow-sm">
+                                <i class="fas fa-paper-plane mr-1"></i> Kirim Tes Pesan
+                            </button>
+                        }
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary shadow-sm">
+                            <i class="fas fa-save mr-1"></i> Simpan Pengaturan
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

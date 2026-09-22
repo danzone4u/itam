@@ -8,16 +8,18 @@ using ClosedXML.Excel;
 
 namespace itam.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "SuperAdmin,AdminGudang")]
     public class BarangController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly Services.IStokSyncService _stokSync;
 
-        public BarangController(ApplicationDbContext context, IWebHostEnvironment env)
+        public BarangController(ApplicationDbContext context, IWebHostEnvironment env, Services.IStokSyncService stokSync)
         {
             _context = context;
             _env = env;
+            _stokSync = stokSync;
         }
 
         public IActionResult Index()
@@ -333,6 +335,16 @@ namespace itam.Controllers
             ViewBag.SnTersedia = snTersedia;
 
             return View(barang);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        public async Task<IActionResult> SyncStok(int id)
+        {
+            var newStok = await _stokSync.SyncBarangAsync(id);
+            TempData["Success"] = $"Stok & Serial Number barang berhasil disinkronkan sesuai riwayat transaksi! (Stok saat ini: {newStok})";
+            return RedirectToAction(nameof(Detail), new { id });
         }
 
         public async Task<IActionResult> ExportExcel()

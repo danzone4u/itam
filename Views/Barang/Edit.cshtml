@@ -14,7 +14,7 @@
                 <div class="col-md-6"><div class="form-group"><label asp-for="Satuan"></label><select asp-for="Satuan" class="form-control" required><option value="">-- Pilih Satuan --</option><option>Unit</option><option>Pcs</option><option>Set</option><option>Buah</option><option>Lembar</option><option>Rim</option><option>Box</option><option>Pack</option><option>Roll</option><option>Botol</option><option>Dus</option><option>Karton</option><option>Lusin</option><option>Meter</option><option>Batang</option><option>Pasang</option><option>Kg</option><option>Liter</option></select></div></div>
             <div class="row">
                 <div class="col-md-6"><div class="form-group"><label asp-for="StokMinimum"></label><input asp-for="StokMinimum" class="form-control" /><small class="text-muted">Alert ditampilkan di Dashboard jika stok <= nilai ini</small></div></div>
-                <div class="col-md-6"><div class="form-group"><label asp-for="Stok"></label><input asp-for="Stok" class="form-control" type="number" min="0" /><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Peringatan: Override stok manual hanya untuk koreksi data.</small></div></div>
+                <div class="col-md-6"><div class="form-group"><label asp-for="Stok"></label><input asp-for="Stok" class="form-control bg-light" type="number" readonly /><small class="text-info"><i class="fas fa-info-circle"></i> Stok dihitung otomatis dari transaksi. Gunakan menu <b>Sinkronkan Stok</b> atau <b>Stok Opname</b> untuk koreksi.</small></div></div>
             </div>
             @if (!string.IsNullOrEmpty(Model.Gambar))
             {

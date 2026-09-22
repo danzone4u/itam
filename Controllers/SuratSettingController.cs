@@ -31,11 +31,13 @@ namespace itam.Controllers
             var countSTB = await _context.BarangKeluars.CountAsync() + 1;
             var countSK = await _context.BarangKembalis.CountAsync() + 1;
             var countSP = await _context.Peminjamans.CountAsync() + 1;
+            var countREQ = await _context.Permintaans.CountAsync() + 1;
 
             ViewBag.Preview = GenerateNomorSurat(setting, countSJ, "SJ");
             ViewBag.PreviewTerima = GenerateNomorSurat(setting, countSTB, "STB");
             ViewBag.PreviewKembali = GenerateNomorSurat(setting, countSK, "SK");
             ViewBag.PreviewPeminjaman = GenerateNomorSurat(setting, countSP, "SP");
+            ViewBag.PreviewPermintaan = GenerateNomorSurat(setting, countREQ, "REQ");
 
             return View(setting);
         }
@@ -53,6 +55,7 @@ namespace itam.Controllers
                     existing.PrefixSuratKembali = model.PrefixSuratKembali;
                     existing.PrefixSuratTerima = model.PrefixSuratTerima;
                     existing.PrefixSuratPeminjaman = model.PrefixSuratPeminjaman;
+                    existing.PrefixPermintaan = model.PrefixPermintaan;
                     existing.FormatTanggal = model.FormatTanggal;
                     existing.PanjangNomorUrut = model.PanjangNomorUrut;
                     existing.Separator = model.Separator;
@@ -63,6 +66,7 @@ namespace itam.Controllers
                     existing.TemplateSuratTerima = model.TemplateSuratTerima;
                     existing.TemplateSuratKembali = model.TemplateSuratKembali;
                     existing.TemplateSuratPeminjaman = model.TemplateSuratPeminjaman;
+                    existing.TemplatePermintaan = model.TemplatePermintaan;
                 }
                 else
                 {
@@ -92,6 +96,7 @@ namespace itam.Controllers
                 "SK" => setting.PrefixSuratKembali,
                 "STB" => setting.PrefixSuratTerima,
                 "SP" => setting.PrefixSuratPeminjaman,
+                "REQ" => setting.PrefixPermintaan,
                 _ => setting.PrefixSuratJalan
             };
 
@@ -101,6 +106,7 @@ namespace itam.Controllers
                 "SK" => setting.TemplateSuratKembali,
                 "STB" => setting.TemplateSuratTerima,
                 "SP" => setting.TemplateSuratPeminjaman,
+                "REQ" => setting.TemplatePermintaan,
                 _ => setting.TemplateSuratJalan
             };
 

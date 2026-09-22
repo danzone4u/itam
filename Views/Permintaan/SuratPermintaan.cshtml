@@ -1,0 +1,140 @@
+@model itam.Models.Permintaan
+@{
+    ViewData["Title"] = "Form Permintaan Barang - " + Model.NoPermintaan;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var kop = ViewBag.Kop as itam.Models.KopSurat ?? new itam.Models.KopSurat();
+}
+
+<div class="no-print mb-3">
+    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Cetak Form</button>
+    <a href="@Url.Action("Detail", new { id = Model.Id })" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali ke Detail</a>
+</div>
+
+<div class="surat-container" style="background:#fff; padding:30px; border:1px solid #ddd;">
+    <div class="surat-header" style="text-align:left; border-bottom:none !important;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+                <h3 style="margin:0; font-weight:bold; font-size:22px;">@kop.NamaPerusahaan</h3>
+                @if (!string.IsNullOrEmpty(kop.SubJudul)) { <p style="font-size:14px; color:#666; margin:2px 0 0 0;">@kop.SubJudul</p> }
+                @if (!string.IsNullOrEmpty(kop.Alamat)) { <p style="font-size:12px; margin:2px 0 0 0;">@kop.Alamat</p> }
+                @{
+                    var contacts = new List<string>();
+                    if (!string.IsNullOrEmpty(kop.Telepon)) contacts.Add("Telp: " + kop.Telepon);
+                    if (!string.IsNullOrEmpty(kop.Email)) contacts.Add("Email: " + kop.Email);
+                    if (!string.IsNullOrEmpty(kop.Website)) contacts.Add(kop.Website);
+                }
+                @if (contacts.Any()) { <p style="font-size:11px; color:#888; margin:2px 0 0 0;">@string.Join(" | ", contacts)</p> }
+            </div>
+            @if (kop.TampilkanLogo)
+            {
+                var imgPath = !string.IsNullOrEmpty(kop.LogoPath) ? kop.LogoPath : "images/logo-ppn.png";
+                <img src="~/@imgPath" alt="Logo" style="height:100px;">
+            }
+        </div>
+    </div>
+    
+    <hr style="border-top:3px solid #333; margin:15px 0;" />
+    <h3 style="text-align:center; margin-top:20px; font-weight:bold; margin-bottom:20px; text-transform:uppercase;">
+        FORM PERMINTAAN & PERSETUJUAN BARANG
+    </h3>
+
+    <table style="width:100%; margin-bottom:20px; font-size:14px; line-height:1.8;">
+        <tr>
+            <td style="width:180px"><strong>No. Permintaan</strong></td>
+            <td>: <strong>@Model.NoPermintaan</strong></td>
+            <td style="width:160px"><strong>Status</strong></td>
+            <td>: <strong>@Model.Status</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Jenis Permintaan</strong></td>
+            <td>: @(Model.JenisPermintaan == "Peminjaman" ? "Peminjaman (Harus Kembali)" : "Barang Keluar (Habis Pakai)")</td>
+            <td><strong>Tgl Pengajuan</strong></td>
+            <td>: @Model.TanggalPengajuan.ToString("dd MMMM yyyy HH:mm")</td>
+        </tr>
+        <tr>
+            <td><strong>Pemohon (Inputter)</strong></td>
+            <td>: @Model.PemohonUser</td>
+            <td><strong>Penerima Barang</strong></td>
+            <td>: <strong>@Model.Penerima</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Nopeg / NIP / NIK</strong></td>
+            <td>: @(Model.NipNik ?? "-")</td>
+            <td><strong>Departemen / Unit</strong></td>
+            <td>: @(Model.Departemen ?? "-")</td>
+        </tr>
+        <tr>
+            <td><strong>Ruangan / Lokasi</strong></td>
+            <td>: @(Model.Lokasi?.NamaLokasi ?? "-")</td>
+            <td><strong>No. HP</strong></td>
+            <td>: @(Model.NoHp ?? "-")</td>
+        </tr>
+        <tr>
+            <td><strong>Keperluan</strong></td>
+            <td colspan="3">: @Model.Keperluan</td>
+        </tr>
+    </table>
+
+    <p style="font-weight:bold; margin-top:15px; margin-bottom:10px;">Daftar Rincian Barang Diminta:</p>
+    <table class="table table-bordered" style="width:100%; margin-bottom:25px; font-size:13px;">
+        <thead>
+            <tr style="background:#f8f9fa;">
+                <th width="40" style="text-align:center;">No</th>
+                <th width="120">Kode Barang</th>
+                <th>Nama Barang</th>
+                <th width="80" style="text-align:center;">Jumlah</th>
+                <th width="80">Satuan</th>
+                <th>Catatan / Spesifikasi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int index = 1; }
+            @foreach (var detail in Model.Details)
+            {
+                <tr>
+                    <td style="text-align:center;">@(index++)</td>
+                    <td><code>@detail.Barang?.KodeBarang</code></td>
+                    <td><strong>@detail.Barang?.NamaBarang</strong></td>
+                    <td style="text-align:center;"><strong>@detail.Jumlah</strong></td>
+                    <td>@detail.Barang?.Satuan</td>
+                    <td>@(detail.Catatan ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!string.IsNullOrEmpty(Model.ApprovedBy))
+    {
+        <div style="background:#f8f9fa; padding:10px 15px; border-left:4px solid #28a745; margin-bottom:25px; font-size:13px;">
+            <strong>Catatan Respon Admin (@Model.ApprovedBy - @Model.ApprovedAt?.ToString("dd/MM/yyyy HH:mm")):</strong><br />
+            <span>@(Model.CatatanAdmin ?? "Tidak ada catatan khusus.")</span>
+        </div>
+    }
+
+    <!-- Tanda Tangan Section -->
+    <div style="margin-top:40px; display:flex; justify-content:space-between; text-align:center; font-size:13px;">
+        <div style="width:30%;">
+            <p>Pemohon,</p>
+            <br /><br /><br />
+            <p><strong>(@Model.PemohonUser)</strong></p>
+        </div>
+        <div style="width:30%;">
+            <p>Penerima Barang,</p>
+            <br /><br /><br />
+            <p><strong>(@Model.Penerima)</strong></p>
+        </div>
+        <div style="width:30%;">
+            <p>Disetujui Oleh (Admin Gudang),</p>
+            <br /><br /><br />
+            <p><strong>(@(!string.IsNullOrEmpty(Model.ApprovedBy) ? Model.ApprovedBy : "____________________"))</strong></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        .no-print, .main-header, .main-sidebar, .main-footer { display: none !important; }
+        .content-wrapper { margin-left: 0 !important; padding: 0 !important; background: #fff !important; }
+        .surat-container { border: none !important; padding: 0 !important; }
+    }
+</style>

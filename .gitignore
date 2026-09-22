@@ -9,6 +9,8 @@ appsettings.Development.json
 Migrations/
 publish/
 publish.zip
+*.zip
+DataProtectionKeys/
 script.sql
 *.bak
 MyGudang.db

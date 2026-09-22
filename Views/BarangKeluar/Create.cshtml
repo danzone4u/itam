@@ -168,7 +168,14 @@ $(function(){
     $('#formKeluar').on('submit', function(e){
         if ($('#tableKeluar tbody tr').length === 0) {
             e.preventDefault();
-            Swal.fire('Peringatan', 'Tambahkan minimal 1 barang ke daftar!', 'warning');
+            Swal.fire({
+                icon: 'error',
+                title: '<span style="font-size: 20px; font-weight: bold; color: #dc3545;"><i class="fas fa-times-circle"></i> Gagal Menyimpan Data!</span>',
+                html: '<div class="text-left py-1" style="font-size: 14px; color: #444;">Daftar barang keluar masih kosong! Silakan pilih barang & SN lalu klik <b>"Tambahkan ke Daftar"</b> terlebih dahulu.</div>',
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: '<i class="fas fa-check"></i> Mengerti',
+                customClass: { popup: 'animate__animated animate__shakeX shadow-lg' }
+            });
         }
     });
 });

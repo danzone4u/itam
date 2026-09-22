@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -13,12 +14,14 @@ namespace itam.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public BackupController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env)
+        public BackupController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env, UserManager<IdentityUser> userManager)
         {
             _context = context;
             _config = config;
             _env = env;
+            _userManager = userManager;
         }
 
         // ── Ambil nama database dari connection string ──
@@ -58,12 +61,25 @@ namespace itam.Controllers
             return Path.Combine(_env.WebRootPath, "backups");
         }
 
+        private string ResolvePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return Path.Combine(_env.WebRootPath, "backups");
+            if (!Path.IsPathRooted(path))
+            {
+                if (path.StartsWith("wwwroot"))
+                    return Path.Combine(_env.ContentRootPath, path);
+                return Path.Combine(_env.WebRootPath, path);
+            }
+            return path;
+        }
+
         private async Task<string> GetBackupFolderAsync()
         {
             var setting = await _context.BackupSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            var path = setting?.BackupPath;
+            var rawPath = setting?.BackupPath;
 
-            if (string.IsNullOrWhiteSpace(path) || path == "wwwroot/backups")
+            string path;
+            if (string.IsNullOrWhiteSpace(rawPath) || rawPath == "wwwroot/backups")
             {
                 path = await GetSqlDefaultBackupDirAsync();
                 if (setting != null)
@@ -71,6 +87,10 @@ namespace itam.Controllers
                     setting.BackupPath = path;
                     await _context.SaveChangesAsync();
                 }
+            }
+            else
+            {
+                path = ResolvePath(rawPath);
             }
 
             try { Directory.CreateDirectory(path); }
@@ -94,19 +114,31 @@ namespace itam.Controllers
 
             var backupFolder = await GetBackupFolderAsync();
             List<FileInfo> files = new();
+            string? accessError = null;
             try
             {
-                files = Directory.GetFiles(backupFolder, "*.bak")
-                    .Select(f => new FileInfo(f))
-                    .OrderByDescending(f => f.CreationTime)
-                    .ToList();
+                if (Directory.Exists(backupFolder))
+                {
+                    files = Directory.GetFiles(backupFolder, "*.bak")
+                        .Select(f => new FileInfo(f))
+                        .OrderByDescending(f => f.CreationTime)
+                        .ToList();
+                }
             }
-            catch { }
+            catch (UnauthorizedAccessException)
+            {
+                accessError = $"Web App tidak memiliki izin membaca folder backup: {backupFolder}. Pastikan IIS AppPool memiliki akses ke folder ini.";
+            }
+            catch (Exception ex)
+            {
+                accessError = $"Gagal mengakses folder backup ({backupFolder}): {ex.Message}";
+            }
 
             ViewBag.Setting     = setting;
             ViewBag.BackupFiles = files;
             ViewBag.CurrentPath = backupFolder;
             ViewBag.DbName      = GetDatabaseName();
+            ViewBag.AccessError = accessError;
             return View();
         }
 
@@ -207,11 +239,24 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Restore(string fileName)
+        public async Task<IActionResult> Restore(string fileName, string adminPassword)
         {
             if (string.IsNullOrEmpty(fileName))
             {
                 TempData["Error"] = "File backup tidak valid.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(adminPassword))
+            {
+                TempData["Error"] = "❌ Password admin wajib diisi untuk konfirmasi restore.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || !await _userManager.CheckPasswordAsync(user, adminPassword))
+            {
+                TempData["Error"] = "❌ Password admin salah. Restore dibatalkan.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -283,8 +328,26 @@ namespace itam.Controllers
             if (string.IsNullOrEmpty(fileName)) { TempData["Error"] = "File tidak valid."; return RedirectToAction(nameof(Index)); }
             var backupFolder = await GetBackupFolderAsync();
             var filePath     = Path.Combine(backupFolder, Path.GetFileName(fileName));
-            if (System.IO.File.Exists(filePath)) { System.IO.File.Delete(filePath); TempData["Success"] = $"File {fileName} berhasil dihapus."; }
-            else TempData["Error"] = "File tidak ditemukan.";
+            try
+            {
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                    TempData["Success"] = $"File {fileName} berhasil dihapus.";
+                }
+                else
+                {
+                    TempData["Error"] = "File tidak ditemukan di server.";
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TempData["Error"] = $"❌ Gagal menghapus file {fileName}: Akses ditolak. Berikan izin Modify/Delete pada akun IIS AppPool di folder backup.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"❌ Gagal menghapus file {fileName}: {ex.Message}";
+            }
             return RedirectToAction(nameof(Index));
         }
 

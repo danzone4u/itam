@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using itam.Data;
 using itam.Models;
+using itam.Services;
 using ClosedXML.Excel;
 using OfficeOpenXml;
 using System.IO;
@@ -14,10 +15,14 @@ namespace itam.Controllers
     public class BarangMasukController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITelegramService _telegram;
+        private readonly IEmailService _email;
 
-        public BarangMasukController(ApplicationDbContext context)
+        public BarangMasukController(ApplicationDbContext context, ITelegramService telegram, IEmailService email)
         {
             _context = context;
+            _telegram = telegram;
+            _email = email;
         }
 
         public async Task<IActionResult> Index()
@@ -72,6 +77,33 @@ namespace itam.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Kirim Notifikasi Telegram
+                try
+                {
+                    var barangObj = await _context.Barangs.FindAsync(barangMasuk.BarangId);
+                    var lokasiObj = await _context.Lokasis.FindAsync(barangMasuk.LokasiId.Value);
+                    
+                    var msg = $"📥 *Barang Masuk Baru*\n"
+                              + $"Tgl Masuk: *{barangMasuk.TanggalMasuk:dd/MM/yyyy}*\n"
+                              + $"Lokasi: *{lokasiObj?.NamaLokasi ?? "Ruang IT"}*\n"
+                              + $"Keterangan: *{barangMasuk.Keterangan ?? "-"}*\n\n"
+                              + $"*Daftar Barang:*\n"
+                              + $"- {barangObj?.NamaBarang ?? "Barang"} (Jml: {barangMasuk.Jumlah})";
+
+                    // Telegram notification (if enabled)
+                    if (await _context.TelegramBotSettings.AnyAsync(s => s.IsEnabled))
+                    {
+                        _ = Task.Run(() => _telegram.SendAsync(msg));
+                    }
+                    // Email notification (if enabled)
+                    _ = Task.Run(() => _email.SendEmailAsync("Barang Masuk Notification", msg, isBarangMasuk: true));
+                }
+                catch
+                {
+                    // Silently ignore
+                }
+
                 TempData["Success"] = "Barang masuk berhasil ditambahkan!";
                 return RedirectToAction(nameof(Index));
             }
@@ -103,6 +135,26 @@ namespace itam.Controllers
             return newLokasi.Id;
         }
 
+        private static List<string> ParseAndSplitSNs(IEnumerable<string?>? rawValues)
+        {
+            var result = new List<string>();
+            if (rawValues == null) return result;
+            foreach (var raw in rawValues)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) continue;
+                var splitted = raw.Split(new[] { ',', ';', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var s in splitted)
+                {
+                    var trimmed = s.Trim();
+                    if (!string.IsNullOrEmpty(trimmed))
+                    {
+                        result.Add(trimmed);
+                    }
+                }
+            }
+            return result;
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin,AdminGudang")]
@@ -114,74 +166,84 @@ namespace itam.Controllers
                 return RedirectToAction(nameof(Create));
             }
 
-            // Extract the dynamic snRows from Request.Form since jagged arrays are differently bound.
-            // Keys come in like "snRows[0]", "snRows[1]"
             var snData = new Dictionary<int, List<string>>();
-            var formKeys = Request.Form.Keys.Where(k => k.StartsWith("snRows[")).ToList();
-            foreach (var key in formKeys)
-            {
-                var indexStr = key.Replace("snRows[", "").Replace("]", "");
-                if (int.TryParse(indexStr, out int idx))
-                {
-                    var vals = Request.Form[key].Where(v => !string.IsNullOrEmpty(v)).Select(v => v!).ToList();
-                    snData[idx] = vals; // this correlates to the row index
-                }
-            }
-
             var kondisiData = new Dictionary<int, List<string>>();
-            var kondisiKeys = Request.Form.Keys.Where(k => k.StartsWith("kondisiRows[")).ToList();
-            foreach (var key in kondisiKeys)
+
+            // Extract dynamic snRows and kondisiRows matching each row index
+            for (int i = 0; i < barangIds.Length; i++)
             {
-                var indexStr = key.Replace("kondisiRows[", "").Replace("]", "");
-                if (int.TryParse(indexStr, out int idx))
+                var rawSnVals = Request.Form[$"snRows[{i}]"].Where(v => !string.IsNullOrEmpty(v)).ToList();
+                // Also fallback to any key starting with snRows[i] if not indexed directly
+                if (!rawSnVals.Any())
                 {
-                    var vals = Request.Form[key].Select(v => string.IsNullOrWhiteSpace(v) ? "Baru" : v.Trim()).ToList();
-                    kondisiData[idx] = vals;
+                    var key = Request.Form.Keys.FirstOrDefault(k => k.Equals($"snRows[{i}]", StringComparison.OrdinalIgnoreCase) || k.StartsWith($"snRows[{i}]"));
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        rawSnVals = Request.Form[key].Where(v => !string.IsNullOrEmpty(v)).ToList();
+                    }
                 }
+
+                var parsedSNs = ParseAndSplitSNs(rawSnVals);
+                snData[i] = parsedSNs;
+
+                var rawKondisiVals = Request.Form[$"kondisiRows[{i}]"].Select(v => string.IsNullOrWhiteSpace(v) ? "Baru" : v.Trim()).ToList();
+                if (!rawKondisiVals.Any())
+                {
+                    var key = Request.Form.Keys.FirstOrDefault(k => k.Equals($"kondisiRows[{i}]", StringComparison.OrdinalIgnoreCase) || k.StartsWith($"kondisiRows[{i}]"));
+                    if (!string.IsNullOrEmpty(key))
+                    {
+                        rawKondisiVals = Request.Form[key].Select(v => string.IsNullOrWhiteSpace(v) ? "Baru" : v.Trim()).ToList();
+                    }
+                }
+                kondisiData[i] = rawKondisiVals;
             }
 
-            int count = 0;
-            var orderedSnKeys = snData.Keys.OrderBy(k => k).ToList();
-
-            // ── Kumpulkan semua SN yang akan diinput (non-dash) ──
+            // Gather all non-dash SNs for duplicate check
             var allInputSNs = new List<string>();
             for (int i = 0; i < barangIds.Length; i++)
             {
-                if (orderedSnKeys.Count > i)
+                if (snData.TryGetValue(i, out var snList))
                 {
-                    int keyIndex = orderedSnKeys[i];
-                    allInputSNs.AddRange(snData[keyIndex].Where(s => !string.IsNullOrWhiteSpace(s) && s.Trim() != "-").Select(s => s.Trim()));
+                    allInputSNs.AddRange(snList.Where(s => s != "-").Select(s => s.Trim()));
                 }
             }
 
-            // ── Cek duplikat dalam batch input sendiri ──
+            // Check duplicate SNs within the batch (case-insensitive)
             var batchDuplicates = allInputSNs
                 .GroupBy(s => s, StringComparer.OrdinalIgnoreCase)
                 .Where(g => g.Count() > 1)
                 .Select(g => g.Key)
                 .ToList();
 
-            // ── Cek SN yang sudah ada di database ──
+            // Check existing SNs in database (case-insensitive)
             var existingSNs = new List<string>();
             if (allInputSNs.Any())
             {
+                var inputUpperSet = allInputSNs.Select(s => s.ToUpper()).ToHashSet();
                 var dbSNs = await _context.BarangSerials
-                    .Where(s => s.SerialNumber != "-" && allInputSNs.Contains(s.SerialNumber))
+                    .Where(s => s.SerialNumber != "-" && s.SerialNumber != "")
                     .Select(s => s.SerialNumber)
                     .ToListAsync();
-                existingSNs = dbSNs;
+                existingSNs = dbSNs
+                    .Where(s => inputUpperSet.Contains(s.Trim().ToUpper()))
+                    .Select(s => s.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
             }
 
             if (batchDuplicates.Any() || existingSNs.Any())
             {
                 var msgs = new List<string>();
                 if (batchDuplicates.Any())
-                    msgs.Add($"SN duplikat dalam input: {string.Join(", ", batchDuplicates)}");
+                    msgs.Add($"SN duplikat dalam input: {string.Join(", ", batchDuplicates.Distinct(StringComparer.OrdinalIgnoreCase))}");
                 if (existingSNs.Any())
                     msgs.Add($"SN sudah ada di database: {string.Join(", ", existingSNs)}");
                 TempData["Error"] = "❌ Gagal menyimpan. " + string.Join(" | ", msgs);
                 return RedirectToAction(nameof(Create));
             }
+
+            var notifyItems = new List<string>();
+            int count = 0;
 
             for (int i = 0; i < barangIds.Length; i++)
             {
@@ -190,13 +252,7 @@ namespace itam.Controllers
                 var ket = (keterangans != null && i < keterangans.Length && !string.IsNullOrWhiteSpace(keterangans[i]))
                     ? keterangans[i] : keteranganGlobal;
 
-                var snList = new List<string>();
-                if (orderedSnKeys.Count > i)
-                {
-                    int keyIndex = orderedSnKeys[i];
-                    snList = snData[keyIndex].Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-                }
-
+                var snList = snData.ContainsKey(i) ? snData[i] : new List<string>();
                 int actualJumlah = snList.Count > 0 ? snList.Count : jumlahs[i];
 
                 var bm = new BarangMasuk
@@ -216,11 +272,7 @@ namespace itam.Controllers
 
                 if (snList.Count > 0)
                 {
-                    var kondisiList = new List<string>();
-                    if (orderedSnKeys.Count > i && kondisiData.ContainsKey(orderedSnKeys[i]))
-                    {
-                        kondisiList = kondisiData[orderedSnKeys[i]];
-                    }
+                    var kondisiList = kondisiData.ContainsKey(i) ? kondisiData[i] : new List<string>();
 
                     for (int j = 0; j < snList.Count; j++)
                     {
@@ -247,6 +299,7 @@ namespace itam.Controllers
                         {
                             BarangId = barangIds[i],
                             SerialNumber = "-",
+                            Kondisi = "Baru",
                             Status = "Tersedia",
                             BarangMasukId = bm.Id,
                             CreatedAt = DateTime.Now
@@ -255,7 +308,11 @@ namespace itam.Controllers
                 }
 
                 var barang = await _context.Barangs.FindAsync(barangIds[i]);
-                if (barang != null) barang.Stok += actualJumlah;
+                if (barang != null)
+                {
+                    barang.Stok += actualJumlah;
+                    notifyItems.Add($"- {barang.NamaBarang} (Jml: {actualJumlah})");
+                }
 
                 // Update BarangLokasi (stok per ruangan)
                 int finalLokasiId = bm.LokasiId.Value;
@@ -271,6 +328,33 @@ namespace itam.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            // Kirim Notifikasi Telegram
+            try
+            {
+                if (notifyItems.Any())
+                {
+                    var lokasiObj = lokasiId.HasValue && lokasiId.Value > 0 ? await _context.Lokasis.FindAsync(lokasiId.Value) : null;
+                    var lokasiNama = lokasiObj?.NamaLokasi ?? "Ruang IT";
+                    
+                    var msg = $"📥 *Barang Masuk Baru*\n"
+                              + $"Tgl Masuk: *{tanggalMasuk:dd/MM/yyyy}*\n"
+                              + $"Lokasi: *{lokasiNama}*\n"
+                              + $"Keterangan: *{keteranganGlobal ?? "-"}*\n\n"
+                              + $"*Daftar Barang:*\n{string.Join("\n", notifyItems)}";
+
+                    if (await _context.TelegramBotSettings.AnyAsync(s => s.IsEnabled))
+                    {
+                        _ = Task.Run(() => _telegram.SendAsync(msg));
+                    }
+                    _ = Task.Run(() => _email.SendEmailAsync("Barang Masuk Notification", msg, isBarangMasuk: true));
+                }
+            }
+            catch
+            {
+                // Silently ignore
+            }
+
             TempData["Success"] = $"{count} item barang masuk berhasil ditambahkan!";
             return RedirectToAction(nameof(Index));
         }
@@ -310,13 +394,13 @@ namespace itam.Controllers
             if (barang == null) return NotFound();
             
             // Handle Serial Numbers from FormData
-            var snList = new List<string>();
+            var rawSnVals = new List<string>();
             var formKeys = Request.Form.Keys.Where(k => k.StartsWith("snRows")).ToList();
             foreach (var key in formKeys)
             {
-                var vals = Request.Form[key].Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!.Trim()).ToList();
-                snList.AddRange(vals);
+                rawSnVals.AddRange(Request.Form[key].Where(v => !string.IsNullOrWhiteSpace(v)));
             }
+            var snList = ParseAndSplitSNs(rawSnVals);
 
             var kondisiList = new List<string>();
             var kondisiKeys = Request.Form.Keys.Where(k => k.StartsWith("kondisiRows")).ToList();
@@ -328,6 +412,28 @@ namespace itam.Controllers
 
             int actualJumlah = snList.Count > 0 ? snList.Count : jumlahBaru;
             if (actualJumlah <= 0) actualJumlah = bm.Jumlah; // fallback
+
+            // Duplicate SN check for new SNs
+            var checkSNs = snList.Where(s => s != "-").Select(s => s.Trim()).ToList();
+            if (checkSNs.Any())
+            {
+                var inputUpperSet = checkSNs.Select(s => s.ToUpper()).ToHashSet();
+                var dbExisting = await _context.BarangSerials
+                    .Where(s => s.BarangMasukId != id && s.SerialNumber != "-" && s.SerialNumber != "")
+                    .Select(s => s.SerialNumber)
+                    .ToListAsync();
+                var dupes = dbExisting
+                    .Where(s => inputUpperSet.Contains(s.Trim().ToUpper()))
+                    .Select(s => s.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (dupes.Any())
+                {
+                    TempData["Error"] = $"❌ Gagal memperbarui. SN sudah ada di database: {string.Join(", ", dupes)}";
+                    return RedirectToAction(nameof(Edit), new { id });
+                }
+            }
 
             // 1. Calculate difference in stock 
             int selisih = actualJumlah - bm.Jumlah;
@@ -350,7 +456,7 @@ namespace itam.Controllers
                    foreach (var bld in bls) {
                        if (sisa <= 0) break;
                        int deduct = Math.Min(bld.Stok, sisa);
-                       bld.Stok -= deduct;
+                       bld.Stok = Math.Max(0, bld.Stok - deduct);
                        sisa -= deduct;
                    }
                }
@@ -362,7 +468,6 @@ namespace itam.Controllers
             else 
             {
                // lokasi is the same, just update difference
-               // We add/deduct the difference to/from RakKompartemen = null as fallback
                if (selisih > 0) {
                    var bl = await _context.BarangLokasis.FirstOrDefaultAsync(x => x.BarangId == bm.BarangId && x.LokasiId == finalLokasiId.Value && x.RakKompartemen == null);
                    if (bl != null) bl.Stok += selisih;
@@ -373,13 +478,13 @@ namespace itam.Controllers
                    foreach (var bld in bls) {
                        if (sisa <= 0) break;
                        int deduct = Math.Min(bld.Stok, sisa);
-                       bld.Stok -= deduct;
+                       bld.Stok = Math.Max(0, bld.Stok - deduct);
                        sisa -= deduct;
                    }
                }
             }
 
-            barang.Stok += selisih;
+            barang.Stok = Math.Max(0, barang.Stok + selisih);
             bm.Jumlah = actualJumlah;
             bm.TanggalMasuk = tanggalMasuk;
             bm.Keterangan = keterangan;
@@ -400,7 +505,7 @@ namespace itam.Controllers
                     _context.BarangSerials.Add(new BarangSerial
                     {
                         BarangId = bm.BarangId,
-                        SerialNumber = sn,
+                        SerialNumber = string.IsNullOrWhiteSpace(sn) || sn == "-" ? "-" : sn.Trim(),
                         Kondisi = kondisi,
                         Status = "Tersedia",
                         BarangMasukId = bm.Id,
@@ -416,6 +521,7 @@ namespace itam.Controllers
                     {
                         BarangId = bm.BarangId,
                         SerialNumber = "-",
+                        Kondisi = "Baru",
                         Status = "Tersedia",
                         BarangMasukId = bm.Id,
                         CreatedAt = DateTime.Now
@@ -437,7 +543,7 @@ namespace itam.Controllers
             {
                 var barang = await _context.Barangs.FindAsync(bm.BarangId);
                 if (barang != null)
-                    barang.Stok -= bm.Jumlah;
+                    barang.Stok = Math.Max(0, barang.Stok - bm.Jumlah);
 
                 if (bm.LokasiId.HasValue && bm.LokasiId.Value > 0)
                 {
@@ -446,7 +552,7 @@ namespace itam.Controllers
                    foreach (var bld in bls) {
                        if (sisa <= 0) break;
                        int deduct = Math.Min(bld.Stok, sisa);
-                       bld.Stok -= deduct;
+                       bld.Stok = Math.Max(0, bld.Stok - deduct);
                        sisa -= deduct;
                    }
                 }
@@ -477,7 +583,7 @@ namespace itam.Controllers
             foreach (var bm in items)
             {
                 var barang = await _context.Barangs.FindAsync(bm.BarangId);
-                if (barang != null) barang.Stok -= bm.Jumlah;
+                if (barang != null) barang.Stok = Math.Max(0, barang.Stok - bm.Jumlah);
                 
                 if (bm.LokasiId.HasValue && bm.LokasiId.Value > 0)
                 {
@@ -486,7 +592,7 @@ namespace itam.Controllers
                    foreach (var bld in bls) {
                        if (sisa <= 0) break;
                        int deduct = Math.Min(bld.Stok, sisa);
-                       bld.Stok -= deduct;
+                       bld.Stok = Math.Max(0, bld.Stok - deduct);
                        sisa -= deduct;
                    }
                 }
@@ -730,6 +836,7 @@ namespace itam.Controllers
 
             int successCount = 0;
             var nextNumbers = new Dictionary<string, int>();
+            var notifyImportItems = new List<string>();
 
             // ── Kumpulkan SN duplikat (file + database) untuk di-skip ──
             var allImportSNs = staged
@@ -931,6 +1038,7 @@ namespace itam.Controllers
                 }
 
                 barang.Stok += totalJumlah;
+                notifyImportItems.Add($"- {barang.NamaBarang} (Jml: {totalJumlah})");
 
                 if (finalLokasiId.HasValue && finalLokasiId.Value > 0)
                 {
@@ -949,6 +1057,26 @@ namespace itam.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            // Kirim Notifikasi Telegram
+            try
+            {
+                if (notifyImportItems.Any())
+                {
+                    var msg = $"📥 *Import Barang Masuk (Excel)*\n" +
+                              $"Jumlah Transaksi: *{successCount}*\n" +
+                              $"Total Macam Barang: *{notifyImportItems.Count}*\n\n" +
+                              $"*Daftar Barang:*\n" +
+                              $"{string.Join("\n", notifyImportItems.Take(15))}" +
+                              $"{(notifyImportItems.Count > 15 ? "\n...dan barang lainnya." : "")}";
+
+                    _ = Task.Run(() => _telegram.SendAsync(msg));
+                }
+            }
+            catch
+            {
+                // Silently ignore
+            }
 
             // ── Notifikasi gabungan: sukses + warning SN dilewati ──
             var messages = new List<string>();

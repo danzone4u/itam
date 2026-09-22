@@ -48,7 +48,15 @@ namespace itam.Services
                 // Do backup
                 var backupFolder = setting.BackupPath;
                 if (string.IsNullOrWhiteSpace(backupFolder))
+                {
                     backupFolder = Path.Combine(_env.WebRootPath, "backups");
+                }
+                else if (!Path.IsPathRooted(backupFolder))
+                {
+                    backupFolder = backupFolder.StartsWith("wwwroot")
+                        ? Path.Combine(_env.ContentRootPath, backupFolder)
+                        : Path.Combine(_env.WebRootPath, backupFolder);
+                }
 
                 try
                 {

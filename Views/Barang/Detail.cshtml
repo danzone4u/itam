@@ -33,52 +33,84 @@
                         <b>Satuan</b> <a class="float-right">@Model.Satuan</a>
                     </li>
                     <li class="list-group-item">
-                            <b>Total Stok Saat Ini</b>
-                            <span class="badge bg-primary float-right" style="font-size: 1.1em;">@Model.Stok</span>
-                        </li>
-                    </ul>
-                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-block"><b>Kembali</b></a>
-                </div>
-            </div>
-
-            <!-- Daftar S/N Tersedia -->
-            <div class="card card-outline card-info mt-3">
-                <div class="card-header">
-                    <h3 class="card-title text-info"><i class="fas fa-barcode"></i> Daftar Unit S/N Tersedia</h3>
-                </div>
-                <div class="card-body p-0">
+                        <b>Total Stok Saat Ini</b>
+                        <span class="badge bg-primary float-right" style="font-size: 1.1em;">@Model.Stok</span>
+                    </li>
                     @{
-                        var snList = ViewBag.SnTersedia as IEnumerable<itam.Models.BarangSerial>;
-                        if (snList != null && snList.Any())
+                        var snListCount = (ViewBag.SnTersedia as IEnumerable<itam.Models.BarangSerial>)?.Count() ?? 0;
+                    }
+                    <li class="list-group-item">
+                        <b>Unit SN Tersedia</b>
+                        <span class="badge @(snListCount == Model.Stok ? "bg-success" : "bg-warning text-dark") float-right" style="font-size: 1.1em;">@snListCount</span>
+                    </li>
+                </ul>
+
+                @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                {
+                    <form asp-action="SyncStok" asp-route-id="@Model.Id" method="post" class="mb-2" onsubmit="return confirm('Sinkronkan stok & status SN barang ini dengan riwayat transaksi?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-primary btn-block shadow-sm">
+                            <i class="fas fa-sync-alt"></i> <b>Sinkronkan Stok & SN</b>
+                        </button>
+                    </form>
+                }
+
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-block"><b>Kembali</b></a>
+            </div>
+        </div>
+
+        <!-- Daftar S/N Tersedia -->
+        <div class="card card-outline card-info mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title text-info mb-0"><i class="fas fa-barcode"></i> Unit S/N Tersedia (@snListCount)</h3>
+            </div>
+            <div class="card-body p-0">
+                @{
+                    var snList = ViewBag.SnTersedia as IEnumerable<itam.Models.BarangSerial>;
+                    var hasRealSn = snList != null && snList.Any(s => s.SerialNumber != "-");
+                    if (snList != null && snList.Any())
+                    {
+                        if (hasRealSn)
                         {
-                            <table class="table table-sm table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>S/N</th>
-                                        <th>Kondisi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var sn in snList)
-                                    {
-                                        var badgeClass = sn.Kondisi == "Baru" ? "badge-success" : "badge-warning text-dark";
+                            <div style="max-height: 250px; overflow-y: auto;">
+                                <table class="table table-sm table-striped m-0">
+                                    <thead>
                                         <tr>
-                                            <td><small>@sn.SerialNumber</small></td>
-                                            <td><span class="badge @badgeClass">@sn.Kondisi</span></td>
+                                            <th>S/N</th>
+                                            <th>Kondisi</th>
                                         </tr>
-                                    }
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var sn in snList)
+                                        {
+                                            var badgeClass = sn.Kondisi == "Baru" ? "badge-success" : "badge-warning text-dark";
+                                            <tr>
+                                                <td><small>@(sn.SerialNumber == "-" ? "(Non-SN)" : sn.SerialNumber)</small></td>
+                                                <td><span class="badge @badgeClass">@sn.Kondisi</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                         }
                         else
                         {
-                            <div class="p-3 text-center text-muted">Belum ada S/N atau stok kosong</div>
+                            <div class="p-3 text-center text-muted">
+                                <i class="fas fa-boxes text-info fa-2x mb-2"></i><br/>
+                                <strong>Barang Non-Serial Number</strong><br/>
+                                <small>Pelacakan stok berbasis kuantitas total (Tersedia: <b>@Model.Stok @Model.Satuan</b>)</small>
+                            </div>
                         }
                     }
-                </div>
+                    else
+                    {
+                        <div class="p-3 text-center text-muted">Belum ada S/N atau stok kosong</div>
+                    }
+                }
             </div>
-            
         </div>
+        
+    </div>
 
     <div class="col-md-8">
         <!-- Riwayat Masuk Terbaru -->

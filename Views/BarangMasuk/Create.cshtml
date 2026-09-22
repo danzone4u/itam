@@ -123,7 +123,15 @@ $(document).on('click','.remove-row',function(){
     else { Swal.fire('Peringatan', 'Minimal 1 baris barang!', 'warning'); }
 });
 
-function renumberMasuk(){ $('#tableMasuk tbody tr').each(function(i){ $(this).find('.row-num').text(i+1); }); }
+function renumberMasuk(){
+    $('#tableMasuk tbody tr').each(function(i){
+        $(this).find('.row-num').text(i+1);
+        var $container = $(this).find('.sn-container');
+        $container.attr('data-row-index', i);
+        $container.find('input[name^="snRows"]').attr('name', 'snRows[' + i + ']');
+        $container.find('select[name^="kondisiRows"]').attr('name', 'kondisiRows[' + i + ']');
+    });
+}
 
 // Create Barang Baru via AJAX
 $('#btnSaveBarangBaru').click(function(){
@@ -183,7 +191,14 @@ $('form').submit(function(e) {
     });
     if (!valid) {
         e.preventDefault();
-        Swal.fire('Peringatan', errMsg, 'warning');
+        Swal.fire({
+            icon: 'error',
+            title: '<span style="font-size: 20px; font-weight: bold; color: #dc3545;"><i class="fas fa-times-circle"></i> Gagal Menyimpan Data!</span>',
+            html: '<div class="text-left py-1" style="font-size: 14px; color: #444;">' + errMsg + '</div>',
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: '<i class="fas fa-pen"></i> Perbaiki Inputan',
+            customClass: { popup: 'animate__animated animate__shakeX shadow-lg' }
+        });
     }
 });
 

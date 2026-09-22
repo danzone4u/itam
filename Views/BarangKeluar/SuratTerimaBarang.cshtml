@@ -33,7 +33,8 @@
             </div>
             @if (kop.TampilkanLogo)
             {
-                <img src="/images/logo-ppn.png" alt="Logo" style="height:112px;">
+                var imgPath = !string.IsNullOrEmpty(kop.LogoPath) ? kop.LogoPath : "images/logo-ppn.png";
+                <img src="~/@imgPath" alt="Logo" style="height:112px;">
             }
         </div>
     </div>

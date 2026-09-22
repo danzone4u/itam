@@ -1,9 +1,10 @@
 @{
     ViewData["Title"] = "Backup & Restore";
-    var setting  = ViewBag.Setting  as itam.Models.BackupSetting;
-    var files    = ViewBag.BackupFiles as List<System.IO.FileInfo> ?? new List<System.IO.FileInfo>();
-    var dbName   = ViewBag.DbName as string ?? "DB";
-    var curPath  = ViewBag.CurrentPath as string ?? "";
+    var setting     = ViewBag.Setting  as itam.Models.BackupSetting;
+    var files       = ViewBag.BackupFiles as List<System.IO.FileInfo> ?? new List<System.IO.FileInfo>();
+    var dbName      = ViewBag.DbName as string ?? "DB";
+    var curPath     = ViewBag.CurrentPath as string ?? "";
+    var accessError = ViewBag.AccessError as string;
 }
 
 <div class="row">
@@ -90,6 +91,13 @@
 
     <!-- ── Right: File list ── -->
     <div class="col-md-8">
+        @if (!string.IsNullOrEmpty(accessError))
+        {
+            <div class="alert alert-danger mb-3">
+                <i class="fas fa-exclamation-triangle mr-1"></i> <strong>Akses Folder Terbatas:</strong> @accessError
+            </div>
+        }
+
         <div class="card card-outline card-success">
             <div class="card-header"><h3 class="card-title"><i class="fas fa-archive"></i> Daftar File Backup (@files.Count)</h3></div>
             <div class="card-body p-0">
@@ -119,12 +127,9 @@
                                         <a href="@Url.Action("Download", new { fileName = file.Name })" class="btn btn-success btn-xs" title="Download">
                                             <i class="fas fa-download"></i>
                                         </a>
-                                        <form asp-action="Restore" method="post" style="display:inline"
-                                              onsubmit="return confirm('⚠️ RESTORE akan menimpa seluruh data database @dbName saat ini!\nPastikan sudah backup terbaru.\nLanjutkan?')">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="fileName" value="@file.Name">
-                                            <button type="submit" class="btn btn-warning btn-xs" title="Restore"><i class="fas fa-undo"></i></button>
-                                        </form>
+                                        <button type="button" class="btn btn-warning btn-xs" title="Restore (Butuh Password Admin)" onclick="openRestoreModal('@file.Name')">
+                                            <i class="fas fa-undo"></i> Restore
+                                        </button>
                                         <form asp-action="DeleteBackup" method="post" style="display:inline" onsubmit="return confirm('Hapus file backup ini?')">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="fileName" value="@file.Name">
@@ -141,10 +146,9 @@
 
         <!-- Petunjuk izin SQL Server -->
         <div class="alert alert-warning mt-3">
-            <i class="fas fa-exclamation-triangle"></i> <strong>Penting:</strong>
-            Folder backup harus dapat diakses oleh <strong>SQL Server Service Account</strong> (bukan web server).
+            <i class="fas fa-exclamation-triangle"></i> <strong>Penting (IIS / Server Deploy):</strong><br>
+            Folder backup harus dapat diakses oleh <strong>SQL Server Service Account</strong> (untuk menulis) dan <strong>IIS AppPool Account</strong> (untuk membaca & menghapus).<br>
             Gunakan tombol <i class="fas fa-plug"></i> <b>Tes Akses</b> untuk memastikan SQL Server bisa menulis ke folder tersebut.
-            Jika gagal, gunakan folder default SQL Server (biasanya: <code>C:\Program Files\Microsoft SQL Server\MSSQL...\MSSQL\Backup</code>).
         </div>
     </div>
 </div>
@@ -179,9 +183,46 @@
     </div>
 </div>
 
+<!-- ─────────── Modal Restore (Konfirmasi Password Admin) ─────────── -->
+<div class="modal fade" id="modalRestore" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Restore" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Konfirmasi Restore Database</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning mb-3">
+                        <strong>⚠️ PERINGATAN:</strong> Restore akan menimpa seluruh data database <strong>@dbName</strong> saat ini dengan data dari file backup:
+                        <div class="mt-2 font-weight-bold text-dark p-2 bg-light rounded border text-break" id="restoreFileNameLabel"></div>
+                    </div>
+                    <input type="hidden" name="fileName" id="restoreFileNameInput">
+                    <div class="form-group mb-0">
+                        <label for="adminPassword"><i class="fas fa-lock"></i> Password Admin Saat Ini:</label>
+                        <input type="password" name="adminPassword" id="adminPassword" class="form-control" required placeholder="Masukkan password admin untuk konfirmasi...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-undo"></i> Ya, Restore Database</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
 <script>
 var _selectedFolder = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(curPath));
+
+function openRestoreModal(fileName) {
+    $('#restoreFileNameInput').val(fileName);
+    $('#restoreFileNameLabel').text(fileName);
+    $('#adminPassword').val('');
+    $('#modalRestore').modal('show');
+}
 
 function openFolderPicker() {
     _selectedFolder = $('#backupPathInput').val() || '';

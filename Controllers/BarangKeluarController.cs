@@ -4,18 +4,23 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using itam.Data;
 using itam.Models;
+using itam.Services;
 using ClosedXML.Excel;
 
 namespace itam.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,AdminGudang,User")]
+    [Authorize(Roles = "SuperAdmin,AdminGudang")]
     public class BarangKeluarController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITelegramService _telegram;
+        private readonly IEmailService _email;
 
-        public BarangKeluarController(ApplicationDbContext context)
+        public BarangKeluarController(ApplicationDbContext context, ITelegramService telegram, IEmailService email)
         {
             _context = context;
+            _telegram = telegram;
+            _email = email;
         }
 
         public async Task<IActionResult> Index()
@@ -50,7 +55,7 @@ namespace itam.Controllers
                 var barang = await _context.Barangs.FindAsync(barangKeluar.BarangId);
                 if (barang == null || barang.Stok < barangKeluar.Jumlah)
                 {
-                    TempData["Error"] = "Stok tidak mencukupi!";
+                    TempData["Error"] = $"Stok tidak mencukupi! (Stok tersedia: {barang?.Stok ?? 0}, diminta: {barangKeluar.Jumlah})";
                     ViewBag.Barangs = new SelectList(await _context.Barangs.Where(b => b.Stok > 0).ToListAsync(), "Id", "NamaBarang", barangKeluar.BarangId);
                     return View(barangKeluar);
                 }
@@ -60,9 +65,49 @@ namespace itam.Controllers
                 barangKeluar.NoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting, count, "SJ");
                 barangKeluar.CreatedAt = DateTime.Now;
 
-                barang.Stok -= barangKeluar.Jumlah;
+                barang.Stok = Math.Max(0, barang.Stok - barangKeluar.Jumlah);
                 _context.Add(barangKeluar);
                 await _context.SaveChangesAsync();
+
+                // Update available serials for this barang
+                var availableSerials = await _context.BarangSerials
+                    .Where(s => s.BarangId == barangKeluar.BarangId && s.Status == "Tersedia")
+                    .OrderBy(s => s.SerialNumber == "-" ? 0 : 1)
+                    .ThenBy(s => s.Id)
+                    .Take(barangKeluar.Jumlah)
+                    .ToListAsync();
+                foreach (var s in availableSerials)
+                {
+                    s.Status = "Keluar";
+                    s.BarangKeluarId = barangKeluar.Id;
+                }
+                await _context.SaveChangesAsync();
+
+                // Kirim Notifikasi
+                try
+                {
+                    var barangObj = await _context.Barangs.FindAsync(barangKeluar.BarangId);
+                    var lokasiObj = barangKeluar.LokasiId.HasValue && barangKeluar.LokasiId.Value > 0 
+                        ? await _context.Lokasis.FindAsync(barangKeluar.LokasiId.Value) : null;
+                    
+                    var msg = $"📤 *Barang Keluar Baru ({barangKeluar.NoSuratJalan})*\n" +
+                              $"Penerima: *{barangKeluar.Penerima}*\n" +
+                              $"Tgl Keluar: *{barangKeluar.TanggalKeluar:dd/MM/yyyy}*\n" +
+                              $"Lokasi/Ruang: *{lokasiObj?.NamaLokasi ?? "Gudang Utama/Umum"}*\n" +
+                              $"Keterangan: *{barangKeluar.Keterangan ?? "-"}*\n\n" +
+                              $"*Daftar Barang:*\n" +
+                              $"- {barangObj?.NamaBarang ?? "Barang"} (Jml: {barangKeluar.Jumlah})";
+
+                    if (await _context.TelegramBotSettings.AnyAsync(s => s.IsEnabled))
+                    {
+                        _ = Task.Run(() => _telegram.SendAsync(msg));
+                    }
+                    _ = Task.Run(() => _email.SendEmailAsync("Barang Keluar Notification", msg, isBarangKeluar: true));
+                }
+                catch
+                {
+                    // Silently ignore
+                }
 
                 TempData["Success"] = "Barang keluar berhasil ditambahkan!";
                 return RedirectToAction(nameof(Index));
@@ -113,7 +158,10 @@ namespace itam.Controllers
         public async Task<IActionResult> CreateMultiple(int[] barangIds, int[] jumlahs, int[] serialIds, DateTime tanggalKeluar,
             string penerima, string? noHpPenerima, string? alamat, string? keteranganGlobal, int? lokasiId, string? pic)
         {
-            if ((barangIds == null || barangIds.Length == 0) && (serialIds == null || serialIds.Length == 0) || string.IsNullOrWhiteSpace(penerima))
+            bool hasBarangIds = barangIds != null && barangIds.Length > 0;
+            bool hasSerialIds = serialIds != null && serialIds.Length > 0;
+
+            if ((!hasBarangIds && !hasSerialIds) || string.IsNullOrWhiteSpace(penerima))
             {
                 TempData["Error"] = "Pilih minimal 1 barang dan isi nama penerima!";
                 ViewBag.Barangs = new SelectList(await _context.Barangs.Where(b => b.Stok > 0).ToListAsync(), "Id", "NamaBarang");
@@ -121,42 +169,106 @@ namespace itam.Controllers
                 return View("Create");
             }
 
+            // Group serial records by ID
+            var serialRecords = new List<BarangSerial>();
+            if (hasSerialIds)
+            {
+                var idSet = new HashSet<int>(serialIds!);
+                serialRecords = await _context.BarangSerials
+                    .Where(s => s.Status == "Tersedia" && idSet.Contains(s.Id))
+                    .ToListAsync();
+            }
+
+            // Build map of BarangId -> List<BarangSerial>
+            var serialsByBarang = serialRecords
+                .GroupBy(s => s.BarangId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // Determine all unique BarangIds to process
+            var targetBarangMap = new Dictionary<int, (int Qty, List<BarangSerial> Serials)>();
+
+            if (hasBarangIds)
+            {
+                for (int i = 0; i < barangIds!.Length; i++)
+                {
+                    int bId = barangIds[i];
+                    if (bId <= 0) continue;
+                    int reqQty = (jumlahs != null && i < jumlahs.Length && jumlahs[i] > 0) ? jumlahs[i] : 1;
+
+                    if (!targetBarangMap.ContainsKey(bId))
+                    {
+                        var assignedSerials = serialsByBarang.ContainsKey(bId) ? new List<BarangSerial>(serialsByBarang[bId]) : new List<BarangSerial>();
+                        int finalQty = assignedSerials.Count > 0 ? assignedSerials.Count : reqQty;
+                        targetBarangMap[bId] = (finalQty, assignedSerials);
+                    }
+                    else
+                    {
+                        var prev = targetBarangMap[bId];
+                        int addQty = prev.Serials.Count > 0 ? 0 : reqQty;
+                        targetBarangMap[bId] = (prev.Qty + addQty, prev.Serials);
+                    }
+                }
+            }
+
+            // Also add any serials whose BarangId was not in barangIds array
+            foreach (var kvp in serialsByBarang)
+            {
+                if (!targetBarangMap.ContainsKey(kvp.Key))
+                {
+                    targetBarangMap[kvp.Key] = (kvp.Value.Count, kvp.Value);
+                }
+            }
+
+            if (!targetBarangMap.Any())
+            {
+                TempData["Error"] = "Tidak ada barang valid untuk dikeluarkan!";
+                return RedirectToAction(nameof(Create));
+            }
+
+            // STEP 1: VALIDATE STOCK SUFFICIENCY FOR ALL ITEMS BEFORE SAVING
+            var errorMsgs = new List<string>();
+            foreach (var kvp in targetBarangMap)
+            {
+                var barang = await _context.Barangs.FindAsync(kvp.Key);
+                if (barang == null)
+                {
+                    errorMsgs.Add($"Barang ID {kvp.Key} tidak ditemukan di sistem.");
+                    continue;
+                }
+                if (barang.Stok < kvp.Value.Qty)
+                {
+                    errorMsgs.Add($"Stok '{barang.NamaBarang}' tidak mencukupi! (Stok tersedia: {barang.Stok}, diminta: {kvp.Value.Qty})");
+                }
+            }
+
+            if (errorMsgs.Any())
+            {
+                TempData["Error"] = "❌ Gagal menyimpan. " + string.Join(" | ", errorMsgs);
+                ViewBag.Barangs = new SelectList(await _context.Barangs.Where(b => b.Stok > 0).ToListAsync(), "Id", "NamaBarang");
+                ViewBag.Lokasis = new SelectList(await _context.Lokasis.OrderBy(l => l.NamaLokasi).ToListAsync(), "Id", "NamaLokasi");
+                return View("Create");
+            }
+
+            // STEP 2: GENERATE SURAT JALAN & SAVE RECORDS
             var suratSetting2 = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            var baseCount = await _context.BarangKeluars.CountAsync();
-            
-            // Generate ONE shared Surat Jalan number for this transaction
-            baseCount++;
+            var baseCount = await _context.BarangKeluars.CountAsync() + 1;
             var sharedNoSuratJalan = SuratSettingController.GenerateNomorSurat(suratSetting2, baseCount, "SJ");
 
             int count = 0;
+            var notifyItems = new List<string>();
 
-            // Group serial IDs by barangId
-            var serialRecords = new List<BarangSerial>();
-            if (serialIds != null && serialIds.Length > 0)
+            foreach (var kvp in targetBarangMap)
             {
-                var idSet = new HashSet<int>(serialIds);
-                var allSerials = await _context.BarangSerials.Where(s => s.Status == "Tersedia").ToListAsync();
-                serialRecords = allSerials.Where(s => idSet.Contains(s.Id)).ToList();
-            }
-
-            // Group by BarangId to create one BarangKeluar per unique barang
-            var grouped = new Dictionary<int, List<BarangSerial>>();
-            foreach (var sr in serialRecords)
-            {
-                if (!grouped.ContainsKey(sr.BarangId))
-                    grouped[sr.BarangId] = new List<BarangSerial>();
-                grouped[sr.BarangId].Add(sr);
-            }
-
-            foreach (var kvp in grouped)
-            {
-                var barang = await _context.Barangs.FindAsync(kvp.Key);
+                var bId = kvp.Key;
+                var qty = kvp.Value.Qty;
+                var serials = kvp.Value.Serials;
+                var barang = await _context.Barangs.FindAsync(bId);
                 if (barang == null) continue;
 
                 var bk = new BarangKeluar
                 {
-                    BarangId = kvp.Key,
-                    Jumlah = kvp.Value.Count,
+                    BarangId = bId,
+                    Jumlah = qty,
                     TanggalKeluar = tanggalKeluar,
                     Penerima = penerima,
                     NoHpPenerima = noHpPenerima,
@@ -168,25 +280,51 @@ namespace itam.Controllers
                     CreatedAt = DateTime.Now
                 };
                 _context.BarangKeluars.Add(bk);
-                await _context.SaveChangesAsync(); // Get bk.Id
+                await _context.SaveChangesAsync(); // Generate bk.Id
 
-                // Update serial statuses
-                foreach (var sr in kvp.Value)
+                // Update status for matched serials
+                var serialIdSet = new HashSet<int>();
+                if (serials.Any())
                 {
-                    sr.Status = "Keluar";
-                    sr.BarangKeluarId = bk.Id;
+                    foreach (var sr in serials)
+                    {
+                        sr.Status = "Keluar";
+                        sr.BarangKeluarId = bk.Id;
+                        serialIdSet.Add(sr.Id);
+                    }
                 }
-                barang.Stok -= kvp.Value.Count;
+
+                // If fewer serials were explicitly selected than qty, mark remaining available serials as Keluar
+                int remainingQty = qty - serials.Count;
+                if (remainingQty > 0)
+                {
+                    var extraSerials = await _context.BarangSerials
+                        .Where(s => s.BarangId == bId && s.Status == "Tersedia" && !serialIdSet.Contains(s.Id))
+                        .OrderBy(s => s.SerialNumber == "-" ? 0 : 1)
+                        .ThenBy(s => s.Id)
+                        .Take(remainingQty)
+                        .ToListAsync();
+
+                    foreach (var es in extraSerials)
+                    {
+                        es.Status = "Keluar";
+                        es.BarangKeluarId = bk.Id;
+                    }
+                }
+
+                // Deduct stock with floor limit
+                barang.Stok = Math.Max(0, barang.Stok - qty);
+                notifyItems.Add($"- {barang.NamaBarang} (Jml: {qty})");
 
                 // Update BarangLokasi (kurangi stok ruangan)
                 if (lokasiId.HasValue && lokasiId.Value > 0)
                 {
-                    var bls = await _context.BarangLokasis.Where(x => x.BarangId == kvp.Key && x.LokasiId == lokasiId.Value && x.Stok > 0).OrderBy(x => x.Id).ToListAsync();
-                    int sisa = kvp.Value.Count;
+                    var bls = await _context.BarangLokasis.Where(x => x.BarangId == bId && x.LokasiId == lokasiId.Value && x.Stok > 0).OrderBy(x => x.Id).ToListAsync();
+                    int sisa = qty;
                     foreach (var bld in bls) {
                         if (sisa <= 0) break;
                         int deduct = Math.Min(bld.Stok, sisa);
-                        bld.Stok -= deduct;
+                        bld.Stok = Math.Max(0, bld.Stok - deduct);
                         sisa -= deduct;
                     }
                 }
@@ -195,6 +333,33 @@ namespace itam.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            // Kirim Notifikasi
+            try
+            {
+                if (notifyItems.Any())
+                {
+                    var lokasiObj = lokasiId.HasValue && lokasiId.Value > 0 ? await _context.Lokasis.FindAsync(lokasiId.Value) : null;
+                    var lokasiNama = lokasiObj?.NamaLokasi ?? "Gudang Utama/Umum";
+                    
+                    var msg = $"📤 *Barang Keluar Baru ({sharedNoSuratJalan})*\n" +
+                              $"Penerima: *{penerima}*\n" +
+                              $"Tgl Keluar: *{tanggalKeluar:dd/MM/yyyy}*\n" +
+                              $"Lokasi/Ruang: *{lokasiNama}*\n" +
+                              $"Keterangan: *{keteranganGlobal ?? "-"}*\n\n" +
+                              $"*Daftar Barang:*\n{string.Join("\n", notifyItems)}";
+
+                    if (await _context.TelegramBotSettings.AnyAsync(s => s.IsEnabled))
+                    {
+                        _ = Task.Run(() => _telegram.SendAsync(msg));
+                    }
+                    _ = Task.Run(() => _email.SendEmailAsync("Barang Keluar Notification", msg, isBarangKeluar: true));
+                }
+            }
+            catch
+            {
+                // Silently ignore
+            }
 
             if (count > 0)
                 TempData["Success"] = $"{count} item barang keluar berhasil ditambahkan!";

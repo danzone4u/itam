@@ -13,6 +13,7 @@
                     <tr><td><strong>Surat Terima Barang:</strong></td><td><code id="previewSTB">@ViewBag.PreviewTerima</code></td></tr>
                     <tr><td><strong>Surat Pengembalian:</strong></td><td><code id="previewSK">@ViewBag.PreviewKembali</code></td></tr>
                     <tr><td><strong>Surat Peminjaman:</strong></td><td><code id="previewSP">@ViewBag.PreviewPeminjaman</code></td></tr>
+                    <tr><td><strong>Permintaan Barang:</strong></td><td><code id="previewREQ">@ViewBag.PreviewPermintaan</code></td></tr>
                 </table>
             </div>
 
@@ -70,6 +71,15 @@
                     </div>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="TemplatePermintaan"></label>
+                        <input asp-for="TemplatePermintaan" class="form-control template-input" placeholder="{PREFIX}/{NOMOR}/{SUFFIX}/{TAHUN}" />
+                        <small class="text-muted">Contoh hasil: <span class="template-preview" data-prefix-field="PrefixPermintaan"></span></small>
+                    </div>
+                </div>
+            </div>
 
             <hr/>
 
@@ -90,18 +100,25 @@
                         <small class="text-muted">Surat Terima Barang</small>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="form-group">
                         <label asp-for="PrefixSuratKembali"></label>
                         <input asp-for="PrefixSuratKembali" class="form-control prefix-input" placeholder="SK" />
                         <small class="text-muted">Surat Pengembalian</small>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="form-group">
                         <label asp-for="PrefixSuratPeminjaman"></label>
                         <input asp-for="PrefixSuratPeminjaman" class="form-control prefix-input" placeholder="SP" />
                         <small class="text-muted">Surat Peminjaman</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label asp-for="PrefixPermintaan"></label>
+                        <input asp-for="PrefixPermintaan" class="form-control prefix-input" placeholder="REQ" />
+                        <small class="text-muted">Permintaan Barang</small>
                     </div>
                 </div>
             </div>
@@ -246,6 +263,11 @@ $(function(){
         var spTemplate = $('#TemplateSuratPeminjaman').val();
         var spPrefix = $('#PrefixSuratPeminjaman').val();
         $('#TemplateSuratPeminjaman').closest('.form-group').find('.template-preview').text(renderTemplate(spTemplate, spPrefix, suffix, panjang));
+
+        // Permintaan Barang
+        var reqTemplate = $('#TemplatePermintaan').val();
+        var reqPrefix = $('#PrefixPermintaan').val();
+        $('#TemplatePermintaan').closest('.form-group').find('.template-preview').text(renderTemplate(reqTemplate, reqPrefix, suffix, panjang));
     }
 
     // Update preview on any input change

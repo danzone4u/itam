@@ -1,0 +1,202 @@
+@model itam.Models.Permintaan
+@{
+    ViewData["Title"] = "Detail Permintaan - " + Model.NoPermintaan;
+    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang");
+
+    var statusBadge = Model.Status switch
+    {
+        "Disetujui" => "badge-success",
+        "Ditolak" => "badge-danger",
+        "Dibatalkan" => "badge-secondary",
+        _ => "badge-warning"
+    };
+
+    var jenisBadge = Model.JenisPermintaan switch
+    {
+        "Peminjaman" => "badge-info",
+        _ => "badge-primary"
+    };
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle text-primary"></i> Informasi Pengajuan</h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-striped">
+                    <tr><th>No. Permintaan</th><td><span class="badge bg-secondary font-monospace">@Model.NoPermintaan</span></td></tr>
+                    <tr><th>Jenis Permintaan</th><td><span class="badge @jenisBadge">@(Model.JenisPermintaan == "Peminjaman" ? "Peminjaman Barang" : "Barang Keluar")</span></td></tr>
+                    <tr><th>Status</th><td><span class="badge @statusBadge">@Model.Status</span></td></tr>
+                    <tr><th>Pemohon (User)</th><td>@Model.PemohonUser</td></tr>
+                    <tr><th>Penerima / Pengguna</th><td><strong>@Model.Penerima</strong></td></tr>
+                    <tr><th>Nopeg / NIP / NIK</th><td>@(Model.NipNik ?? "-")</td></tr>
+                    <tr><th>Departemen</th><td>@(Model.Departemen ?? "-")</td></tr>
+                    <tr><th>No. HP</th><td>@(Model.NoHp ?? "-")</td></tr>
+                    <tr><th>Ruangan / Lokasi</th><td>@(Model.Lokasi?.NamaLokasi ?? "-")</td></tr>
+                    <tr><th>Tanggal Pengajuan</th><td>@Model.TanggalPengajuan.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                    @if (Model.JenisPermintaan == "Peminjaman" && Model.TanggalDibutuhkan.HasValue)
+                    {
+                        <tr><th>Target Kembali</th><td>@Model.TanggalDibutuhkan.Value.ToString("dd/MM/yyyy")</td></tr>
+                    }
+                    <tr><th>Keperluan</th><td>@Model.Keperluan</td></tr>
+                </table>
+
+                @if (!string.IsNullOrEmpty(Model.ApprovedBy))
+                {
+                    <hr />
+                    <h6><i class="fas fa-user-check text-info"></i> Info Respon Admin</h6>
+                    <table class="table table-sm table-borderless text-muted" style="font-size:13px;">
+                        <tr><th>Respon Oleh:</th><td>@Model.ApprovedBy</td></tr>
+                        <tr><th>Waktu:</th><td>@Model.ApprovedAt?.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                        <tr><th>Catatan Admin:</th><td>@(Model.CatatanAdmin ?? "-")</td></tr>
+                    </table>
+
+                    @if (Model.Status == "Disetujui")
+                    {
+                        <div class="mt-2 text-center">
+                            @if (Model.JenisPermintaan == "BarangKeluar")
+                            {
+                                <a href="@Url.Action("Index", "BarangKeluar")" class="btn btn-outline-danger btn-block btn-sm">
+                                    <i class="fas fa-arrow-up mr-1"></i> Buka Catatan Barang Keluar & Surat Jalan
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Index", "Peminjaman")" class="btn btn-outline-purple btn-block btn-sm">
+                                    <i class="fas fa-handshake mr-1"></i> Buka Catatan Peminjaman
+                                </a>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            <div class="card-footer text-right">
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Kembali</a>
+                <a href="@Url.Action("SuratPermintaan", new { id = Model.Id })" class="btn btn-primary btn-sm"><i class="fas fa-print"></i> Cetak Form</a>
+                @if (Model.Status == "Menunggu Approval" && (!isStaffOrAdmin || Model.PemohonUser == User.Identity?.Name))
+                {
+                    <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('Batalkan pengajuan ini?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-dark btn-sm"><i class="fas fa-times"></i> Batalkan Pengajuan</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card card-outline card-success">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-boxes text-success"></i> Daftar Barang Diminta</h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Kode</th>
+                            <th>Nama Barang</th>
+                            <th>Stok Gudang</th>
+                            <th width="100">Jml Diminta</th>
+                            <th>Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var detail in Model.Details)
+                        {
+                            var stokCukup = (detail.Barang?.Stok ?? 0) >= detail.Jumlah;
+                            <tr>
+                                <td><code>@detail.Barang?.KodeBarang</code></td>
+                                <td><strong>@detail.Barang?.NamaBarang</strong></td>
+                                <td>
+                                    <span class="badge @(stokCukup ? "badge-success" : "badge-danger")">
+                                        @detail.Barang?.Stok @detail.Barang?.Satuan
+                                    </span>
+                                </td>
+                                <td><strong>@detail.Jumlah</strong> @detail.Barang?.Satuan</td>
+                                <td>@(detail.Catatan ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.Status == "Menunggu Approval" && isStaffOrAdmin)
+            {
+                <div class="card-footer bg-light p-3 text-center">
+                    <h5 class="text-primary mb-3"><i class="fas fa-user-shield"></i> Keputusan Persetujuan Admin</h5>
+                    <button type="button" class="btn btn-success btn-lg mr-2" data-toggle="modal" data-target="#modalApprove">
+                        <i class="fas fa-check-circle mr-1"></i> Setujui Permintaan (Approve)
+                    </button>
+                    <button type="button" class="btn btn-danger btn-lg" data-toggle="modal" data-target="#modalReject">
+                        <i class="fas fa-times-circle mr-1"></i> Tolak Permintaan (Reject)
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.Status == "Menunggu Approval" && isStaffOrAdmin)
+{
+    <!-- Modal Approve -->
+    <div class="modal fade" id="modalApprove" tabindex="-1" role="dialog" aria-labelledby="modalApproveLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalApproveLabel"><i class="fas fa-check-circle mr-1"></i> Konfirmasi Persetujuan Permintaan</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form asp-action="Approve" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle mr-1"></i> Menyutujui permintaan <strong>@Model.NoPermintaan</strong> untuk <strong>@Model.Penerima</strong>. Stok barang akan otomatis dipotong.
+                        </div>
+                        <div class="form-group">
+                            <label>Catatan Persetujuan (Opsional)</label>
+                            <textarea name="catatanAdmin" class="form-control" rows="3" placeholder="Misal: Disetujui, silakan ambil barang di Gudang IT jam 14.00"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i> Batal</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-check-circle"></i> Setujui & Potong Stok</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reject -->
+    <div class="modal fade" id="modalReject" tabindex="-1" role="dialog" aria-labelledby="modalRejectLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="modalRejectLabel"><i class="fas fa-times-circle mr-1"></i> Konfirmasi Penolakan Permintaan</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form asp-action="Reject" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> Anda akan MENOLAK permintaan <strong>@Model.NoPermintaan</strong>. Stok barang tidak akan berkurang.
+                        </div>
+                        <div class="form-group">
+                            <label class="required">Alasan Penolakan</label>
+                            <textarea name="catatanAdmin" class="form-control" rows="3" placeholder="Masukkan alasan penolakan permintaan..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i> Batal</button>
+                        <button type="submit" class="btn btn-danger"><i class="fas fa-ban"></i> Tolak Permintaan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

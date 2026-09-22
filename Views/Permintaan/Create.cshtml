@@ -1,0 +1,202 @@
+@{
+    ViewData["Title"] = "Buat Permintaan Barang";
+    var barangs = ViewBag.Barangs as List<itam.Models.Barang> ?? new List<itam.Models.Barang>();
+}
+
+<div class="card card-outline card-success">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-paper-plane text-success mr-1"></i> Form Pengajuan Permintaan Barang</h3>
+    </div>
+    <form asp-action="Create" method="post" id="formPermintaan">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="required">Jenis Permintaan</label>
+                        <select name="jenisPermintaan" id="jenisPermintaan" class="form-control" required>
+                            <option value="BarangKeluar">Barang Keluar (Permanent Issue / Habis Pakai)</option>
+                            <option value="Peminjaman">Peminjaman (Temporary Loan / Harus Kembali)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="required">Nama Penerima / Pengguna Barang</label>
+                        <input type="text" name="penerima" class="form-control" placeholder="Nama pengguna sesungguhnya" required value="@User.Identity?.Name" />
+                        <small class="text-muted">Diisi pemohon jika digunakan sendiri, atau nama penerima jika diwakilkan.</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Nopeg / NIP / NIK</label>
+                        <input type="text" name="nipNik" class="form-control" placeholder="Nomor Pegawai / Identitas" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Departemen / Unit Kerja</label>
+                        <input type="text" name="departemen" class="form-control" placeholder="Unit kerja penerima" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>No. HP Penerima</label>
+                        <input type="text" name="noHp" class="form-control" placeholder="08xxxxxxxxxx" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Lokasi / Ruangan Tujuan</label>
+                        <select name="lokasiId" class="form-control select2" asp-items="ViewBag.Lokasis">
+                            <option value="">-- Pilih Ruangan (Opsional) --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label class="required">Keperluan / Alasan Permintaan</label>
+                        <input type="text" name="keperluan" class="form-control" placeholder="Misal: Operasional Lapangan / Project Migration / Penggantian Rusak" required />
+                    </div>
+                </div>
+                <div class="col-md-4" id="divTanggalDibutuhkan" style="display:none;">
+                    <div class="form-group">
+                        <label>Tanggal Target Kembali</label>
+                        <input type="date" name="tanggalDibutuhkan" class="form-control" value="@DateTime.Now.AddDays(7).ToString("yyyy-MM-dd")" />
+                        <small class="text-muted">Khusus Peminjaman (Default 7 Hari)</small>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+            <h5 class="text-primary"><i class="fas fa-boxes mr-1"></i> Pilih Barang yang Diminta</h5>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <select id="selectBarang" class="form-control select2">
+                        <option value="">-- Pilih Barang --</option>
+                        @foreach (var b in barangs)
+                        {
+                            <option value="@b.Id" data-nama="@b.NamaBarang" data-satuan="@b.Satuan" data-stok="@b.Stok">
+                                @b.NamaBarang (Stok: @b.Stok @b.Satuan)
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" id="inputJumlah" class="form-control" min="1" value="1" placeholder="Jumlah" />
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="inputCatatan" class="form-control" placeholder="Catatan item (opsional)" />
+                </div>
+                <div class="col-md-1">
+                    <button type="button" id="btnAddBarang" class="btn btn-primary btn-block"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+
+            <table class="table table-bordered table-striped" id="tableSelectedItems">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Barang</th>
+                        <th width="100">Jumlah</th>
+                        <th>Catatan</th>
+                        <th width="80">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodySelectedItems">
+                    <!-- Dynamic Rows -->
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-right">
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+            <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> Kirim Permintaan</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.select2').select2({ theme: 'bootstrap4' });
+
+            $('#jenisPermintaan').change(function () {
+                if ($(this).val() === 'Peminjaman') {
+                    $('#divTanggalDibutuhkan').slideDown();
+                } else {
+                    $('#divTanggalDibutuhkan').slideUp();
+                }
+            });
+
+            $('#btnAddBarang').click(function () {
+                var selectedOption = $('#selectBarang option:selected');
+                var barangId = $('#selectBarang').val();
+                var nama = selectedOption.data('nama');
+                var satuan = selectedOption.data('satuan');
+                var stok = parseInt(selectedOption.data('stok') || 0);
+                var jumlah = parseInt($('#inputJumlah').val() || 1);
+                var catatan = $('#inputCatatan').val() || '';
+
+                if (!barangId) {
+                    Swal.fire('Peringatan', 'Pilih barang terlebih dahulu!', 'warning');
+                    return;
+                }
+
+                if (jumlah <= 0) {
+                    Swal.fire('Peringatan', 'Jumlah harus minimal 1!', 'warning');
+                    return;
+                }
+
+                if (jumlah > stok) {
+                    Swal.fire('Peringatan', 'Jumlah melebihi stok yang tersedia (' + stok + ')!', 'warning');
+                    return;
+                }
+
+                // Check existing
+                var exists = false;
+                $('#tbodySelectedItems tr').each(function () {
+                    var existingId = $(this).find('input[name="barangIds"]').val();
+                    if (existingId == barangId) {
+                        exists = true;
+                    }
+                });
+
+                if (exists) {
+                    Swal.fire('Peringatan', 'Barang sudah ada di daftar. Hapus dulu jika ingin mengubah jumlah.', 'warning');
+                    return;
+                }
+
+                var rowHtml = '<tr>' +
+                    '<td><input type="hidden" name="barangIds" value="' + barangId + '" />' + nama + '</td>' +
+                    '<td><input type="number" name="jumlahs" class="form-control form-control-sm" value="' + jumlah + '" min="1" max="' + stok + '" required /></td>' +
+                    '<td><input type="text" name="catatans" class="form-control form-control-sm" value="' + catatan + '" /></td>' +
+                    '<td class="text-center"><button type="button" class="btn btn-danger btn-xs btnRemoveRow"><i class="fas fa-trash"></i></button></td>' +
+                    '</tr>';
+
+                $('#tbodySelectedItems').append(rowHtml);
+
+                // Reset inputs
+                $('#selectBarang').val('').trigger('change');
+                $('#inputJumlah').val(1);
+                $('#inputCatatan').val('');
+            });
+
+            $(document).on('click', '.btnRemoveRow', function () {
+                $(this).closest('tr').remove();
+            });
+
+            $('#formPermintaan').submit(function (e) {
+                if ($('#tbodySelectedItems tr').length === 0) {
+                    e.preventDefault();
+                    Swal.fire('Peringatan', 'Pilih minimal 1 barang untuk diajukan!', 'warning');
+                }
+            });
+        });
+    </script>
+}
