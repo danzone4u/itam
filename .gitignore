@@ -6,7 +6,6 @@ obj/
 wwwroot/uploads/
 wwwroot/backups/
 appsettings.Development.json
-Migrations/
 publish/
 publish.zip
 *.zip
