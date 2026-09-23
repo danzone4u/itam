@@ -272,6 +272,11 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a href="@Url.Action("Notification","Settings")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" && ViewContext.RouteData.Values["action"]?.ToString() == "Notification" ? "active" : "")">
+                                    <i class="far fa-circle nav-icon text-warning"></i><p>Notifikasi (Telegram/Email)</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="@Url.Action("Index","ActivityLog")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ActivityLog" ? "active" : "")">
                                     <i class="far fa-circle nav-icon"></i><p>Log Aktivitas</p>
                                 </a>
