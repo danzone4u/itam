@@ -1,44 +1,18 @@
 @model itam.Models.NotificationSettingsViewModel
 
 @{
-    ViewData["Title"] = "Pengaturan Notifikasi";
+    ViewData["Title"] = "Pengaturan Notifikasi Email";
 }
 
 <div class="row mt-3">
     <div class="col-md-8 mx-auto">
         <form asp-action="SaveNotification" method="post">
             
-            <!-- TELEGRAM SETTINGS CARD -->
-            <div class="card card-primary card-outline shadow-sm mb-4">
-                <div class="card-header border-0 d-flex justify-content-between align-items-center">
-                    <h3 class="card-title font-weight-bold text-primary">
-                        <i class="fab fa-telegram-plane mr-2"></i> Telegram Notifikasi
-                    </h3>
-                    <div class="custom-control custom-switch custom-switch-lg custom-switch-primary">
-                        <input type="checkbox" class="custom-control-input" id="TelegramEnabled" name="TelegramEnabled" value="true" @(Model.TelegramEnabled ? "checked" : "")>
-                        <label class="custom-control-label" for="TelegramEnabled">Aktifkan</label>
-                    </div>
-                </div>
-                
-                <div class="card-body bg-light" id="TelegramSettingsContainer" style="display: @(Model.TelegramEnabled ? "block" : "none");">
-                    <div class="form-group">
-                        <label asp-for="TelegramBotToken">Bot Token</label>
-                        <input asp-for="TelegramBotToken" class="form-control" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" />
-                        <small class="form-text text-muted">Token bot dari BotFather di Telegram.</small>
-                    </div>
-                    <div class="form-group">
-                        <label asp-for="TelegramChatIds">Chat ID(s)</label>
-                        <textarea asp-for="TelegramChatIds" class="form-control" rows="2" placeholder="-100123456789, 987654321"></textarea>
-                        <small class="form-text text-muted">ID Group atau ID User. Pisahkan dengan koma jika lebih dari satu.</small>
-                    </div>
-                </div>
-            </div>
-
             <!-- EMAIL SETTINGS CARD -->
             <div class="card card-info card-outline shadow-sm mb-4">
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold text-info">
-                        <i class="fas fa-envelope mr-2"></i> Email Notifikasi
+                        <i class="fas fa-envelope mr-2"></i> Pengaturan Notifikasi Email
                     </h3>
                     <div class="custom-control custom-switch custom-switch-lg custom-switch-info">
                         <input type="checkbox" class="custom-control-input" id="EmailEnabled" name="EmailEnabled" value="true" @(Model.EmailEnabled ? "checked" : "")>
