@@ -47,6 +47,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Create(BarangMasuk barangMasuk)
         {
             if (ModelState.IsValid)
@@ -537,6 +538,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Delete(int id)
         {
             var bm = await _context.BarangMasuks.FindAsync(id);
@@ -577,6 +579,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> BulkDelete(int[] ids)
         {
             if (ids == null || ids.Length == 0) return RedirectToAction(nameof(Index));
@@ -736,6 +739,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Import(IFormFile file)
         {
             if (file == null || file.Length == 0)
