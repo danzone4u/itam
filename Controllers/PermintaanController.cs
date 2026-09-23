@@ -135,7 +135,49 @@ namespace itam.Controllers
             }
             await _context.SaveChangesAsync();
 
-            // Telegram Notification to Admin
+            // If request is made by SuperAdmin or AdminGudang, AUTO-APPROVE immediately!
+            if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+            {
+                var approverName = User.FindFirst("NamaLengkap")?.Value ?? User.Identity?.Name ?? "Admin";
+                var reloadedPermintaan = await _context.Permintaans
+                    .Include(p => p.Details)
+                        .ThenInclude(d => d.Barang)
+                    .FirstOrDefaultAsync(p => p.Id == permintaan.Id);
+
+                if (reloadedPermintaan != null)
+                {
+                    await ProcessApprovalInternalAsync(reloadedPermintaan, approverName, "Otomatis Disetujui (Admin/SuperAdmin)");
+                }
+
+                try
+                {
+                    var lokasiObj = lokasiId.HasValue && lokasiId.Value > 0 ? await _context.Lokasis.FindAsync(lokasiId.Value) : null;
+                    var jenisLabel = jenisPermintaan == "Peminjaman" ? "📌 *Peminjaman Barang*" : (jenisPermintaan == "BarangOperasional" ? "⚙️ *Barang Operasional*" : "📤 *Barang Keluar*");
+                    var msg = $"🔔 *Permintaan Barang Baru ({permintaan.NoPermintaan})*\n" +
+                              $"Jenis: {jenisLabel}\n" +
+                              $"Pemohon: *{permintaan.PemohonUser}*\n" +
+                              $"Penerima: *{permintaan.Penerima}*\n" +
+                              $"Unit Kerja: *{permintaan.Departemen ?? "-"}*\n" +
+                              $"Lokasi: *{lokasiObj?.NamaLokasi ?? "Utama"}*\n" +
+                              $"Keperluan: *{permintaan.Keperluan}*\n\n" +
+                              $"*Item Diminta:*\n";
+
+                    var details = await _context.PermintaanDetails.Include(d => d.Barang).Where(d => d.PermintaanId == permintaan.Id).ToListAsync();
+                    foreach (var d in details)
+                    {
+                        msg += $"- {d.Barang?.NamaBarang} ({d.Jumlah} {d.Barang?.Satuan})\n";
+                    }
+                    msg += $"\n*Status: Otomatis Disetujui oleh {approverName}*";
+
+                    await _telegram.SendAsync(msg);
+                }
+                catch { }
+
+                TempData["Success"] = $"Permintaan {noPermintaan} berhasil dibuat dan otomatis DISETUJUI!";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Telegram Notification for regular user request
             try
             {
                 var lokasiObj = lokasiId.HasValue && lokasiId.Value > 0 ? await _context.Lokasis.FindAsync(lokasiId.Value) : null;
@@ -257,6 +299,27 @@ namespace itam.Controllers
                 }
             }
 
+            var approverName = User.FindFirst("NamaLengkap")?.Value ?? User.Identity?.Name ?? "Admin";
+            await ProcessApprovalInternalAsync(permintaan, approverName, catatanAdmin);
+
+            // Send Telegram Notification
+            try
+            {
+                var msg = $"✅ *Permintaan Barang DISETUJUI ({permintaan.NoPermintaan})*\n" +
+                          $"Pemohon: *{permintaan.PemohonUser}*\n" +
+                          $"Penerima: *{permintaan.Penerima}*\n" +
+                          $"Disetujui Oleh: *{permintaan.ApprovedBy}*\n" +
+                          $"Catatan Admin: *{permintaan.CatatanAdmin ?? "-"}*";
+                await _telegram.SendAsync(msg);
+            }
+            catch { }
+
+            TempData["Success"] = $"Permintaan {permintaan.NoPermintaan} berhasil DISETUJUI dan stok telah terpotong!";
+            return RedirectToAction(nameof(Detail), new { id });
+        }
+
+        private async Task ProcessApprovalInternalAsync(Permintaan permintaan, string approverName, string? catatanAdmin)
+        {
             var suratSetting = await _context.SuratSettings.OrderBy(x => x.Id).FirstOrDefaultAsync();
 
             if (permintaan.JenisPermintaan == "BarangKeluar")
@@ -407,27 +470,11 @@ namespace itam.Controllers
                 permintaan.Status = "Disetujui";
             }
 
-            var approverName = User.FindFirst("NamaLengkap")?.Value ?? User.Identity?.Name ?? "Admin";
             permintaan.ApprovedBy = approverName;
             permintaan.ApprovedAt = DateTime.Now;
             permintaan.CatatanAdmin = catatanAdmin;
 
             await _context.SaveChangesAsync();
-
-            // Send Telegram Notification
-            try
-            {
-                var msg = $"✅ *Permintaan Barang DISETUJUI ({permintaan.NoPermintaan})*\n" +
-                          $"Pemohon: *{permintaan.PemohonUser}*\n" +
-                          $"Penerima: *{permintaan.Penerima}*\n" +
-                          $"Disetujui Oleh: *{permintaan.ApprovedBy}*\n" +
-                          $"Catatan Admin: *{permintaan.CatatanAdmin ?? "-"}*";
-                await _telegram.SendAsync(msg);
-            }
-            catch { }
-
-            TempData["Success"] = $"Permintaan {permintaan.NoPermintaan} berhasil DISETUJUI dan stok telah terpotong!";
-            return RedirectToAction(nameof(Detail), new { id });
         }
 
         [HttpPost]
