@@ -3,16 +3,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using itam.Models;
 
 namespace itam.Controllers
 {
     [Authorize(Roles = "SuperAdmin")]
     public class UserController : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
-        public UserController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+        public UserController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -39,7 +40,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string username, string email, string password, string role)
+        public async Task<IActionResult> Create(string username, string? namaLengkap, string email, string password, string role)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
@@ -48,9 +49,10 @@ namespace itam.Controllers
                 return View();
             }
 
-            var user = new IdentityUser
+            var user = new ApplicationUser
             {
                 UserName = username,
+                NamaLengkap = string.IsNullOrWhiteSpace(namaLengkap) ? username : namaLengkap,
                 Email = email,
                 EmailConfirmed = true
             };
@@ -81,12 +83,13 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, string username, string email, string? newPassword, string role)
+        public async Task<IActionResult> Edit(string id, string username, string? namaLengkap, string email, string? newPassword, string role)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
 
             user.UserName = username;
+            user.NamaLengkap = string.IsNullOrWhiteSpace(namaLengkap) ? username : namaLengkap;
             user.Email = email;
             var updateResult = await _userManager.UpdateAsync(user);
 

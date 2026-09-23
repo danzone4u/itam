@@ -2,17 +2,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using itam.Data;
+using itam.Models;
 using itam.Services;
 
 namespace itam.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
 
-        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ApplicationDbContext context)
+        public AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, ApplicationDbContext context)
         {
             _signInManager = signInManager;
             _userManager = userManager;
@@ -76,11 +77,12 @@ namespace itam.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> Profile(string email, string? currentPassword, string? newPassword)
+        public async Task<IActionResult> Profile(string namaLengkap, string email, string? currentPassword, string? newPassword)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return RedirectToAction("Login");
 
+            user.NamaLengkap = namaLengkap;
             user.Email = email;
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
@@ -99,6 +101,7 @@ namespace itam.Controllers
                 }
             }
 
+            await _signInManager.RefreshSignInAsync(user);
             TempData["Success"] = "Profil berhasil diperbarui!";
             return View(user);
         }

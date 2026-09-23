@@ -1,7 +1,7 @@
 @model IEnumerable<itam.Models.Permintaan>
 @{
     ViewData["Title"] = "Permintaan Barang";
-    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang");
+    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang") || User.IsInRole("Supervisor");
     var currentStatus = ViewBag.CurrentStatus as string ?? "";
     var pendingCount = (int)(ViewBag.PendingCount ?? 0);
 }

@@ -12,7 +12,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
         o => o.UseCompatibilityLevel(120)));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
@@ -23,6 +23,8 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationUserClaimsPrincipalFactory>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddHostedService<BackupService>();
@@ -77,11 +79,11 @@ using (var scope = app.Services.CreateScope())
     var context = services.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
 
-    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
     // Seed roles
-    string[] roles = { "SuperAdmin", "AdminGudang", "User" };
+    string[] roles = { "SuperAdmin", "AdminGudang", "Supervisor", "User" };
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
@@ -90,9 +92,10 @@ using (var scope = app.Services.CreateScope())
 
     if (!userManager.Users.Any())
     {
-        var admin = new IdentityUser
+        var admin = new ApplicationUser
         {
             UserName = "admin",
+            NamaLengkap = "Administrator",
             Email = "admin@mygudang.com",
             EmailConfirmed = true
         };

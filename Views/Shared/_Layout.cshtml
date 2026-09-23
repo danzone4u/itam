@@ -36,7 +36,7 @@
             </li>
         </ul>
         <ul class="navbar-nav ml-auto">
-            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang") || User.IsInRole("Supervisor"))
             {
                 <li class="nav-item dropdown">
                     <a class="nav-link" data-toggle="dropdown" href="#" title="Notifikasi Permintaan">
@@ -66,7 +66,7 @@
             }
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
-                    <i class="fas fa-user-circle"></i> @User.Identity?.Name
+                    <i class="fas fa-user-circle"></i> @(User.FindFirst("NamaLengkap")?.Value ?? User.Identity?.Name)
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a href="@Url.Action("Profile","Account")" class="dropdown-item"><i class="fas fa-user-edit mr-2"></i> Edit Profil</a>
@@ -114,13 +114,28 @@
                             <i class="nav-icon fas fa-clipboard-list" style="color:#fd7e14;"></i>
                             <p>
                                 Permintaan Barang
-                                @if ((User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang")) && pendingPermintaanCount > 0)
+                                @if ((User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang") || User.IsInRole("Supervisor")) && pendingPermintaanCount > 0)
                                 {
                                     <span class="badge badge-warning right">@pendingPermintaanCount</span>
                                 }
                             </p>
                         </a>
                     </li>
+                    @if (User.IsInRole("Supervisor") && !User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang"))
+                    {
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Stok")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stok" ? "active" : "")">
+                                <i class="nav-icon fas fa-cubes"></i>
+                                <p>Data Stok</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Laporan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Laporan" ? "active" : "")">
+                                <i class="nav-icon fas fa-chart-pie" style="color:#6f42c1;"></i>
+                                <p>Laporan Rekap</p>
+                            </a>
+                        </li>
+                    }
                     @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
                     {
                         <li class="nav-item has-treeview @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">

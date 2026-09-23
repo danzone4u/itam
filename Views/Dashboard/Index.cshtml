@@ -1,7 +1,7 @@
 @{
     ViewData["Title"] = "Dashboard";
     var charts = (List<itam.Models.ChartSetting>)ViewBag.Charts;
-    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang");
+    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang") || User.IsInRole("Supervisor");
     var userRecentReqs = (List<itam.Models.Permintaan>?)ViewBag.UserRecentPermintaans ?? new List<itam.Models.Permintaan>();
 }
 

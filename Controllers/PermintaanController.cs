@@ -31,7 +31,7 @@ namespace itam.Controllers
                     .ThenInclude(d => d.Barang)
                 .AsQueryable();
 
-            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang"))
+            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && !User.IsInRole("Supervisor"))
             {
                 var username = User.Identity?.Name ?? "";
                 query = query.Where(p => p.PemohonUser == username);
@@ -180,14 +180,14 @@ namespace itam.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && permintaan.PemohonUser != User.Identity?.Name)
+            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && !User.IsInRole("Supervisor") && permintaan.PemohonUser != User.Identity?.Name)
             {
                 return Forbid();
             }
 
-            // Ambil daftar S/N tersedia untuk masing-masing item jika Admin
+            // Ambil daftar S/N tersedia untuk masing-masing item jika Admin / Supervisor
             var availableSerialsMap = new Dictionary<int, List<BarangSerial>>();
-            if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+            if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang") || User.IsInRole("Supervisor"))
             {
                 foreach (var detail in permintaan.Details)
                 {
@@ -210,7 +210,7 @@ namespace itam.Controllers
             var permintaan = await _context.Permintaans.FindAsync(id);
             if (permintaan == null) return NotFound();
 
-            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && permintaan.PemohonUser != User.Identity?.Name)
+            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && !User.IsInRole("Supervisor") && permintaan.PemohonUser != User.Identity?.Name)
             {
                 return Forbid();
             }
@@ -230,7 +230,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        [Authorize(Roles = "SuperAdmin,AdminGudang,Supervisor")]
         public async Task<IActionResult> Approve(int id, string? catatanAdmin)
         {
             var permintaan = await _context.Permintaans
@@ -407,7 +407,8 @@ namespace itam.Controllers
                 permintaan.Status = "Disetujui";
             }
 
-            permintaan.ApprovedBy = User.Identity?.Name ?? "Admin";
+            var approverName = User.FindFirst("NamaLengkap")?.Value ?? User.Identity?.Name ?? "Admin";
+            permintaan.ApprovedBy = approverName;
             permintaan.ApprovedAt = DateTime.Now;
             permintaan.CatatanAdmin = catatanAdmin;
 
@@ -431,7 +432,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        [Authorize(Roles = "SuperAdmin,AdminGudang,Supervisor")]
         public async Task<IActionResult> Reject(int id, string catatanAdmin)
         {
             var permintaan = await _context.Permintaans.FindAsync(id);
@@ -443,8 +444,9 @@ namespace itam.Controllers
                 return RedirectToAction(nameof(Detail), new { id });
             }
 
+            var approverName = User.FindFirst("NamaLengkap")?.Value ?? User.Identity?.Name ?? "Admin";
             permintaan.Status = "Ditolak";
-            permintaan.ApprovedBy = User.Identity?.Name ?? "Admin";
+            permintaan.ApprovedBy = approverName;
             permintaan.ApprovedAt = DateTime.Now;
             permintaan.CatatanAdmin = string.IsNullOrWhiteSpace(catatanAdmin) ? "Ditolak oleh Admin" : catatanAdmin;
 
@@ -474,7 +476,7 @@ namespace itam.Controllers
 
             if (permintaan == null) return NotFound();
 
-            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && permintaan.PemohonUser != User.Identity?.Name)
+            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && !User.IsInRole("Supervisor") && permintaan.PemohonUser != User.Identity?.Name)
             {
                 return Forbid();
             }
@@ -494,7 +496,7 @@ namespace itam.Controllers
 
             if (permintaan == null) return NotFound();
 
-            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && permintaan.PemohonUser != User.Identity?.Name)
+            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && !User.IsInRole("Supervisor") && permintaan.PemohonUser != User.Identity?.Name)
             {
                 return Forbid();
             }
@@ -531,7 +533,7 @@ namespace itam.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,AdminGudang")]
+        [Authorize(Roles = "SuperAdmin,AdminGudang,Supervisor")]
         public async Task<IActionResult> SetujuiPengembalian(int id, string kondisi, string tindakLanjut, string? catatanAdmin)
         {
             var permintaan = await _context.Permintaans
@@ -626,7 +628,7 @@ namespace itam.Controllers
                     .ThenInclude(d => d.Barang)
                 .AsQueryable();
 
-            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang"))
+            if (!User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang") && !User.IsInRole("Supervisor"))
             {
                 var username = User.Identity?.Name ?? "";
                 query = query.Where(p => p.PemohonUser == username);

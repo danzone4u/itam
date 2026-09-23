@@ -1,7 +1,7 @@
 @model itam.Models.Permintaan
 @{
     ViewData["Title"] = "Detail Permintaan - " + Model.NoPermintaan;
-    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang");
+    var isStaffOrAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang") || User.IsInRole("Supervisor");
 
     var statusBadge = Model.Status switch
     {
