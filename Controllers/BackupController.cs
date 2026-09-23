@@ -14,9 +14,9 @@ namespace itam.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public BackupController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env, UserManager<IdentityUser> userManager)
+        public BackupController(ApplicationDbContext context, IConfiguration config, IWebHostEnvironment env, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _config = config;
