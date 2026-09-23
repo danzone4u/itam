@@ -2,8 +2,8 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using itam.Data;
+using itam.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Net;
 
 namespace itam.Services
 {
@@ -18,21 +18,47 @@ namespace itam.Services
             _logger = logger;
         }
 
-        private static (string Username, string Password) GetCredentials(string senderEmail, string rawPassword)
+        private async Task AuthenticateSmtpAsync(SmtpClient client, EmailSetting setting)
         {
-            var cleanPassword = (rawPassword ?? "").Replace(" ", "").Trim();
-            var username = (senderEmail ?? "").Trim();
-
-            if (username.Contains('@'))
+            var rawPass = setting.SenderPassword?.Trim();
+            if (string.IsNullOrWhiteSpace(rawPass))
             {
-                username = username.Split('@', 2)[0];
-            }
-            else if (username.Contains('\\'))
-            {
-                username = username.Split('\\', 2)[1];
+                // Tidak ada password, lewati autentikasi (untuk SMTP Relay internal tanpa otorisasi)
+                return;
             }
 
-            return (username, cleanPassword);
+            var fullEmail = (setting.SenderEmail ?? "").Trim();
+            var secureOption = setting.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
+
+            // Percobaan 1: Menggunakan full email (misal: user@domain.com)
+            try
+            {
+                await client.AuthenticateAsync(fullEmail, rawPass);
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("EmailService: Autentikasi dengan full email ('{FullEmail}') gagal. Mencoba samAccountName. Pesan: {Msg}", fullEmail, ex.Message);
+            }
+
+            // Percobaan 2: Jika full email gagal dan mengandung '@', coba samAccountName (misal: 'user')
+            if (fullEmail.Contains('@'))
+            {
+                var samName = fullEmail.Split('@', 2)[0];
+                try
+                {
+                    // Putuskan koneksi terlebih dahulu agar counter kesalahan autentikasi pada server SMTP di-reset (mencegah error 421 4.5.11)
+                    await client.DisconnectAsync(true);
+                    await client.ConnectAsync(setting.SmtpServer, setting.SmtpPort, secureOption);
+                    await client.AuthenticateAsync(samName, rawPass);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("EmailService: Autentikasi dengan samAccountName ('{SamName}') juga gagal. Pesan: {Msg}", samName, ex.Message);
+                    throw;
+                }
+            }
         }
 
         public async Task SendEmailAsync(string subject, string htmlMessage, bool isBarangMasuk = false, bool isBarangKeluar = false, bool isPeminjaman = false, bool isPermintaan = false)
@@ -92,7 +118,7 @@ namespace itam.Services
                 string template = setting.EmailHtmlTemplate;
                 if (string.IsNullOrWhiteSpace(template))
                 {
-                    template = new Models.EmailSetting().EmailHtmlTemplate;
+                    template = new EmailSetting().EmailHtmlTemplate;
                 }
 
                 string finalHtml = template
@@ -108,21 +134,9 @@ namespace itam.Services
                 using var client = new SmtpClient();
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
                 var secureOption = setting.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
+                
                 await client.ConnectAsync(setting.SmtpServer, setting.SmtpPort, secureOption);
-
-                if (!string.IsNullOrWhiteSpace(setting.SenderPassword))
-                {
-                    var (user, pass) = GetCredentials(setting.SenderEmail, setting.SenderPassword);
-                    try
-                    {
-                        await client.AuthenticateAsync(user, pass);
-                    }
-                    catch
-                    {
-                        // Fallback to full email if samAccountName fails
-                        await client.AuthenticateAsync(setting.SenderEmail.Trim(), pass);
-                    }
-                }
+                await AuthenticateSmtpAsync(client, setting);
 
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
@@ -162,7 +176,7 @@ namespace itam.Services
                 string template = setting.EmailHtmlTemplate;
                 if (string.IsNullOrWhiteSpace(template))
                 {
-                    template = new Models.EmailSetting().EmailHtmlTemplate;
+                    template = new EmailSetting().EmailHtmlTemplate;
                 }
 
                 string finalHtml = template
@@ -180,19 +194,7 @@ namespace itam.Services
                 var secureOption = setting.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
                 
                 await client.ConnectAsync(setting.SmtpServer, setting.SmtpPort, secureOption);
-
-                if (!string.IsNullOrWhiteSpace(setting.SenderPassword))
-                {
-                    var (user, pass) = GetCredentials(setting.SenderEmail, setting.SenderPassword);
-                    try
-                    {
-                        await client.AuthenticateAsync(user, pass);
-                    }
-                    catch
-                    {
-                        await client.AuthenticateAsync(setting.SenderEmail.Trim(), pass);
-                    }
-                }
+                await AuthenticateSmtpAsync(client, setting);
 
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
