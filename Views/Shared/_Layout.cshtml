@@ -121,22 +121,7 @@
                             </p>
                         </a>
                     </li>
-                    @if (User.IsInRole("Supervisor") && !User.IsInRole("SuperAdmin") && !User.IsInRole("AdminGudang"))
-                    {
-                        <li class="nav-item">
-                            <a href="@Url.Action("Index","Stok")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stok" ? "active" : "")">
-                                <i class="nav-icon fas fa-cubes"></i>
-                                <p>Data Stok</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="@Url.Action("Index","Laporan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Laporan" ? "active" : "")">
-                                <i class="nav-icon fas fa-chart-pie" style="color:#6f42c1;"></i>
-                                <p>Laporan Rekap</p>
-                            </a>
-                        </li>
-                    }
-                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang") || User.IsInRole("Supervisor"))
                     {
                         <li class="nav-item has-treeview @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
                             <a href="javascript:void(0);" class="nav-link @(new[]{"Barang","BarangMasuk","BarangKeluar","BarangKembali"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
@@ -159,13 +144,19 @@
                                         <i class="far fa-circle nav-icon text-danger"></i><p>Barang Keluar</p>
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a href="@Url.Action("Index","BarangKembali")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKembali" ? "active" : "")">
-                                        <i class="far fa-circle nav-icon text-info"></i><p>Barang Kembali</p>
-                                    </a>
-                                </li>
+                                @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                                {
+                                    <li class="nav-item">
+                                        <a href="@Url.Action("Index","BarangKembali")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BarangKembali" ? "active" : "")">
+                                            <i class="far fa-circle nav-icon text-info"></i><p>Barang Kembali</p>
+                                        </a>
+                                    </li>
+                                }
                             </ul>
                         </li>
+                    }
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                    {
                         <li class="nav-item has-treeview @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "menu-open" : "")">
                             <a href="javascript:void(0);" class="nav-link @(new[]{"Stok","StokOpname"}.Contains(ViewContext.RouteData.Values["controller"]?.ToString()) ? "active" : "")">
                                 <i class="nav-icon fas fa-cubes"></i>
@@ -184,6 +175,18 @@
                                 </li>
                             </ul>
                         </li>
+                    }
+                    else if (User.IsInRole("Supervisor"))
+                    {
+                        <li class="nav-item">
+                            <a href="@Url.Action("Index","Stok")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Stok" ? "active" : "")">
+                                <i class="nav-icon fas fa-cubes"></i>
+                                <p>Data Stok</p>
+                            </a>
+                        </li>
+                    }
+                    @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+                    {
                         <li class="nav-item">
                             <a href="@Url.Action("Index","Peminjaman")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Peminjaman" ? "active" : "")">
                                 <i class="nav-icon fas fa-handshake" style="color:#6f42c1;"></i>
@@ -220,6 +223,7 @@
                                 <p>Transfer Antar Ruangan</p>
                             </a>
                         </li>
+                    }
                         <li class="nav-item">
                             <a href="@Url.Action("Index","Laporan")" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Laporan" ? "active" : "")">
                                 <i class="nav-icon fas fa-chart-pie" style="color:#6f42c1;"></i>

@@ -9,7 +9,7 @@ using ClosedXML.Excel;
 
 namespace itam.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,AdminGudang")]
+    [Authorize(Roles = "SuperAdmin,AdminGudang,Supervisor")]
     public class BarangKeluarController : Controller
     {
         private readonly ApplicationDbContext _context;

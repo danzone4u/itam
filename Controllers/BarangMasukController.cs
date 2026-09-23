@@ -11,7 +11,7 @@ using System.IO;
 
 namespace itam.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,AdminGudang")]
+    [Authorize(Roles = "SuperAdmin,AdminGudang,Supervisor")]
     public class BarangMasukController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -35,6 +35,7 @@ namespace itam.Controllers
             return View(data);
         }
 
+        [Authorize(Roles = "SuperAdmin,AdminGudang")]
         public async Task<IActionResult> Create()
         {
             ViewBag.Barangs = new SelectList(await _context.Barangs.ToListAsync(), "Id", "NamaBarang");

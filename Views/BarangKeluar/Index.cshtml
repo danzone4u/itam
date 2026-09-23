@@ -20,7 +20,10 @@
                     <button class="dropdown-item btn-bulk-print" type="button" data-url="@Url.Action("PrintBASTBulk")"><i class="fas fa-file-signature"></i> Berita Acara (BAST)</button>
                 </div>
             </div>
-            <button class="btn btn-danger btn-sm d-none ml-2" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("AdminGudang"))
+            {
+                <button class="btn btn-danger btn-sm d-none ml-2" id="btnBulkDelete" data-url="@Url.Action("BulkDelete")"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="bulkCount">0</span>)</button>
+            }
         </div>
         <table class="table table-bordered table-hover data-table">
             <thead class="thead-light">
