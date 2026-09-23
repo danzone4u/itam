@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using itam.Data;
 using itam.Models;
+using itam.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace itam.Controllers
@@ -11,10 +12,12 @@ namespace itam.Controllers
     public class SettingsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public SettingsController(ApplicationDbContext context)
+        public SettingsController(ApplicationDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         // GET: /Settings/Notification
@@ -42,6 +45,7 @@ namespace itam.Controllers
                 NotifBarangMasuk = email.NotifBarangMasuk,
                 NotifBarangKeluar = email.NotifBarangKeluar,
                 NotifPeminjaman = email.NotifPeminjaman,
+                NotifPermintaan = email.NotifPermintaan,
                 EmailHtmlTemplate = email.EmailHtmlTemplate
             };
             return View(vm);
@@ -86,6 +90,7 @@ namespace itam.Controllers
             email.NotifBarangMasuk = model.NotifBarangMasuk;
             email.NotifBarangKeluar = model.NotifBarangKeluar;
             email.NotifPeminjaman = model.NotifPeminjaman;
+            email.NotifPermintaan = model.NotifPermintaan;
 
             // Jangan biarkan template email kosong, jika dikosongkan secara tidak sengaja,
             // kembalikan ke default bawaan dari model EmailSetting
@@ -102,6 +107,19 @@ namespace itam.Controllers
             await _context.SaveChangesAsync();
             TempData["Success"] = "Pengaturan notifikasi berhasil disimpan.";
             return RedirectToAction(nameof(Notification));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TestEmail(string targetEmail)
+        {
+            if (string.IsNullOrWhiteSpace(targetEmail))
+            {
+                return Json(new { success = false, message = "Masukkan alamat email tujuan." });
+            }
+
+            var (success, message) = await _emailService.TestEmailAsync(targetEmail);
+            return Json(new { success, message });
         }
     }
 }

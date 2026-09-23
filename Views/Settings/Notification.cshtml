@@ -105,8 +105,11 @@
                     </div>
 
                     <div class="card mt-4 border-info">
-                        <div class="card-header bg-info text-white">
-                            <h3 class="card-title"><i class="fas fa-tasks mr-2"></i> Trigger Event Email</h3>
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h3 class="card-title mb-0"><i class="fas fa-tasks mr-2"></i> Trigger Event Email</h3>
+                            <button type="button" class="btn btn-light btn-sm font-weight-bold" data-toggle="modal" data-target="#modalTestEmail">
+                                <i class="fas fa-paper-plane text-info mr-1"></i> Uji Coba Kirim Email
+                            </button>
                         </div>
                         <div class="card-body">
                             <div class="custom-control custom-checkbox mb-2">
@@ -117,9 +120,13 @@
                                 <input type="checkbox" class="custom-control-input" id="NotifBarangKeluar" name="NotifBarangKeluar" value="true" @(Model.NotifBarangKeluar ? "checked" : "")>
                                 <label class="custom-control-label" for="NotifBarangKeluar">Barang Keluar</label>
                             </div>
-                            <div class="custom-control custom-checkbox">
+                            <div class="custom-control custom-checkbox mb-2">
                                 <input type="checkbox" class="custom-control-input" id="NotifPeminjaman" name="NotifPeminjaman" value="true" @(Model.NotifPeminjaman ? "checked" : "")>
                                 <label class="custom-control-label" for="NotifPeminjaman">Peminjaman / Pengembalian</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="NotifPermintaan" name="NotifPermintaan" value="true" @(Model.NotifPermintaan ? "checked" : "")>
+                                <label class="custom-control-label" for="NotifPermintaan">Permintaan Barang</label>
                             </div>
                         </div>
                     </div>
@@ -179,6 +186,34 @@
             </div>
             
         </form>
+    </div>
+</div>
+
+<!-- Modal Uji Coba Kirim Email -->
+<div class="modal fade" id="modalTestEmail" tabindex="-1" role="dialog" aria-labelledby="modalTestEmailLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalTestEmailLabel"><i class="fas fa-paper-plane mr-1"></i> Uji Coba Kirim Email (SMTP Test)</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Kirim email uji coba untuk memverifikasi apakah konfigurasi SMTP Server, Email Pengirim, dan Password sudah berjalan dengan baik.</p>
+                <div class="form-group">
+                    <label class="required font-weight-bold">Alamat Email Tujuan Uji Coba</label>
+                    <input type="email" id="testTargetEmail" class="form-control" placeholder="admin@domain.com" value="@Model.SenderEmail" />
+                </div>
+                <div id="testEmailAlert" style="display:none;" class="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-info" id="btnSendTestEmail">
+                    <i class="fas fa-paper-plane mr-1"></i> Kirim Email Uji Coba
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -269,15 +304,29 @@
                 }
             });
 
-            // Allow Tab key in textarea
-            $('#EmailHtmlTemplate').on('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    e.preventDefault();
-                    var start = this.selectionStart;
-                    var end = this.selectionEnd;
-                    this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-                    this.selectionStart = this.selectionEnd = start + 4;
+            // Uji Coba Kirim Email
+            $('#btnSendTestEmail').click(function() {
+                var target = $('#testTargetEmail').val();
+                if (!target) {
+                    Swal.fire('Peringatan', 'Masukkan alamat email tujuan uji coba!', 'warning');
+                    return;
                 }
+                var $btn = $(this);
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Mengirim...');
+                $('#testEmailAlert').hide();
+
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                $.post('@Url.Action("TestEmail", "Settings")', { targetEmail: target, __RequestVerificationToken: token }, function(res) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Kirim Email Uji Coba');
+                    if (res.success) {
+                        $('#testEmailAlert').removeClass('alert-danger').addClass('alert-success').html('<i class="fas fa-check-circle mr-1"></i> ' + res.message).show();
+                    } else {
+                        $('#testEmailAlert').removeClass('alert-success').addClass('alert-danger').html('<i class="fas fa-exclamation-triangle mr-1"></i> ' + res.message).show();
+                    }
+                }).fail(function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Kirim Email Uji Coba');
+                    $('#testEmailAlert').removeClass('alert-success').addClass('alert-danger').html('<i class="fas fa-exclamation-triangle mr-1"></i> Gagal menghubungi server.').show();
+                });
             });
         });
     </script>

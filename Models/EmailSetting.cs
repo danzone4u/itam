@@ -49,6 +49,9 @@ namespace itam.Models
         [Display(Name = "Notifikasi Peminjaman")]
         public bool NotifPeminjaman { get; set; } = true;
 
+        [Display(Name = "Notifikasi Permintaan Barang")]
+        public bool NotifPermintaan { get; set; } = true;
+
         [Display(Name = "Template HTML Email")]
         public string EmailHtmlTemplate { get; set; } = @"<!DOCTYPE html>
 <html>

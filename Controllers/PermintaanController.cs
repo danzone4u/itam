@@ -169,7 +169,9 @@ namespace itam.Controllers
                     }
                     msg += $"\n*Status: Otomatis Disetujui oleh {approverName}*";
 
-                    await _telegram.SendAsync(msg);
+                await _telegram.SendAsync(msg);
+                _ = Task.Run(() => _email.SendEmailAsync($"Permintaan Barang Baru ({permintaan.NoPermintaan})", msg, isPermintaan: true));
+                    _ = Task.Run(() => _email.SendEmailAsync($"Permintaan Barang Otomatis Disetujui ({permintaan.NoPermintaan})", msg, isPermintaan: true));
                 }
                 catch { }
 
@@ -311,6 +313,7 @@ namespace itam.Controllers
                           $"Disetujui Oleh: *{permintaan.ApprovedBy}*\n" +
                           $"Catatan Admin: *{permintaan.CatatanAdmin ?? "-"}*";
                 await _telegram.SendAsync(msg);
+                _ = Task.Run(() => _email.SendEmailAsync($"Permintaan Barang DISETUJUI ({permintaan.NoPermintaan})", msg, isPermintaan: true));
             }
             catch { }
 
@@ -506,6 +509,7 @@ namespace itam.Controllers
                           $"Ditolak Oleh: *{permintaan.ApprovedBy}*\n" +
                           $"Alasan Ditolak: *{permintaan.CatatanAdmin}*";
                 await _telegram.SendAsync(msg);
+                _ = Task.Run(() => _email.SendEmailAsync($"Permintaan Barang DITOLAK ({permintaan.NoPermintaan})", msg, isPermintaan: true));
             }
             catch { }
 
