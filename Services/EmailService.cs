@@ -1,3 +1,4 @@
+using System.Net;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
@@ -18,46 +19,111 @@ namespace itam.Services
             _logger = logger;
         }
 
+        private static SecureSocketOptions GetSecureSocketOptions(EmailSetting setting)
+        {
+            if (!setting.UseSsl)
+            {
+                return SecureSocketOptions.None;
+            }
+
+            if (setting.SmtpPort == 465)
+            {
+                return SecureSocketOptions.SslOnConnect;
+            }
+
+            return SecureSocketOptions.StartTls;
+        }
+
         private async Task AuthenticateSmtpAsync(SmtpClient client, EmailSetting setting)
         {
             var rawPass = setting.SenderPassword?.Trim();
             if (string.IsNullOrWhiteSpace(rawPass))
             {
                 // Tidak ada password, lewati autentikasi (untuk SMTP Relay internal tanpa otorisasi)
+                _logger.LogInformation("EmailService: Password kosong, melanjutkan tanpa autentikasi SMTP (Relay).");
                 return;
             }
 
             var fullEmail = (setting.SenderEmail ?? "").Trim();
-            var secureOption = setting.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
+            var secureOption = GetSecureSocketOptions(setting);
 
-            // Percobaan 1: Menggunakan full email (misal: user@domain.com)
-            try
+            // Daftar strategi autentikasi yang akan dicoba
+            var credentialsToTry = new List<(string Label, ICredentials Creds)>();
+
+            if (fullEmail.Contains('\\'))
             {
-                await client.AuthenticateAsync(fullEmail, rawPass);
-                return;
+                var parts = fullEmail.Split('\\', 2);
+                var domain = parts[0];
+                var user = parts[1];
+                credentialsToTry.Add(($"DOMAIN\\user ({domain}\\{user})", new NetworkCredential(user, rawPass, domain)));
+                credentialsToTry.Add(($"Full Input ({fullEmail})", new NetworkCredential(fullEmail, rawPass)));
             }
-            catch (Exception ex)
+            else if (fullEmail.Contains('@'))
             {
-                _logger.LogWarning("EmailService: Autentikasi dengan full email ('{FullEmail}') gagal. Mencoba samAccountName. Pesan: {Msg}", fullEmail, ex.Message);
+                var parts = fullEmail.Split('@', 2);
+                var user = parts[0];
+                var domainFull = parts[1];
+                var domainShort = domainFull.Split('.')[0];
+
+                // 1. Full UPN (user@domain.com)
+                credentialsToTry.Add(($"UPN ({fullEmail})", new NetworkCredential(fullEmail, rawPass)));
+                // 2. NetworkCredential dengan FQDN Domain (user, pass, domain.com)
+                credentialsToTry.Add(($"samAccountName dengan FQDN ({user} @ {domainFull})", new NetworkCredential(user, rawPass, domainFull)));
+                // 3. NetworkCredential dengan NetBIOS Domain (user, pass, domainShort)
+                if (!string.Equals(domainShort, domainFull, StringComparison.OrdinalIgnoreCase))
+                {
+                    credentialsToTry.Add(($"samAccountName dengan NetBIOS ({user} @ {domainShort})", new NetworkCredential(user, rawPass, domainShort)));
+                }
+                // 4. Bare samAccountName (user)
+                credentialsToTry.Add(($"bare samAccountName ({user})", new NetworkCredential(user, rawPass)));
+            }
+            else
+            {
+                credentialsToTry.Add(($"Username ({fullEmail})", new NetworkCredential(fullEmail, rawPass)));
             }
 
-            // Percobaan 2: Jika full email gagal dan mengandung '@', coba samAccountName (misal: 'user')
-            if (fullEmail.Contains('@'))
+            Exception? lastException = null;
+
+            for (int i = 0; i < credentialsToTry.Count; i++)
             {
-                var samName = fullEmail.Split('@', 2)[0];
+                var (label, creds) = credentialsToTry[i];
+
+                if (i > 0)
+                {
+                    // Disconnect & reconnect ke server SMTP agar counter error autentikasi di-reset oleh server Exchange
+                    try
+                    {
+                        await client.DisconnectAsync(true);
+                    }
+                    catch { }
+
+                    try
+                    {
+                        await client.ConnectAsync(setting.SmtpServer, setting.SmtpPort, secureOption);
+                    }
+                    catch (Exception connEx)
+                    {
+                        _logger.LogError(connEx, "EmailService: Gagal reconnect ke SMTP server saat mencoba strategi '{Label}'", label);
+                        throw;
+                    }
+                }
+
                 try
                 {
-                    // Putuskan koneksi terlebih dahulu agar counter kesalahan autentikasi pada server SMTP di-reset (mencegah error 421 4.5.11)
-                    await client.DisconnectAsync(true);
-                    await client.ConnectAsync(setting.SmtpServer, setting.SmtpPort, secureOption);
-                    await client.AuthenticateAsync(samName, rawPass);
+                    await client.AuthenticateAsync(creds);
+                    _logger.LogInformation("EmailService: Autentikasi SMTP berhasil menggunakan strategi '{Label}'", label);
                     return;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("EmailService: Autentikasi dengan samAccountName ('{SamName}') juga gagal. Pesan: {Msg}", samName, ex.Message);
-                    throw;
+                    lastException = ex;
+                    _logger.LogWarning("EmailService: Percobaan autentikasi '{Label}' gagal: {Message}", label, ex.Message);
                 }
+            }
+
+            if (lastException != null)
+            {
+                throw lastException;
             }
         }
 
@@ -133,7 +199,7 @@ namespace itam.Services
 
                 using var client = new SmtpClient();
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-                var secureOption = setting.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
+                var secureOption = GetSecureSocketOptions(setting);
                 
                 await client.ConnectAsync(setting.SmtpServer, setting.SmtpPort, secureOption);
                 await AuthenticateSmtpAsync(client, setting);
@@ -191,7 +257,7 @@ namespace itam.Services
 
                 using var client = new SmtpClient();
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-                var secureOption = setting.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
+                var secureOption = GetSecureSocketOptions(setting);
                 
                 await client.ConnectAsync(setting.SmtpServer, setting.SmtpPort, secureOption);
                 await AuthenticateSmtpAsync(client, setting);
