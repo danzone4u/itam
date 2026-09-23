@@ -145,8 +145,10 @@
                                 <div class="alert alert-info mb-3">
                                     <i class="fas fa-info-circle mr-1"></i>
                                     <strong>Placeholder yang tersedia:</strong><br>
+                                    <code>{Subject}</code> / <code>{Subjek}</code> — Judul / Subjek notifikasi.<br>
                                     <code>{Content}</code> — Isi pesan notifikasi (wajib ada).<br>
-                                    <code>{themeColor}</code> — Warna tema otomatis berdasarkan jenis event.
+                                    <code>{themeColor}</code> — Warna tema otomatis berdasarkan jenis event.<br>
+                                    <code>{Date}</code> — Tanggal & waktu pengiriman.
                                 </div>
                                 
                                 <div class="form-group">
@@ -283,6 +285,9 @@
                 var html = $('#EmailHtmlTemplate').val();
                 // Replace placeholders with sample data
                 html = html.replace(/\{themeColor\}/g, '#007bff');
+                html = html.replace(/\{Subject\}/g, 'Contoh Notifikasi Email');
+                html = html.replace(/\{Subjek\}/g, 'Contoh Notifikasi Email');
+                html = html.replace(/\{Date\}/g, new Date().toLocaleString('id-ID'));
                 html = html.replace(/\{Content\}/g, '<p>Halo,<br><br>Berikut adalah contoh notifikasi dari sistem <strong>IT Asset Management</strong>.</p><div class="item-list"><strong>Daftar Barang:</strong><br>- Laptop Dell Latitude 5520 (SN: ABC123)<br>- Monitor LG 24" (SN: DEF456)</div>');
                 
                 var $container = $('#previewContainer');

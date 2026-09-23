@@ -98,6 +98,7 @@ namespace itam.Services
                 string finalHtml = template
                     .Replace("{themeColor}", themeColor)
                     .Replace("{Subject}", subject)
+                    .Replace("{Subjek}", subject)
                     .Replace("{Content}", formattedText)
                     .Replace("{Date}", DateTime.Now.ToString("dd MMMM yyyy HH:mm:ss"));
 
@@ -167,6 +168,7 @@ namespace itam.Services
                 string finalHtml = template
                     .Replace("{themeColor}", "#007bff")
                     .Replace("{Subject}", "Uji Coba Notifikasi Email")
+                    .Replace("{Subjek}", "Uji Coba Notifikasi Email")
                     .Replace("{Content}", testContent)
                     .Replace("{Date}", DateTime.Now.ToString("dd MMMM yyyy HH:mm:ss"));
 
